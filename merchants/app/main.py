@@ -12,6 +12,9 @@ app = FastAPI()
 PAYMENTS_GATEWAY_URL = os.getenv("PAYMENTS_GATEWAY_URL")
 MERCHANT_API_KEY = os.getenv("MERCHANT_API_KEY")
 
+@app.get("/ping")
+async def ping():
+    return {"message": "pong"}
 
 @app.post("/orders/create")
 async def create_order(product_id: int, amount: float):

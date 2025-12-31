@@ -32,25 +32,29 @@ services:
     ports:
       - "9000:8000"
 
-merchants:
-  build: ./merchants
-  container_name: merchants
-  depends_on:
-    - merchants-db
-  environment:
-    DATABASE_URL: postgresql://merchants:merchants@merchants-db:5432/merchants
-    PAYMENTS_GATEWAY_URL: http://gateway:80
-    MERCHANT_API_KEY: demo_api_key_123
+  merchants:
+    build: ./merchants
+    container_name: merchants
+    depends_on:
+      - merchants-db
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql://merchants:merchants@merchants-db:5432/merchants
+      PAYMENTS_GATEWAY_URL: http://gateway:80
+      MERCHANT_API_KEY: demo_api_key_123
+    volumes:
+      - ./merchants:/app
 
-merchants-db:
-  image: postgres:15
-  container_name: merchants-db
-  environment:
-    POSTGRES_DB: merchants
-    POSTGRES_USER: merchants
-    POSTGRES_PASSWORD: merchants
-  volumes:
-    - merchants_pgdata:/var/lib/postgresql/data
+  merchants-db:
+    image: postgres:15
+    container_name: merchants-db
+    environment:
+      POSTGRES_DB: merchants
+      POSTGRES_USER: merchants
+      POSTGRES_PASSWORD: merchants
+    volumes:
+      - merchants_pgdata:/var/lib/postgresql/data
 
 volumes:
   pgdata:
