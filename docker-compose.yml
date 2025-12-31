@@ -1,0 +1,57 @@
+services:
+  gateway:
+    image: nginx:alpine
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - payments
+
+  payments:
+    build: ./payments
+    container_name: payments
+    environment:
+      - MODULE_NAME=app.main
+    volumes:
+      - ./payments:/app
+
+  db:
+    image: postgres:15
+    container_name: payments-db
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: payments
+      POSTGRES_PASSWORD: payments
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  provider:
+    build: ./providers
+    container_name: provider
+    ports:
+      - "9000:8000"
+
+merchants:
+  build: ./merchants
+  container_name: merchants
+  depends_on:
+    - merchants-db
+  environment:
+    DATABASE_URL: postgresql://merchants:merchants@merchants-db:5432/merchants
+    PAYMENTS_GATEWAY_URL: http://gateway:80
+    MERCHANT_API_KEY: demo_api_key_123
+
+merchants-db:
+  image: postgres:15
+  container_name: merchants-db
+  environment:
+    POSTGRES_DB: merchants
+    POSTGRES_USER: merchants
+    POSTGRES_PASSWORD: merchants
+  volumes:
+    - merchants_pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+  merchants_pgdata:

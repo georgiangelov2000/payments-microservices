@@ -1,0 +1,28 @@
+from fastapi import FastAPI, Header
+from app.schemas.payments import (
+    CreatePaymentRequest,
+    PaymentWebhookRequest,
+)
+from app.classes.payments import Payment
+
+app = FastAPI()
+
+handler = Payment()
+
+
+@app.post("/payments/create")
+async def create_payment(
+    request: CreatePaymentRequest,
+    x_api_key: str = Header(..., alias="X-API-Key"),
+):
+    return handler.create_payment(request, x_api_key)
+
+
+@app.post("/payments/webhook")
+async def webhook(request: PaymentWebhookRequest):
+    return handler.webhook(request)
+
+
+@app.get("/payments/ping")
+def ping():
+    return {"ok": True}
