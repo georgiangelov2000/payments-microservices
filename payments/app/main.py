@@ -4,6 +4,7 @@ from app.schemas.payments import (
     PaymentWebhookRequest,
 )
 from app.classes.payments import Payment
+from app.classes import rabbitmq
 
 app = FastAPI()
 
@@ -20,8 +21,14 @@ async def create_payment(
 ):
     return handler.create_payment(request, x_api_key)
 
-
 @app.post("/payments/webhook")
 async def webhook(request: PaymentWebhookRequest):
     return handler.webhook(request)
 
+@app.on_event("startup")
+async def startup():
+    await rabbitmq.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    await rabbitmq.close()

@@ -54,6 +54,13 @@ services:
     volumes:
       - merchants_pgdata:/var/lib/postgresql/data
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
 volumes:
   pgdata:
   merchants_pgdata:
