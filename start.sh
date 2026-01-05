@@ -38,3 +38,17 @@ echo "Merchants: seeding products..."
 docker compose exec merchants python -m seeders.seed_products
 
 echo "All services are up, migrated, and seeded!"
+
+# -------------------------
+# PROVIDERS
+# -------------------------
+echo "Providers: upgrading DB..."
+docker compose exec provider alembic upgrade head
+
+echo "Providers: generating Alembic revision..."
+docker compose exec provider alembic revision --autogenerate -m "create provider payments table" || true
+
+echo "Providers: upgrading DB..."
+docker compose exec provider alembic upgrade head
+
+echo "All services are up, migrated, and seeded!"

@@ -8,9 +8,7 @@ from sqlalchemy import (
     Index,
     func,
 )
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from app.db import Base
 
 class ProviderPayment(Base):
     __tablename__ = "provider_payments"

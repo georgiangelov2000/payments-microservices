@@ -12,7 +12,7 @@ services:
   payments:
     build: ./payments
     container_name: payments
-    env_file: .env.payments
+    env_file: ./payments/.env.payments
     volumes:
       - ./payments:/app
 
@@ -29,14 +29,26 @@ services:
   provider:
     build: ./providers
     container_name: provider
-    env_file: .env.providers
+    env_file: ./providers/.env.providers
+    volumes:
+      - ./providers:/app
     ports:
       - "9000:8000"
+
+  providers-db:
+    image: postgres:15
+    container_name: providers-db
+    environment:
+      POSTGRES_DB: providers
+      POSTGRES_USER: providers
+      POSTGRES_PASSWORD: providers
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   merchants:
     build: ./merchants
     container_name: merchants
-    env_file: .env.merchants
+    env_file: ./merchants/.env.merchants
     depends_on:
       - merchants-db
     ports:
@@ -63,16 +75,6 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-
-  providers-db:
-    image: postgres:15
-    container_name: providers-db
-    environment:
-      POSTGRES_DB: providers
-      POSTGRES_USER: providers
-      POSTGRES_PASSWORD: providers
-    volumes:
-      - pgdata:/var/lib/postgresql/data
 
 volumes:
   pgdata:
