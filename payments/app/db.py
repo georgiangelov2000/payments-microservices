@@ -4,7 +4,7 @@ import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://payments:payments@db:5432/payments"
+    "postgresql://payments:payments@payments-db:5432/payments"
 )
 
 engine = create_engine(DATABASE_URL)

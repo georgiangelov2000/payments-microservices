@@ -9,6 +9,9 @@ app = FastAPI()
 
 handler = Payment()
 
+@app.get("/payments/ping")
+def ping():
+    return {"ok": True}
 
 @app.post("/payments/create")
 async def create_payment(
@@ -22,7 +25,3 @@ async def create_payment(
 async def webhook(request: PaymentWebhookRequest):
     return handler.webhook(request)
 
-
-@app.get("/payments/ping")
-def ping():
-    return {"ok": True}
