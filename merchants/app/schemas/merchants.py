@@ -11,3 +11,10 @@ class CreateOrderRequest(BaseModel):
         if v <= 0:
             raise ValueError("value must be greater than 0")
         return v
+    
+class WebhookOrderResponse(BaseModel):
+    order_id: int
+    payment_id: int
+    status: str
+    amount: int
+    price: float

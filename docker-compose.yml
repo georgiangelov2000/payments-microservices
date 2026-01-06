@@ -1,4 +1,25 @@
 services:
+
+  saas-gateway:
+    image: nginx:alpine
+    container_name: saas-gateway
+    volumes:
+      - ./saas-laravel:/var/www/html
+      - ./saas-gateway/nginx.conf:/etc/nginx/nginx.conf
+      - ./saas-gateway/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - saas-laravel
+
+  saas-laravel:
+    build: ./saas-laravel
+    container_name: saas-laravel
+    volumes:
+      - ./saas-laravel/app:/var/www
+    depends_on:
+      - payments-db
+
   gateway:
     image: nginx:alpine
     container_name: gateway
@@ -24,6 +45,14 @@ services:
       --reload
       --reload-dir /app/app
       --reload-dir /app/seeders
+
+  payments-worker:
+    build: ./payments
+    container_name: payments-worker
+    command: python -m app.workers.payment_events
+    depends_on:
+      - rabbitmq
+      - payments
 
   payments-db:
     image: postgres:15

@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from decimal import Decimal
 
-from app.schemas.merchants import CreateOrderRequest
+from app.schemas.merchants import CreateOrderRequest, WebhookOrderResponse
 from app.models import Product, Order, OrderStatus 
 from app.db import SessionLocal
 
@@ -106,6 +106,26 @@ class Merchant:
             "order_id": order.id,
             "payment_response": resp.json(),
         }
+
+    async def webhook_order_status(self, request: WebhookOrderResponse):
+        order_id = request.order_id
+        status = request.status
+
+        db = SessionLocal()
+        try:
+            order = db.get(Order, order_id)
+            if not order:
+                raise HTTPException(status_code=404, detail="Order not found")
+
+            if status not in OrderStatus._value2member_map_:
+                raise HTTPException(status_code=400, detail="Invalid status value")
+
+            order.status = status
+            db.commit()
+        finally:
+            db.close()
+
+        return {"message": "Order status updated"}
 
     def _mark_failed(self, order_id: int):
         db = SessionLocal()

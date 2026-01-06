@@ -26,11 +26,11 @@ class Payment:
     - create payment
     - provider interaction
     - webhook updates
-    - event publishing
+    - event publishing (ONLY via webhook)
     """
 
     # -------------------------------------------------
-    # Create payment
+    # Create payment (NO EVENT PUBLISHING)
     # -------------------------------------------------
     async def create_payment(self, request: CreatePaymentRequest, api_key: str):
 
@@ -38,7 +38,6 @@ class Payment:
         try:
             api_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
 
-            # 1. Validate API key
             api_key_row = db.execute(
                 select(MerchantAPIKey)
                 .where(MerchantAPIKey.hash == api_hash)
@@ -51,16 +50,14 @@ class Payment:
             if not merchant:
                 raise HTTPException(status_code=401, detail="Merchant not found")
 
-            # 2. Validate provider
             provider = db.execute(
                 select(Provider)
                 .where(Provider.alias == request.alias)
             ).scalar_one_or_none()
-        
+
             if not provider:
                 raise HTTPException(status_code=400, detail="Provider not found")
 
-            # 3. Enforce one payment per order
             existing = db.execute(
                 select(PaymentModel)
                 .where(PaymentModel.order_id == request.order_id)
@@ -73,7 +70,6 @@ class Payment:
                     "status": existing.status.value,
                 }
 
-            # 4. Create payment
             payment = PaymentModel(
                 order_id=request.order_id,
                 amount=request.amount,
@@ -86,57 +82,39 @@ class Payment:
             db.commit()
             db.refresh(payment)
 
-            payment_dto = PaymentDTO(
-                payment_id=payment.id,
-                order_id=payment.order_id,
-                merchant_id=payment.merchant_id,
-                status=payment.status.value,
-                amount=str(payment.amount),
-                price=str(payment.price),
-            )
-
+            payment_id = payment.id
             merchant_id = merchant.id
             provider_alias = provider.alias
 
         finally:
             db.close()
 
-        # -------------------------
-        # Call provider (ASYNC)
-        # -------------------------
         async with httpx.AsyncClient(timeout=3.0) as client:
             try:
                 resp = await client.post(
                     "http://provider:8000/generate-url",
                     json={
-                        "payment_id": payment_dto.payment_id,
+                        "payment_id": payment_id,
                         "merchant_id": merchant_id,
                         "provider": provider_alias,
                     },
                 )
             except httpx.RequestError:
-                await self._mark_failed(payment_dto.payment_id)
+                await self._mark_failed(payment_id)
                 raise HTTPException(502, "Provider unreachable")
 
         if resp.status_code != 200:
-            await self._mark_failed(payment_dto.payment_id)
+            await self._mark_failed(payment_id)
             raise HTTPException(502, "Provider URL generation failed")
 
-        payment_url = resp.json().get("payment_url")
-
-        # -------------------------
-        # Publish event (payment.pending)
-        # -------------------------
-        await rabbitmq.publish_payment_event(payment_dto)
-
         return {
-            "payment_id": payment_dto.payment_id,
-            "status": payment_dto.status,
-            "payment_url": payment_url,
+            "payment_id": payment_id,
+            "status": PaymentStatus.pending.value,
+            "payment_url": resp.json().get("payment_url"),
         }
 
     # -------------------------------------------------
-    # Webhook
+    # Webhook (EVENT PUBLISHING HERE ONLY)
     # -------------------------------------------------
     async def webhook(self, request: PaymentWebhookRequest):
 
