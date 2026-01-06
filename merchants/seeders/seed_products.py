@@ -5,11 +5,12 @@ from app.models import Product
 
 def seed_products(db):
     products = [
-        {"name": "Basic Subscription", "price": 9.99},
-        {"name": "Pro Subscription", "price": 19.99},
-        {"name": "Enterprise Subscription", "price": 49.99},
-        {"name": "One-time Setup Fee", "price": 99.00},
+        {"name": "Wireless Mouse", "price": 24.99},
+        {"name": "Mechanical Keyboard", "price": 89.99},
+        {"name": "USB-C Hub", "price": 39.99},
+        {"name": "27-inch 4K Monitor", "price": 299.00},
     ]
+
 
     for p in products:
         exists = db.execute(

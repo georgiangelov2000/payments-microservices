@@ -12,24 +12,25 @@ services:
   payments:
     build: ./payments
     container_name: payments
-    env_file: ./payments/.env.payments
+    env_file: payments/.env.payments
     volumes:
       - ./payments:/app
+    depends_on:
+      - rabbitmq
 
   payments-db:
     image: postgres:15
     container_name: payments-db
-    environment:
-      POSTGRES_DB: payments
-      POSTGRES_USER: payments
-      POSTGRES_PASSWORD: payments
+    env_file: 
+      - payments/.env.payments-db
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - payments_pgdata:/var/lib/postgresql/data
 
   provider:
     build: ./providers
     container_name: provider
-    env_file: ./providers/.env.providers
+    env_file: 
+      - providers/.env.providers
     volumes:
       - ./providers:/app
     ports:
@@ -38,34 +39,28 @@ services:
   providers-db:
     image: postgres:15
     container_name: providers-db
-    environment:
-      POSTGRES_DB: providers
-      POSTGRES_USER: providers
-      POSTGRES_PASSWORD: providers
+    env_file:
+      - providers/.env.providers-db
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - providers_pgdata:/var/lib/postgresql/data
 
   merchants:
     build: ./merchants
     container_name: merchants
-    env_file: ./merchants/.env.merchants
+    env_file: 
+      - merchants/.env.merchants
     depends_on:
       - merchants-db
     ports:
       - "8001:8000"
-    environment:
-      DATABASE_URL: postgresql://merchants:merchants@merchants-db:5432/merchants
-      PAYMENTS_GATEWAY_URL: http://gateway:80
     volumes:
       - ./merchants:/app
 
   merchants-db:
     image: postgres:15
     container_name: merchants-db
-    environment:
-      POSTGRES_DB: merchants
-      POSTGRES_USER: merchants
-      POSTGRES_PASSWORD: merchants
+    env_file: 
+      - merchants/.env.merchants-db
     volumes:
       - merchants_pgdata:/var/lib/postgresql/data
 
@@ -77,5 +72,6 @@ services:
       - "15672:15672"
 
 volumes:
-  pgdata:
   merchants_pgdata:
+  providers_pgdata:
+  payments_pgdata:
