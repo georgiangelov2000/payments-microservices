@@ -37,8 +37,8 @@ docker ps
 Generate and apply migrations:
 
 ```bash
-docker exec -it merchants alembic revision --autogenerate -m "create products and orders tables"
-docker exec -it merchants alembic upgrade head
+docker compose exec -it merchants alembic revision --autogenerate -m "create products and orders tables"
+docker compose exec -it merchants alembic upgrade head
 ```
 
 ---
@@ -48,8 +48,8 @@ docker exec -it merchants alembic upgrade head
 Generate and apply migrations:
 
 ```bash
-docker exec -it payments alembic revision --autogenerate -m "create core tables"
-docker exec -it payments alembic upgrade head
+docker compose exec -it payments alembic revision --autogenerate -m "create core tables"
+docker compose exec -it payments alembic upgrade head
 ```
 
 ---
@@ -64,7 +64,7 @@ Seeds:
 - API keys
 
 ```bash
-docker exec -it payments python app/seeders/seed_base_data.py
+docker compose exec -it payments python -m seeders.seed_base_data
 ```
 
 ---
@@ -75,7 +75,7 @@ Seeds:
 - Products
 
 ```bash
-docker exec -it merchants python seeders/seed_products.py
+docker compose exec -it merchants python -m seeders.seed_products
 ```
 
 ---
@@ -85,7 +85,7 @@ docker exec -it merchants python seeders/seed_products.py
 ### Payments Database
 
 ```bash
-docker exec -it payments-db psql -U payments -d payments
+docker compose exec -it payments-db psql -U payments -d payments
 ```
 
 ```sql
@@ -105,7 +105,7 @@ Exit:
 ### Merchants Database
 
 ```bash
-docker exec -it merchants-db psql -U merchants -d merchants
+docker compose exec -it merchants-db psql -U merchants -d merchants
 ```
 
 ```sql

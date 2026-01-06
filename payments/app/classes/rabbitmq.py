@@ -1,9 +1,8 @@
 import os
-import json
 import aio_pika
 from typing import Optional
 
-from app.models import Payment as PaymentModel
+from app.dto.payments import PaymentDTO
 
 
 # -------------------------
@@ -32,10 +31,6 @@ _exchange: Optional[aio_pika.RobustExchange] = None
 # -------------------------
 
 async def connect():
-    """
-    Called once on FastAPI startup.
-    Creates a persistent RabbitMQ connection.
-    """
     global _connection, _channel, _exchange
 
     _connection = await aio_pika.connect_robust(RABBITMQ_URL)
@@ -49,9 +44,6 @@ async def connect():
 
 
 async def close():
-    """
-    Called once on FastAPI shutdown.
-    """
     global _connection
 
     if _connection:
@@ -59,10 +51,10 @@ async def close():
 
 
 # -------------------------
-# Publisher
+# Publisher (DTO-based)
 # -------------------------
 
-async def publish_payment_event(payment: PaymentModel):
+async def publish_payment_event(payment: PaymentDTO):
     """
     Publishes a payment event to RabbitMQ.
     Requires `connect()` to have been called.
@@ -71,21 +63,12 @@ async def publish_payment_event(payment: PaymentModel):
         raise RuntimeError("RabbitMQ is not connected")
 
     message = aio_pika.Message(
-        body=json.dumps(
-            {
-                "payment_id": payment.id,
-                "order_id": payment.order_id,
-                "merchant_id": payment.merchant_id,
-                "amount": payment.amount,
-                "price": payment.price,
-                "status": payment.status.value,
-            }
-        ).encode(),
+        body=payment.model_dump_json().encode(),
         content_type="application/json",
         delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
     )
 
-    routing_key = f"payment.{payment.status.value}"
+    routing_key = f"payment.{payment.status}"
 
     await _exchange.publish(
         message,

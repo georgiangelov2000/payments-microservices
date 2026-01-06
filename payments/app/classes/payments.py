@@ -1,3 +1,4 @@
+import hashlib
 import httpx
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -16,6 +17,7 @@ from app.models import (
 )
 from app.db import SessionLocal
 from app.classes import rabbitmq
+from app.dto.payments import PaymentDTO
 
 
 class Payment:
@@ -31,25 +33,15 @@ class Payment:
     # Create payment
     # -------------------------------------------------
     async def create_payment(self, request: CreatePaymentRequest, api_key: str):
-        """
-        Flow:
-        1) Validate API key & merchant
-        2) Validate provider
-        3) Enforce one payment per order
-        4) Create payment (pending)
-        5) Call provider
-        6) Publish RabbitMQ event
-        """
 
-        # -------------------------
-        # DB: validate & create
-        # -------------------------
         db: Session = SessionLocal()
         try:
+            api_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
             # 1. Validate API key
             api_key_row = db.execute(
                 select(MerchantAPIKey)
-                .where(MerchantAPIKey.hash == api_key)
+                .where(MerchantAPIKey.hash == api_hash)
             ).scalar_one_or_none()
 
             if not api_key_row:
@@ -64,7 +56,7 @@ class Payment:
                 select(Provider)
                 .where(Provider.alias == request.alias)
             ).scalar_one_or_none()
-
+        
             if not provider:
                 raise HTTPException(status_code=400, detail="Provider not found")
 
@@ -94,6 +86,18 @@ class Payment:
             db.commit()
             db.refresh(payment)
 
+            payment_dto = PaymentDTO(
+                payment_id=payment.id,
+                order_id=payment.order_id,
+                merchant_id=payment.merchant_id,
+                status=payment.status.value,
+                amount=str(payment.amount),
+                price=str(payment.price),
+            )
+
+            merchant_id = merchant.id
+            provider_alias = provider.alias
+
         finally:
             db.close()
 
@@ -105,35 +109,29 @@ class Payment:
                 resp = await client.post(
                     "http://provider:8000/generate-url",
                     json={
-                        "payment_id": payment.id,
-                        "merchant_id": merchant.id,
-                        "provider": provider.alias,
+                        "payment_id": payment_dto.payment_id,
+                        "merchant_id": merchant_id,
+                        "provider": provider_alias,
                     },
                 )
             except httpx.RequestError:
-                await self._mark_failed(payment.id)
-                raise HTTPException(
-                    status_code=502,
-                    detail="Provider unreachable",
-                )
+                await self._mark_failed(payment_dto.payment_id)
+                raise HTTPException(502, "Provider unreachable")
 
         if resp.status_code != 200:
-            await self._mark_failed(payment.id)
-            raise HTTPException(
-                status_code=502,
-                detail="Provider URL generation failed",
-            )
+            await self._mark_failed(payment_dto.payment_id)
+            raise HTTPException(502, "Provider URL generation failed")
 
         payment_url = resp.json().get("payment_url")
 
         # -------------------------
         # Publish event (payment.pending)
         # -------------------------
-        await rabbitmq.publish_payment_event(payment)
+        await rabbitmq.publish_payment_event(payment_dto)
 
         return {
-            "payment_id": payment.id,
-            "status": payment.status.value,
+            "payment_id": payment_dto.payment_id,
+            "status": payment_dto.status,
             "payment_url": payment_url,
         }
 
@@ -141,12 +139,6 @@ class Payment:
     # Webhook
     # -------------------------------------------------
     async def webhook(self, request: PaymentWebhookRequest):
-        """
-        Flow:
-        1) Find payment
-        2) Update status
-        3) Publish event
-        """
 
         db: Session = SessionLocal()
         try:
@@ -164,25 +156,31 @@ class Payment:
 
             db.commit()
 
+            payment_dto = PaymentDTO(
+                payment_id=payment.id,
+                order_id=payment.order_id,
+                merchant_id=payment.merchant_id,
+                status=payment.status.value,
+                amount=str(payment.amount),
+                price=str(payment.price),
+            )
+
         finally:
             db.close()
 
-        # Publish terminal event
-        await rabbitmq.publish_payment_event(payment)
+        await rabbitmq.publish_payment_event(payment_dto)
 
         return {
             "message": "payment updated",
-            "payment_id": payment.id,
-            "status": payment.status.value,
+            "payment_id": payment_dto.payment_id,
+            "status": payment_dto.status,
         }
 
     # -------------------------------------------------
     # Internal helper
     # -------------------------------------------------
     async def _mark_failed(self, payment_id: int):
-        """
-        Marks payment as failed (used on provider errors)
-        """
+
         db = SessionLocal()
         try:
             payment = db.get(PaymentModel, payment_id)

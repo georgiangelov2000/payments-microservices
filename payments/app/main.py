@@ -19,11 +19,11 @@ async def create_payment(
     request: CreatePaymentRequest,
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
-    return handler.create_payment(request, x_api_key)
+    return await handler.create_payment(request, x_api_key)
 
 @app.post("/payments/webhook")
 async def webhook(request: PaymentWebhookRequest):
-    return handler.webhook(request)
+    return await handler.webhook(request)
 
 @app.on_event("startup")
 async def startup():

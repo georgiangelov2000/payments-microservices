@@ -3,9 +3,10 @@ import httpx
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from decimal import Decimal
 
 from app.schemas.merchants import CreateOrderRequest
-from app.models import Product, Order
+from app.models import Product, Order, OrderStatus 
 from app.db import SessionLocal
 
 
@@ -18,7 +19,7 @@ class Merchant:
 
     async def create_order(self, request: CreateOrderRequest, x_api_key: str):
         product_id = request.product_id
-        amount = request.amount
+        quantity = request.amount
         alias = request.alias
 
         # -------------------------
@@ -33,14 +34,24 @@ class Merchant:
             if not product:
                 raise HTTPException(status_code=404, detail="Product not found")
 
-            if amount <= 0 or amount > product.stock:
+            if quantity <= 0 or quantity > product.stock:
                 raise HTTPException(status_code=400, detail="Invalid amount requested")
 
+            # Calculate price (Decimal)
+            unit_price: Decimal = product.price
+            total_price: Decimal = unit_price * quantity
+
+            # Update stock
+            product.stock -= quantity
+
+            # Create order
             order = Order(
                 product_id=product_id,
-                amount=amount,
-                status="pending",
+                amount=quantity,
+                price=total_price,
+                status=OrderStatus.pending.value,
             )
+
             db.add(order)
             db.commit()
             db.refresh(order)
@@ -48,18 +59,19 @@ class Merchant:
         finally:
             db.close()
 
+        
         # -------------------------
         # Call payments gateway
         # -------------------------
         async with httpx.AsyncClient(timeout=5.0) as client:
             try:
                 resp = await client.post(
-                    f"{PAYMENTS_GATEWAY_URL}/payments/create",
+                    f"{PAYMENTS_GATEWAY_URL}/api/v1/payments/create",
                     headers={"X-API-Key": x_api_key},
                     json={
                         "order_id": order.id,
-                        "amount": amount,
-                        "price": amount,
+                        "amount": quantity,
+                        "price": str(total_price),
                         "alias": alias,
                     },
                 )
@@ -67,16 +79,24 @@ class Merchant:
                 self._mark_failed(order.id)
                 raise HTTPException(502, "Payment gateway unreachable")
 
-        if resp.status_code != 200:
+        if resp.status_code == 401:
+            self._mark_failed(order.id)
+            raise HTTPException(401, "Invalid API key for payments gateway")
+
+        if resp.status_code == 502:
             self._mark_failed(order.id)
             raise HTTPException(502, "Payment gateway error")
+        
+        if resp.status_code == 400:
+            self._mark_failed(order.id)
+            raise HTTPException(400, "Payment gateway bad request")
 
         # -------------------------
         # Update order status
         # -------------------------
         db = SessionLocal()
         try:
-            order.status = "completed"
+            order.status = OrderStatus.finished.value
             db.merge(order)
             db.commit()
         finally:
@@ -92,7 +112,7 @@ class Merchant:
         try:
             order = db.get(Order, order_id)
             if order:
-                order.status = "failed"
+                order.status = OrderStatus.failed.value
                 db.commit()
         finally:
             db.close()
