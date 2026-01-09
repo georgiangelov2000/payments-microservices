@@ -9,6 +9,7 @@ from sqlalchemy import (
     UniqueConstraint,
     CheckConstraint,
     SmallInteger,
+    Index,
     func,
 )
 from sqlalchemy.orm import relationship, foreign
@@ -40,9 +41,10 @@ class User(Base):
 
     id = Column(BigInteger, primary_key=True)
     name = Column(String(255), nullable=False)
+
     email = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
-    
+
     is_active = Column(
         SmallInteger,
         nullable=False,
@@ -73,6 +75,12 @@ class User(Base):
         "MerchantAPIKey",
         primaryjoin="User.id == foreign(MerchantAPIKey.merchant_id)",
         viewonly=True,
+    )
+
+    __table_args__ = (
+        Index("ix_users_email", "email"),
+        Index("ix_users_is_active", "is_active"),
+        Index("ix_users_role", "role"),
     )
 
 
@@ -108,6 +116,10 @@ class MerchantAPIKey(Base):
     __table_args__ = (
         UniqueConstraint("hash", name="uq_merchant_api_keys_hash"),
         CheckConstraint("end_date > start_date", name="ck_api_keys_valid_period"),
+
+        Index("ix_api_keys_hash", "hash"),
+        Index("ix_api_keys_merchant_id", "merchant_id"),
+        Index("ix_api_keys_valid_period", "start_date", "end_date"),
     )
 
 
@@ -153,6 +165,15 @@ class Payment(Base):
         viewonly=True,
     )
 
+    __table_args__ = (
+        Index("ix_payments_order_id", "order_id"),
+        Index("ix_payments_merchant_id", "merchant_id"),
+        Index("ix_payments_provider_id", "provider_id"),
+        Index("ix_payments_status", "status"),
+        Index("ix_payments_merchant_status", "merchant_id", "status"),
+        Index("ix_payments_created_at", "created_at"),
+    )
+
 
 # =========================
 # Providers
@@ -172,4 +193,9 @@ class Provider(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_providers_alias", "alias"),
+        Index("ix_providers_name", "name"),
     )

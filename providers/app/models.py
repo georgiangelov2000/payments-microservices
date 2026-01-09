@@ -10,6 +10,7 @@ from sqlalchemy import (
 )
 from app.db import Base
 
+
 class ProviderPayment(Base):
     __tablename__ = "provider_payments"
 
@@ -24,16 +25,22 @@ class ProviderPayment(Base):
     token = Column(String(64), nullable=False, unique=True)
     payment_url = Column(Text, nullable=False)
 
-    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
 
     __table_args__ = (
-        # One payment per provider
+        # One provider entry per payment
         UniqueConstraint(
             "payment_id",
             "provider",
             name="uq_payment_provider",
         ),
-        # Useful indexes
-        Index("idx_payment_id", "payment_id"),
-        Index("idx_merchant_id", "merchant_id"),
+        # Hot-path indexes
+        Index("ix_provider_payments_token", "token"),
+        Index("ix_provider_payments_payment_id", "payment_id"),
+        Index("ix_provider_payments_merchant_id", "merchant_id"),
+        Index("ix_provider_payments_provider", "provider"),
     )
