@@ -3,8 +3,7 @@ FROM nginx:alpine
 # Install Node.js, npm, Redis
 RUN apk add --no-cache \
     nodejs \
-    npm \
-    redis
+    npm
 
 # Node app directory
 WORKDIR /api-verification
@@ -15,4 +14,4 @@ RUN npm install
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Expose ports
-EXPOSE 80 3000 6379
+EXPOSE 80 3000
