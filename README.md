@@ -209,3 +209,7 @@ docker compose up -d --build
 - Internal service communication uses **Docker service names**, not `localhost`
 
 ---
+
+Merchant: Demo Merchant | Email: demo@example.com | Password: ChangeMe123! | API key: 1:1767972565
+Merchant: Test Merchant | Email: test@example.com | Password: ChangeMe123! | API key: 2:1767972565
+Merchant: Sample Merchant | Email: sample@example.com | Password: ChangeMe123! | API key: 3:1767972565

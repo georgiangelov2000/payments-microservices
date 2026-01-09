@@ -17,6 +17,9 @@ services:
   saas-laravel:
     build: ./saas-laravel
     container_name: saas-laravel
+    ports:
+      - "8000:8000"
+      - "5173:5173"
     volumes:
       - ./saas-laravel/app:/var/www
     depends_on:
