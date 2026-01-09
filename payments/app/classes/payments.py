@@ -26,18 +26,21 @@ class Payment:
     - event publishing (ONLY via webhook)
     """
 
+    # --------------------------------------------------
+    # Create payment
+    # --------------------------------------------------
     async def create_payment(self, request: CreatePaymentRequest, merchant_id: str):
-        
         db: Session = SessionLocal()
+
         try:
             provider = db.execute(
-                select(Provider)
-                .where(Provider.alias == request.alias)
+                select(Provider).where(Provider.alias == request.alias)
             ).scalar_one_or_none()
 
             if not provider:
                 raise HTTPException(status_code=400, detail="Provider not found")
 
+            # Explicit idempotency check
             existing = db.execute(
                 select(PaymentModel)
                 .where(PaymentModel.order_id == request.order_id)
@@ -64,14 +67,14 @@ class Payment:
             db.refresh(payment)
 
             payment_id = payment.id
-            merchant_id = merchant_id
             provider_alias = provider.alias
 
         finally:
             db.close()
 
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            try:
+        # Call provider AFTER payment is committed
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.post(
                     "http://provider:8000/generate-url",
                     json={
@@ -80,13 +83,16 @@ class Payment:
                         "provider": provider_alias,
                     },
                 )
-            except httpx.RequestError:
-                await self._mark_failed(payment_id)
-                raise HTTPException(502, "Provider unreachable")
-        
+        except httpx.RequestError:
+            await self._mark_failed_if_pending(payment_id)
+            raise HTTPException(status_code=502, detail="Provider unreachable")
+
         if resp.status_code != 200:
-            await self._mark_failed(payment_id)
-            raise HTTPException(502, "Provider URL generation failed")
+            await self._mark_failed_if_pending(payment_id)
+            raise HTTPException(
+                status_code=502,
+                detail="Provider URL generation failed",
+            )
 
         return {
             "payment_id": payment_id,
@@ -94,14 +100,27 @@ class Payment:
             "payment_url": resp.json().get("payment_url"),
         }
 
+    # --------------------------------------------------
+    # Webhook handler (idempotent)
+    # --------------------------------------------------
     async def webhook(self, request: PaymentWebhookRequest):
-
         db: Session = SessionLocal()
+
         try:
             payment = db.get(PaymentModel, request.payment_id)
 
             if not payment:
                 return {"message": "payment not found"}
+
+            # Idempotency guard
+            if payment.status in (
+                PaymentStatus.finished,
+                PaymentStatus.failed,
+            ):
+                return {
+                    "message": "already processed",
+                    "status": payment.status.value,
+                }
 
             if request.status == "finished":
                 payment.status = PaymentStatus.finished
@@ -124,6 +143,7 @@ class Payment:
         finally:
             db.close()
 
+        # Publish AFTER commit
         await rabbitmq.publish_payment_event(payment_dto)
 
         return {
@@ -132,12 +152,14 @@ class Payment:
             "status": payment_dto.status,
         }
 
-    async def _mark_failed(self, payment_id: int):
-
-        db = SessionLocal()
+    # --------------------------------------------------
+    # Safe failure transition
+    # --------------------------------------------------
+    async def _mark_failed_if_pending(self, payment_id: int):
+        db: Session = SessionLocal()
         try:
             payment = db.get(PaymentModel, payment_id)
-            if payment:
+            if payment and payment.status == PaymentStatus.pending:
                 payment.status = PaymentStatus.failed
                 db.commit()
         finally:
