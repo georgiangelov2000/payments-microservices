@@ -3,12 +3,19 @@ import { Head } from '@inertiajs/react';
 
 export default function Dashboard({ summary }) {
     return (
-        <AuthenticatedLayout>
+        <AuthenticatedLayout
+            header={
+                <h2 className="text-xl font-semibold text-gray-800">
+                    Dashboard
+                </h2>
+            }
+        >
             <Head title="Dashboard" />
 
             <div className="py-8">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
                         {/* Total payments */}
                         <div className="bg-white shadow-sm rounded-lg p-6">
                             <p className="text-sm text-gray-500">
@@ -28,6 +35,37 @@ export default function Dashboard({ summary }) {
                                 {summary.payments_this_month}
                             </p>
                         </div>
+
+                        {/* Finished payments */}
+                        <div className="bg-white shadow-sm rounded-lg p-6">
+                            <p className="text-sm text-gray-500">
+                                Successful Payments
+                            </p>
+                            <p className="mt-2 text-3xl font-semibold text-green-600">
+                                {summary.payments_finished}
+                            </p>
+                        </div>
+
+                        {/* Pending payments */}
+                        <div className="bg-white shadow-sm rounded-lg p-6">
+                            <p className="text-sm text-gray-500">
+                                Pending Payments
+                            </p>
+                            <p className="mt-2 text-3xl font-semibold text-yellow-600">
+                                {summary.payments_pending}
+                            </p>
+                        </div>
+
+                        {/* Failed payments */}
+                        <div className="bg-white shadow-sm rounded-lg p-6">
+                            <p className="text-sm text-gray-500">
+                                Failed Payments
+                            </p>
+                            <p className="mt-2 text-3xl font-semibold text-red-600">
+                                {summary.payments_failed}
+                            </p>
+                        </div>
+
                     </div>
                 </div>
             </div>

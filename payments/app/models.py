@@ -8,6 +8,7 @@ from sqlalchemy import (
     Enum,
     UniqueConstraint,
     CheckConstraint,
+    SmallInteger,
     func,
 )
 from sqlalchemy.orm import relationship, foreign
@@ -41,6 +42,12 @@ class User(Base):
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
+    
+    is_active = Column(
+        SmallInteger,
+        nullable=False,
+        server_default="1"
+    )
 
     role = Column(
         Enum(Role, name="user_role"),
@@ -117,8 +124,8 @@ class Payment(Base):
     amount = Column(Numeric(10, 8), nullable=False)
 
     merchant_id = Column(BigInteger, nullable=False)
-
     order_id = Column(BigInteger, nullable=False, unique=True)
+    provider_id = Column(BigInteger, nullable=False)
 
     status = Column(
         Enum(PaymentStatus, name="payment_status"),
@@ -137,6 +144,12 @@ class Payment(Base):
     merchant = relationship(
         "User",
         primaryjoin="foreign(Payment.merchant_id) == User.id",
+        viewonly=True,
+    )
+
+    provider = relationship(
+        "Provider",
+        primaryjoin="foreign(Payment.provider_id) == Provider.id",
         viewonly=True,
     )
 

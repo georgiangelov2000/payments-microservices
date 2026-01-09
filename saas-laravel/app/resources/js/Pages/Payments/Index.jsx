@@ -56,7 +56,7 @@ export default function Payments({ payments }) {
                   </td>
 
                   <td className="px-4 py-3 text-gray-600">
-                    {new Date(payment.created_at).toLocaleDateString()}
+                    {new Date(payment.created_at).toLocaleString('sv-SE')}
                   </td>
                 </tr>
               ))}

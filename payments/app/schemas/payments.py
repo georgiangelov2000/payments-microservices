@@ -18,4 +18,3 @@ class CreatePaymentRequest(BaseModel):
 class PaymentWebhookRequest(BaseModel):
     payment_id: int = Field(..., gt=0, description="payment_id must be a positive integer")
     status: str = Field(..., min_length=1, description="status is required")
-    provider_reference: str = Field(..., min_length=1, description="provider_reference is required")

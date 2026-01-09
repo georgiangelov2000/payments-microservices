@@ -1,4 +1,6 @@
+import httpx
 import hashlib
+import os
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -33,7 +35,6 @@ class ProviderService:
                 )
             ).scalar_one_or_none()
 
-            print("Existing payment check:", existing)
             if existing:
                 return {
                     "payment_url": existing.payment_url,
@@ -53,6 +54,41 @@ class ProviderService:
             return {
                 "payment_url": payment_url,
             }
+
+        finally:
+            db.close()
+
+    async def accept_payment(self, token: str) -> dict:
+        db = SessionLocal()
+
+        webhook_url = os.getenv("PAYMENT_URL_BASE_WEBHOOK",)
+
+        try:
+            payment = db.execute(
+                select(ProviderPayment)
+                .where(ProviderPayment.token == token)
+            ).scalar_one_or_none()
+
+            if not payment:
+                raise HTTPException(status_code=404, detail="Payment not found")
+
+            payment.status = "finished"
+            db.commit()
+
+            payload = {
+                "payment_id": payment.payment_id,
+                "status": payment.status,
+            }
+
+            #Send webhook
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                await client.post(
+                    webhook_url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            return payload
 
         finally:
             db.close()

@@ -15,6 +15,10 @@ class DashboardService
         return [
             'total_payments' => $this->dashboard->getTotalPayments($merchantId),
             'payments_this_month' => $this->dashboard->getPaymentsThisMonth($merchantId),
+
+            'payments_finished' => $this->dashboard->countByStatus($merchantId, 'finished'),
+            'payments_pending'  => $this->dashboard->countByStatus($merchantId, 'pending'),
+            'payments_failed'   => $this->dashboard->countByStatus($merchantId, 'failed'),
         ];
     }
 }

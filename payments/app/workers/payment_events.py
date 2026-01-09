@@ -1,67 +1,54 @@
 import asyncio
 import json
 import os
+import signal
 import aio_pika
 import httpx
+import redis.asyncio as redis
 
 from app.dto.payments import PaymentDTO
 
+RABBITMQ_URL = os.getenv("RABBITMQ_URL")
+EXCHANGE_NAME = os.getenv("EXCHANGE_NAME")
+QUEUE_NAME = os.getenv("QUEUE_NAME")
+MERCHANT_CALLBACK_URL = os.getenv("MERCHANT_CALLBACK_URL")
 
-# -------------------------
-# Config
-# -------------------------
+REDIS_URL = os.getenv("REDIS_URL")
+MAX_RETRIES = 5
 
-RABBITMQ_URL = os.getenv(
-    "RABBITMQ_URL",
-    "amqp://guest:guest@rabbitmq:5672/"
-)
+redis_client = redis.from_url(REDIS_URL)
 
-EXCHANGE_NAME = "payments"
-QUEUE_NAME = "payments.merchant"
-
-MERCHANT_CALLBACK_URL = os.getenv(
-    "MERCHANT_CALLBACK_URL",
-    "http://merchants:8000/api/v1/payments/update"
-)
+shutdown = False
 
 
-# -------------------------
-# Merchant notifier
-# -------------------------
+def handle_shutdown(*_):
+    global shutdown
+    shutdown = True
+    print("Graceful shutdown requested...")
+
+
+signal.signal(signal.SIGTERM, handle_shutdown)
+signal.signal(signal.SIGINT, handle_shutdown)
+
 
 async def notify_merchant(payment: PaymentDTO):
-    """
-    Sends payment status update to merchant service.
-    """
     async with httpx.AsyncClient(timeout=5.0) as client:
-        await client.post(
+        response = await client.post(
             MERCHANT_CALLBACK_URL,
-            json={
-                "payment_id": payment.payment_id,
-                "order_id": payment.order_id,
-                "status": payment.status,
-                "amount": payment.amount,
-                "price": payment.price,
-            },
+            json=payment.model_dump(),
         )
 
+        if response.status_code >= 500:
+            raise RuntimeError("Merchant temporary failure")
 
-# -------------------------
-# Worker
-# -------------------------
+        if response.status_code >= 400:
+            raise ValueError("Merchant rejected payload")
 
-async def start_payment_events_worker():
-    """
-    RabbitMQ consumer:
-    - listens for payment.* events
-    - forwards them to merchant service
-    """
 
+async def start_worker():
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     channel = await connection.channel()
-
-    # Optional: limit unacked messages
-    await channel.set_qos(prefetch_count=10)
+    await channel.set_qos(prefetch_count=20)
 
     exchange = await channel.declare_exchange(
         EXCHANGE_NAME,
@@ -72,34 +59,52 @@ async def start_payment_events_worker():
     queue = await channel.declare_queue(
         QUEUE_NAME,
         durable=True,
+        arguments={
+            "x-dead-letter-exchange": f"{EXCHANGE_NAME}.dlx"
+        },
     )
 
-    # Bind to all payment events
     await queue.bind(exchange, routing_key="payment.*")
 
-    print("Payments event worker started. Waiting for messages...")
+    print("Payment worker running")
 
-    async with queue.iterator() as queue_iter:
-        async for message in queue_iter:
-            async with message.process():
+    async with queue.iterator() as messages:
+        async for message in messages:
+            if shutdown:
+                break
+
+            retry_count = int(message.headers.get("x-retry", 0))
+
+            async with message.process(ignore_processed=True):
                 try:
-                    payload = json.loads(message.body)
+                    event = json.loads(message.body)
+                    payment = PaymentDTO(**event["payload"])
 
-                    # Convert payload → DTO
-                    payment = PaymentDTO(**payload)
+                    #Idempotency
+                    key = f"payment:event:{payment.payment_id}"
+                    if await redis_client.exists(key):
+                        message.ack()
+                        continue
 
-                    # Forward to merchant
                     await notify_merchant(payment)
 
+                    await redis_client.setex(key, 3600, "sent")
+                    message.ack()
+
+                except ValueError:
+                    # permanent failure
+                    message.nack(requeue=False)
+
                 except Exception as exc:
-                    # Message will be requeued unless you nack explicitly
-                    print("Error processing payment event:", exc)
-                    raise
+                    if retry_count >= MAX_RETRIES:
+                        message.nack(requeue=False)
+                    else:
+                        await asyncio.sleep(2 ** retry_count)
+                        message.headers["x-retry"] = retry_count + 1
+                        message.nack(requeue=True)
 
+    await connection.close()
 
-# -------------------------
-# Entry point
-# -------------------------
 
 if __name__ == "__main__":
-    asyncio.run(start_payment_events_worker())
+    asyncio.run(start_worker())

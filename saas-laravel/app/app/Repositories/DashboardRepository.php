@@ -21,4 +21,11 @@ class DashboardRepository
             ])
             ->count();
     }
+
+    public function countByStatus(int $merchantId, string $status): int
+    {
+        return Payment::where('merchant_id', $merchantId)
+            ->where('status', $status)
+            ->count();
+    }
 }

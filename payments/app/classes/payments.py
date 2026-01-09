@@ -26,9 +26,6 @@ class Payment:
     - event publishing (ONLY via webhook)
     """
 
-    # -------------------------------------------------
-    # Create payment (NO EVENT PUBLISHING)
-    # -------------------------------------------------
     async def create_payment(self, request: CreatePaymentRequest, merchant_id: str):
         
         db: Session = SessionLocal()
@@ -57,6 +54,7 @@ class Payment:
                 order_id=request.order_id,
                 amount=request.amount,
                 price=request.price,
+                provider_id=provider.id,
                 merchant_id=merchant_id,
                 status=PaymentStatus.pending,
             )
@@ -96,9 +94,6 @@ class Payment:
             "payment_url": resp.json().get("payment_url"),
         }
 
-    # -------------------------------------------------
-    # Webhook (EVENT PUBLISHING HERE ONLY)
-    # -------------------------------------------------
     async def webhook(self, request: PaymentWebhookRequest):
 
         db: Session = SessionLocal()
@@ -137,9 +132,6 @@ class Payment:
             "status": payment_dto.status,
         }
 
-    # -------------------------------------------------
-    # Internal helper
-    # -------------------------------------------------
     async def _mark_failed(self, payment_id: int):
 
         db = SessionLocal()
