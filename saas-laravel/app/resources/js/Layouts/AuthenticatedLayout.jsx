@@ -36,6 +36,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Payments
                                 </NavLink>
+                                <NavLink
+                                    href={route('api-keys.index')}
+                                    active={route().current('api-keys.*')}
+                                >
+                                    API Keys
+                                </NavLink>
                             </div>
                         </div>
 
