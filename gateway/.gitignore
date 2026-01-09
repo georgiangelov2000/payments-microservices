@@ -1,0 +1,5 @@
+# Environment files
+.env.gateway
+.env
+.env.*
+!.env.example
