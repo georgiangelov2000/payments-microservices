@@ -151,10 +151,12 @@ redis:
     --requirepass ${REDIS_PASSWORD}
   ports:
     - "6379:6379"
+  volumes:
+    - redis-data:/data
   restart: unless-stopped
-
 
 volumes:
   merchants_pgdata:
   providers_pgdata:
   payments_pgdata:
+  redis-data:
