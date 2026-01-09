@@ -17,9 +17,12 @@ def ping():
 @app.post("/payments/create")
 async def create_payment(
     request: CreatePaymentRequest,
-    x_api_key: str = Header(..., alias="X-API-Key"),
-):
-    return await handler.create_payment(request, x_api_key)
+    x_merchant_id: str = Header(..., alias="X-Merchant-Id"),
+):    
+    return await handler.create_payment(
+        request=request,
+        merchant_id=x_merchant_id,
+    )
 
 @app.post("/payments/webhook")
 async def webhook(request: PaymentWebhookRequest):

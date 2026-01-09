@@ -1,11 +1,11 @@
-# 💳 Payments Microservices – Setup & Seeders Guide
+# Payments Microservices – Setup & Seeders Guide
 
 This project consists of multiple microservices orchestrated using **Docker Compose**.  
 Some **base data** (providers, merchants, API keys, products) must be seeded manually after the infrastructure is running.
 
 ---
 
-## 📦 Prerequisites
+## Prerequisites
 
 Make sure you have the following installed:
 
@@ -14,7 +14,7 @@ Make sure you have the following installed:
 
 ---
 
-## 🚀 Start the Infrastructure
+## Start the Infrastructure
 
 Start all services:
 
@@ -30,7 +30,7 @@ docker ps
 
 ---
 
-## 🗄️ Database Migrations
+## Database Migrations
 
 ### Merchants Service
 
@@ -54,7 +54,18 @@ docker compose exec -it payments alembic upgrade head
 
 ---
 
-## 🌱 Seed Base Data
+### Providers Service
+
+Generate and apply migrations:
+
+```bash
+docker compose exec -it provider alembic revision --autogenerate -m "create core tables"
+docker compose exec -it provider alembic upgrade head
+```
+
+---
+
+## Seed Base Data
 
 ### Payments Service Seeders
 
@@ -80,7 +91,18 @@ docker compose exec -it merchants python -m seeders.seed_products
 
 ---
 
-## 🔍 Verify Seeded Data
+### Providers Service Seeders
+
+Seeds:
+- Provider Payments
+
+```bash
+docker compose exec -it provider python -m seeders.seed_products
+```
+
+---
+
+## Verify Seeded Data
 
 ### Payments Database
 
@@ -120,7 +142,7 @@ Exit:
 
 ---
 
-## 🐰 RabbitMQ
+## RabbitMQ
 
 ### Management UI
 ```
@@ -147,7 +169,7 @@ amqp://guest:guest@rabbitmq:5672/
 
 ---
 
-## 🌐 Service Endpoints
+## Service Endpoints
 
 | Service | URL |
 |------|----|
@@ -156,7 +178,7 @@ amqp://guest:guest@rabbitmq:5672/
 
 ---
 
-## 🔗 Internal Docker Network (Reference)
+## Internal Docker Network (Reference)
 
 | Service | Hostname | Port |
 |------|---------|------|
@@ -166,7 +188,7 @@ amqp://guest:guest@rabbitmq:5672/
 
 ---
 
-## 🧹 Useful Commands
+## Useful Commands
 
 Stop all services:
 ```bash
@@ -180,7 +202,7 @@ docker compose up -d --build
 
 ---
 
-## 📌 Notes
+## Notes
 
 - Migrations must be executed **before** seeders
 - Seeders are **idempotent** (safe to re-run)

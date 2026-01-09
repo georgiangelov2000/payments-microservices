@@ -4,14 +4,18 @@ from datetime import datetime, timedelta
 from sqlalchemy import select
 
 from app.db import SessionLocal
-from app.models import Merchant, MerchantAPIKey, Provider
+from app.models import User, MerchantAPIKey, Provider, Role
+from app.helpers.passwords import hash_password
+
+
+DEFAULT_PASSWORD = "ChangeMe123!"
 
 
 def seed_providers(db):
     providers = [
         {"name": "Stripe", "alias": "stripe", "url": "https://stripe.com"},
         {"name": "PayPal", "alias": "paypal", "url": "https://paypal.com"},
-        {"name": "Adyen", "alias": "adyxen", "url": "https://adyen.com"},
+        {"name": "Adyen", "alias": "adyen", "url": "https://adyen.com"},
     ]
 
     for p in providers:
@@ -33,21 +37,23 @@ def seed_merchants(db):
     generated_keys = []
 
     for m in merchants:
-        #1️ Create merchant if not exists
         merchant = db.execute(
-            select(Merchant).where(Merchant.name == m["name"])
+            select(User).where(User.email == m["email"])
         ).scalar_one_or_none()
 
         if not merchant:
-            merchant = Merchant(name=m["name"], email=m["email"])
+            merchant = User(
+                name=m["name"],
+                email=m["email"],
+                role=Role.merchant,
+                password=hash_password(DEFAULT_PASSWORD),
+            )
             db.add(merchant)
-            db.flush()  # merchant.id now exists
+            db.flush()
 
-        #2️ Generate API key hash (merchant.id + timestamp)
         raw_key = f"{merchant.id}:{int(time.time())}"
         key_hash = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
 
-        #3️ Create API key if not exists
         api_key_exists = db.execute(
             select(MerchantAPIKey).where(MerchantAPIKey.hash == key_hash)
         ).scalar_one_or_none()
@@ -61,8 +67,14 @@ def seed_merchants(db):
                     end_date=datetime.utcnow() + timedelta(days=365),
                 )
             )
+
             generated_keys.append(
-                {"merchant": merchant.name, "api_key": raw_key}
+                {
+                    "merchant": merchant.name,
+                    "email": merchant.email,
+                    "password": DEFAULT_PASSWORD,
+                    "api_key": raw_key,
+                }
             )
 
     return generated_keys
@@ -75,9 +87,14 @@ def run():
         api_keys = seed_merchants(db)
         db.commit()
 
-        print("Seed completed")
+        print("Seed completed\n")
         for k in api_keys:
-            print(f"Merchant: {k['merchant']} | API key: {k['api_key']}")
+            print(
+                f"Merchant: {k['merchant']} | "
+                f"Email: {k['email']} | "
+                f"Password: {k['password']} | "
+                f"API key: {k['api_key']}"
+            )
 
     finally:
         db.close()

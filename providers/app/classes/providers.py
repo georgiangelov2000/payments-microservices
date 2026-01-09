@@ -33,6 +33,7 @@ class ProviderService:
                 )
             ).scalar_one_or_none()
 
+            print("Existing payment check:", existing)
             if existing:
                 return {
                     "payment_url": existing.payment_url,

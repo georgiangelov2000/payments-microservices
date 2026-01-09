@@ -16,14 +16,37 @@ from app.db import Base
 
 
 # =========================
-# Merchant
+# Enums
 # =========================
-class Merchant(Base):
-    __tablename__ = "merchants"
+
+class PaymentStatus(enum.Enum):
+    pending = "pending"
+    finished = "finished"
+    failed = "failed"
+
+
+class Role(enum.Enum):
+    admin = "admin"
+    merchant = "merchant"
+
+
+# =========================
+# Users
+# =========================
+
+class User(Base):
+    __tablename__ = "users"
 
     id = Column(BigInteger, primary_key=True)
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, unique=True)
+    password = Column(String(255), nullable=False)
+
+    role = Column(
+        Enum(Role, name="user_role"),
+        nullable=False,
+        server_default=Role.merchant.value,
+    )
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
@@ -35,13 +58,13 @@ class Merchant(Base):
 
     payments = relationship(
         "Payment",
-        primaryjoin="Merchant.id == foreign(Payment.merchant_id)",
+        primaryjoin="User.id == foreign(Payment.merchant_id)",
         viewonly=True,
     )
 
     api_keys = relationship(
         "MerchantAPIKey",
-        primaryjoin="Merchant.id == foreign(MerchantAPIKey.merchant_id)",
+        primaryjoin="User.id == foreign(MerchantAPIKey.merchant_id)",
         viewonly=True,
     )
 
@@ -49,6 +72,7 @@ class Merchant(Base):
 # =========================
 # Merchant API Keys
 # =========================
+
 class MerchantAPIKey(Base):
     __tablename__ = "merchant_api_keys"
 
@@ -69,8 +93,8 @@ class MerchantAPIKey(Base):
     )
 
     merchant = relationship(
-        "Merchant",
-        primaryjoin="foreign(MerchantAPIKey.merchant_id) == Merchant.id",
+        "User",
+        primaryjoin="foreign(MerchantAPIKey.merchant_id) == User.id",
         viewonly=True,
     )
 
@@ -81,17 +105,9 @@ class MerchantAPIKey(Base):
 
 
 # =========================
-# Payment Status Enum
-# =========================
-class PaymentStatus(enum.Enum):
-    pending = "pending"
-    finished = "finished"
-    failed = "failed"
-
-
-# =========================
 # Payments
 # =========================
+
 class Payment(Base):
     __tablename__ = "payments"
 
@@ -119,8 +135,8 @@ class Payment(Base):
     )
 
     merchant = relationship(
-        "Merchant",
-        primaryjoin="foreign(Payment.merchant_id) == Merchant.id",
+        "User",
+        primaryjoin="foreign(Payment.merchant_id) == User.id",
         viewonly=True,
     )
 
@@ -128,6 +144,7 @@ class Payment(Base):
 # =========================
 # Providers
 # =========================
+
 class Provider(Base):
     __tablename__ = "providers"
 

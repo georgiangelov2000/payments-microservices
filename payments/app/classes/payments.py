@@ -1,4 +1,3 @@
-import hashlib
 import httpx
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -9,8 +8,6 @@ from app.schemas.payments import (
     PaymentWebhookRequest,
 )
 from app.models import (
-    MerchantAPIKey,
-    Merchant,
     Provider,
     Payment as PaymentModel,
     PaymentStatus,
@@ -32,24 +29,10 @@ class Payment:
     # -------------------------------------------------
     # Create payment (NO EVENT PUBLISHING)
     # -------------------------------------------------
-    async def create_payment(self, request: CreatePaymentRequest, api_key: str):
-
+    async def create_payment(self, request: CreatePaymentRequest, merchant_id: str):
+        
         db: Session = SessionLocal()
         try:
-            api_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
-
-            api_key_row = db.execute(
-                select(MerchantAPIKey)
-                .where(MerchantAPIKey.hash == api_hash)
-            ).scalar_one_or_none()
-
-            if not api_key_row:
-                raise HTTPException(status_code=401, detail="Invalid API key")
-
-            merchant = db.get(Merchant, api_key_row.merchant_id)
-            if not merchant:
-                raise HTTPException(status_code=401, detail="Merchant not found")
-
             provider = db.execute(
                 select(Provider)
                 .where(Provider.alias == request.alias)
@@ -74,7 +57,7 @@ class Payment:
                 order_id=request.order_id,
                 amount=request.amount,
                 price=request.price,
-                merchant_id=merchant.id,
+                merchant_id=merchant_id,
                 status=PaymentStatus.pending,
             )
 
@@ -83,7 +66,7 @@ class Payment:
             db.refresh(payment)
 
             payment_id = payment.id
-            merchant_id = merchant.id
+            merchant_id = merchant_id
             provider_alias = provider.alias
 
         finally:
@@ -102,7 +85,7 @@ class Payment:
             except httpx.RequestError:
                 await self._mark_failed(payment_id)
                 raise HTTPException(502, "Provider unreachable")
-
+        
         if resp.status_code != 200:
             await self._mark_failed(payment_id)
             raise HTTPException(502, "Provider URL generation failed")
