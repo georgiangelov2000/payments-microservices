@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import signal
+import time
 import aio_pika
 import httpx
 import redis.asyncio as redis
@@ -14,7 +15,10 @@ QUEUE_NAME = os.getenv("QUEUE_NAME")
 MERCHANT_CALLBACK_URL = os.getenv("MERCHANT_CALLBACK_URL")
 
 REDIS_URL = os.getenv("REDIS_URL")
-MAX_RETRIES = 5
+MAX_RETRIES = 5 # Maximum number of retries for transient failures
+FAIL_LIMIT = 5 # Maximum number of failures before blocking
+BLOCK_SECONDS = 1800 # Time to block in seconds
+RATE_LIMIT = 10 # Maximum number of notifications per minute
 
 redis_client = redis.from_url(REDIS_URL)
 
@@ -31,19 +35,52 @@ signal.signal(signal.SIGTERM, handle_shutdown)
 signal.signal(signal.SIGINT, handle_shutdown)
 
 
-async def notify_merchant(payment: PaymentDTO):
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        response = await client.post(
-            MERCHANT_CALLBACK_URL,
-            json=payment.model_dump(),
-        )
+async def notify_merchant(payment):
+    merchant_id = payment.merchant_id
 
+    fail_key = f"merchant:fail:{merchant_id}"
+    block_key = f"merchant:block:{merchant_id}"
+    rate_key = f"merchant:rate:{merchant_id}:{int(time.time() // 60)}"
+
+    # Circuit breaker: is merchant blocked?
+    if await redis_client.exists(block_key):
+        raise RuntimeError("Merchant temporarily blocked")
+
+    # Rate limiting
+    current = await redis_client.incr(rate_key)
+    if current == 1:
+        await redis_client.expire(rate_key, 60)
+
+    if current > RATE_LIMIT:
+        raise RuntimeError("Merchant rate limit exceeded")
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.post(
+                MERCHANT_CALLBACK_URL,
+                json=payment.model_dump(),
+            )
+
+        # Handle response
         if response.status_code >= 500:
-            raise RuntimeError("Merchant temporary failure")
+            raise RuntimeError("Temporary merchant failure")
 
         if response.status_code >= 400:
-            raise ValueError("Merchant rejected payload")
+            raise ValueError("Permanent merchant error")
 
+        # Success → reset failure counter
+        await redis_client.delete(fail_key)
+
+    except Exception:
+        # Failure → increment failure counter
+        fails = await redis_client.incr(fail_key)
+        await redis_client.expire(fail_key, BLOCK_SECONDS)
+
+        # Open circuit if too many failures
+        if fails >= FAIL_LIMIT:
+            await redis_client.setex(block_key, BLOCK_SECONDS, "1")
+
+        raise
 
 async def start_worker():
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
