@@ -76,7 +76,7 @@ class Payment:
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.post(
-                    "http://provider:8000/generate-url",
+                    "http://provider:8000/payment-links",
                     json={
                         "payment_id": payment_id,
                         "merchant_id": merchant_id,

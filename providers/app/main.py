@@ -5,10 +5,12 @@ from app.schemas.providers import GenerateUrlRequest
 app = FastAPI()
 service = ProviderService()
 
-@app.post("/generate-url")
-async def generate_url(req: GenerateUrlRequest):
+# Resource: payment-links
+@app.post("/payment-links")
+async def create_payment_link(req: GenerateUrlRequest):
     return await service.generate_url(req)
 
-@app.post("/accept-payment/{token}")
+# Resource: payments
+@app.post("/payments/{token}/accept")
 async def accept_payment(token: str):
     return await service.accept_payment(token)

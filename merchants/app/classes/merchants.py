@@ -66,7 +66,7 @@ class Merchant:
         async with httpx.AsyncClient(timeout=5.0) as client:
             try:
                 resp = await client.post(
-                    f"{PAYMENTS_GATEWAY_URL}/api/v1/payments/create",
+                    f"{PAYMENTS_GATEWAY_URL}/api/v1/payments",
                     headers={"X-API-Key": x_api_key},
                     json={
                         "order_id": order.id,

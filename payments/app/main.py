@@ -14,7 +14,7 @@ handler = Payment()
 def ping():
     return {"ok": True}
 
-@app.post("/payments/create")
+@app.post("/payments")
 async def create_payment(
     request: CreatePaymentRequest,
     x_merchant_id: str = Header(..., alias="X-Merchant-Id"),

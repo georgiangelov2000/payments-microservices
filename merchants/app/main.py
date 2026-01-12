@@ -13,7 +13,7 @@ handler = Merchant()
 async def ping():
     return {"message": "pong"}
 
-@app.post("/api/v1/orders/create")
+@app.post("/api/v1/orders")
 async def create_order(
     request: CreateOrderRequest,
     x_api_key: str = Header(..., alias="X-API-Key"),
