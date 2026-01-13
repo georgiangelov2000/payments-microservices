@@ -27,7 +27,7 @@ services:
     build: ./gateway
     container_name: auth-gateway
     env_file:
-      - gateway/.env.gateway
+      - gateway/.env
     volumes:
       - ./gateway:/api-verification
     ports:
@@ -99,4 +99,7 @@ services:
         condition: service_healthy
     command: >
       uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
       --reload
+

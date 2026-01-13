@@ -22,7 +22,7 @@ services:
     build: ./gateway
     container_name: auth-gateway
     env_file:
-      - gateway/.env.gateway
+      - gateway/.env
     depends_on:
       - payments
     command: nginx -g 'daemon off;'
