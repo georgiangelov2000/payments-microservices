@@ -16,8 +16,6 @@ export default function ApiKeys({ keys }) {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left">Key Hash</th>
-                <th className="px-4 py-3 text-left">Valid From</th>
-                <th className="px-4 py-3 text-left">Valid Until</th>
                 <th className="px-4 py-3 text-left">Status</th>
               </tr>
             </thead>
@@ -32,10 +30,6 @@ export default function ApiKeys({ keys }) {
               )}
 
               {rows.map(key => {
-                const now = new Date();
-                const isActive =
-                  new Date(key.start_date) <= now &&
-                  new Date(key.end_date) >= now;
 
                 return (
                   <tr key={key.id} className="border-b last:border-0">
@@ -43,24 +37,16 @@ export default function ApiKeys({ keys }) {
                       {key.hash}
                     </td>
 
-                    <td className="px-4 py-3 text-gray-600">
-                      {new Date(key.start_date).toLocaleDateString()}
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-600">
-                      {new Date(key.end_date).toLocaleDateString()}
-                    </td>
-
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex px-2 py-1 rounded text-xs font-medium
                           ${
-                            isActive
+                            key.status === 'active'
                               ? 'bg-green-100 text-green-700'
                               : 'bg-red-100 text-red-700'
                           }`}
                       >
-                        {isActive ? 'Active' : 'Expired'}
+                        {key.status === 'active' ? 'Active' : 'Expired'}
                       </span>
                     </td>
                   </tr>

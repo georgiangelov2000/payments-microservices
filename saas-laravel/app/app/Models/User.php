@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(MerchantApiKey::class, 'merchant_id');
     }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(UserSubscription::class);
+    }
 }

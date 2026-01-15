@@ -7,12 +7,11 @@ from sqlalchemy import (
     Numeric,
     Enum,
     UniqueConstraint,
-    CheckConstraint,
     SmallInteger,
     Index,
     func,
 )
-from sqlalchemy.orm import relationship, foreign
+from sqlalchemy.orm import relationship
 
 from app.db import Base
 
@@ -26,10 +25,21 @@ class PaymentStatus(enum.Enum):
     finished = "finished"
     failed = "failed"
 
+class SubscriptionStatus(enum.Enum):
+    active = "active"
+    inactive = "inactive"
+
+class MerchantAPIKeyStatus(enum.Enum):
+    active = "active"
+    inactive = "inactive"
 
 class Role(enum.Enum):
     admin = "admin"
     merchant = "merchant"
+
+class Userstatus(enum.Enum):
+    active = "active"
+    inactive = "inactive"
 
 
 # =========================
@@ -44,11 +54,13 @@ class User(Base):
 
     email = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
-
-    is_active = Column(
-        SmallInteger,
+    email_verified_at = Column(DateTime(timezone=True), nullable=True)
+    remember_token = Column(String(100), nullable=True)
+    
+    status = Column(
+        Enum(Userstatus, name="user_status"),
         nullable=False,
-        server_default="1"
+        server_default=Userstatus.active.value,
     )
 
     role = Column(
@@ -79,10 +91,25 @@ class User(Base):
 
     __table_args__ = (
         Index("ix_users_email", "email"),
-        Index("ix_users_is_active", "is_active"),
+        Index("ix_users_status", "status"),
         Index("ix_users_role", "role"),
     )
 
+
+# =========================
+# Subscriptions
+# =========================
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id = Column(BigInteger, primary_key=True)
+    name = Column(String(255), nullable=False, unique=True)
+    price = Column(Numeric(10, 2), nullable=False)
+    tokens = Column(BigInteger, nullable=False)
+
+    __table_args__ = (
+        Index("ix_subscription_plans_name", "name"),
+    )
 
 # =========================
 # Merchant API Keys
@@ -96,15 +123,11 @@ class MerchantAPIKey(Base):
 
     merchant_id = Column(BigInteger, nullable=False)
 
-    start_date = Column(DateTime(timezone=True), nullable=False)
-    end_date = Column(DateTime(timezone=True), nullable=False)
-
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
+    status = Column(
+        Enum(MerchantAPIKeyStatus, name="merchant_api_key_status"),
         nullable=False,
+        server_default=MerchantAPIKeyStatus.active.value,
     )
 
     merchant = relationship(
@@ -115,11 +138,9 @@ class MerchantAPIKey(Base):
 
     __table_args__ = (
         UniqueConstraint("hash", name="uq_merchant_api_keys_hash"),
-        CheckConstraint("end_date > start_date", name="ck_api_keys_valid_period"),
-
+        Index("ix_merchant_api_keys_status", "status"),
         Index("ix_api_keys_hash", "hash"),
         Index("ix_api_keys_merchant_id", "merchant_id"),
-        Index("ix_api_keys_valid_period", "start_date", "end_date"),
     )
 
 
@@ -198,4 +219,45 @@ class Provider(Base):
     __table_args__ = (
         Index("ix_providers_alias", "alias"),
         Index("ix_providers_name", "name"),
+    )
+
+# =========================
+# User Subscriptions
+# =========================
+
+class UserSubscription(Base):
+    __tablename__ = "user_subscriptions"
+
+    id = Column(BigInteger, primary_key=True)
+    user_id = Column(BigInteger, nullable=False)
+    subscription_id = Column(BigInteger, nullable=False)
+    status = Column(
+        Enum(SubscriptionStatus, name="subscription_status"),
+        nullable=False,
+        server_default=SubscriptionStatus.active.value,
+    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    user = relationship(
+        "User",
+        primaryjoin="foreign(UserSubscription.user_id) == User.id",
+        viewonly=True,
+    )
+
+    subscription = relationship(
+        "Subscription",
+        primaryjoin="foreign(UserSubscription.subscription_id) == Subscription.id",
+        viewonly=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "subscription_id", name="uq_user_subscriptions_user_subscription"),
+        Index("ix_user_subscriptions_user_id", "user_id"),
+        Index("ix_user_subscriptions_subscription_id", "subscription_id"),
     )

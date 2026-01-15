@@ -15,8 +15,7 @@ services:
     image: redis:latest
     container_name: redis
     command: ["redis-server"]
-    volumes:
-      - redis-data:/data
+
     restart: unless-stopped
 
   payments-db:
@@ -25,7 +24,7 @@ services:
     env_file:
       - payments/.env.payments-db
     volumes:
-      - payments_pgdata:/var/lib/postgresql/data
+      - ./payments-db/init-db:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U payments"]
       interval: 5s
@@ -37,8 +36,6 @@ services:
     container_name: providers-db
     env_file:
       - providers/.env.providers-db
-    volumes:
-      - providers_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U providers"]
       interval: 5s
@@ -50,16 +47,9 @@ services:
     container_name: merchants-db
     env_file:
       - merchants/.env.merchants-db
-    volumes:
-      - merchants_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U merchants"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-volumes:
-  payments_pgdata:
-  providers_pgdata:
-  merchants_pgdata:
-  redis-data:

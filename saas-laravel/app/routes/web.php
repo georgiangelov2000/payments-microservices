@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\ContactFormController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -24,6 +26,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('/api-keys', [ApiKeyController::class, 'index'])->name('api-keys.index');
+    Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::get('/contacts', [ContactFormController::class, 'index'])->name('contacts.index');
+    Route::post('/contacts', [ContactFormController::class, 'store'])->name('contacts.store');
 });
 
 require __DIR__.'/auth.php';

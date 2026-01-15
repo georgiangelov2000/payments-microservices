@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Enums\MerchantAPIKeyStatus;
 
 class MerchantApiKey extends Model
 {
@@ -12,13 +13,11 @@ class MerchantApiKey extends Model
     protected $fillable = [
         'hash',
         'merchant_id',
-        'start_date',
-        'end_date',
+        'status',
     ];
 
     protected $casts = [
-        'start_date' => 'datetime',
-        'end_date' => 'datetime',
+        'status' => MerchantAPIKeyStatus::class,
     ];
 
     public function merchant(): BelongsTo

@@ -1,10 +1,17 @@
 import hashlib
 import time
-from datetime import datetime, timedelta
+
 from sqlalchemy import select
 
 from app.db import SessionLocal
-from app.models import User, MerchantAPIKey, Provider, Role
+from app.models import (
+    User,
+    MerchantAPIKey,
+    Provider,
+    Role,
+    Subscription,
+    UserSubscription,
+)
 from app.helpers.passwords import hash_password
 
 
@@ -27,6 +34,22 @@ def seed_providers(db):
             db.add(Provider(**p))
 
 
+def seed_subscriptions(db):
+    subscriptions = [
+        {"name": "Basic Plan", "price": 9.99, "tokens": 30},
+        {"name": "Premium Plan", "price": 19.99, "tokens": 100},
+        {"name": "Enterprise Plan", "price": 49.99, "tokens": 500},
+    ]
+
+    for s in subscriptions:
+        exists = db.execute(
+            select(Subscription).where(Subscription.name == s["name"])
+        ).scalar_one_or_none()
+
+        if not exists:
+            db.add(Subscription(**s))
+
+
 def seed_merchants(db):
     merchants = [
         {"name": "Demo Merchant", "email": "demo@example.com"},
@@ -46,6 +69,7 @@ def seed_merchants(db):
                 name=m["name"],
                 email=m["email"],
                 role=Role.merchant,
+                status="active",
                 password=hash_password(DEFAULT_PASSWORD),
             )
             db.add(merchant)
@@ -63,8 +87,7 @@ def seed_merchants(db):
                 MerchantAPIKey(
                     hash=key_hash,
                     merchant_id=merchant.id,
-                    start_date=datetime.utcnow(),
-                    end_date=datetime.utcnow() + timedelta(days=365),
+                    status="active",
                 )
             )
 
@@ -80,11 +103,44 @@ def seed_merchants(db):
     return generated_keys
 
 
+def seed_user_subscriptions(db):
+    base_subscription = db.execute(
+        select(Subscription).where(Subscription.name == "Basic Plan")
+    ).scalar_one_or_none()
+
+    if not base_subscription:
+        raise Exception("Basic Plan subscription not found")
+
+    merchants = db.execute(
+        select(User).where(User.role == Role.merchant)
+    ).scalars().all()
+
+    for merchant in merchants:
+        exists = db.execute(
+            select(UserSubscription).where(
+                UserSubscription.user_id == merchant.id,
+                UserSubscription.status == "active",
+            )
+        ).scalar_one_or_none()
+
+        if not exists:
+            db.add(
+                UserSubscription(
+                    user_id=merchant.id,
+                    subscription_id=base_subscription.id,
+                    status="active",
+                )
+            )
+
+
 def run():
     db = SessionLocal()
     try:
-        seed_providers(db)
+        seed_subscriptions(db)
         api_keys = seed_merchants(db)
+        seed_user_subscriptions(db)
+        seed_providers(db)
+
         db.commit()
 
         print("Seed completed\n")
