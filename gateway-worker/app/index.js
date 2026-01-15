@@ -56,9 +56,9 @@ setInterval(async () => {
     for (const [subId, count] of buffer.entries()) {
       await client.query(
         `
-        UPDATE subscriptions
+        UPDATE user_subscriptions
         SET used_tokens = used_tokens + $1
-        WHERE id = $2
+        WHERE subscription_id = $2
         `,
         [count, subId]
       );

@@ -4,114 +4,76 @@ import crypto from "crypto";
 import { createClient } from "redis";
 import amqp from "amqplib";
 import dotenv from "dotenv";
+import httpProxy from "http-proxy";
 
 dotenv.config();
 
+/* ───────────────── APP ───────────────── */
 const app = express();
 
-/* ─────────────────────────────────────────────
-   CONFIG
-───────────────────────────────────────────── */
+app.use(express.json());
+
+/* ───────────────── CONFIG ───────────────── */
 const PORT = process.env.PORT || 3000;
+const PAYMENTS_URL = process.env.PAYMENTS_URL;
 
-const CACHE_TTL_VALID = 300;
-const CACHE_TTL_INVALID = 60;
+/* ───────────────── PROXY ───────────────── */
+const proxy = httpProxy.createProxyServer();
 
-const REDIS_API_KEY_PREFIX = "api_key";
-const REDIS_SUB_PREFIX = "sub";
-
-const RABBIT_EXCHANGE = "usage.events";
-const RABBIT_ROUTING_KEY = "token.used";
-
-/* ─────────────────────────────────────────────
-   POSTGRES
-───────────────────────────────────────────── */
+/* ───────────────── POSTGRES ───────────────── */
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 30_000,
-  connectionTimeoutMillis: 5_000,
 });
 
-/* ─────────────────────────────────────────────
-   REDIS
-───────────────────────────────────────────── */
-const redis = createClient({
-  url: process.env.REDIS_URL,
-});
-
-redis.on("error", err => {
-  console.error("Redis error:", err);
-});
-
+/* ───────────────── REDIS ───────────────── */
+const redis = createClient({ url: process.env.REDIS_URL });
 await redis.connect();
 
-/* ─────────────────────────────────────────────
-   RABBITMQ
-───────────────────────────────────────────── */
+/* ───────────────── RABBITMQ ───────────────── */
 let rabbitChannel = null;
 
 async function initRabbit() {
   try {
     const conn = await amqp.connect(process.env.RABBITMQ_URL);
-    const channel = await conn.createChannel();
-
-    await channel.assertExchange(RABBIT_EXCHANGE, "topic", {
-      durable: true,
-    });
-
-    rabbitChannel = channel;
-    console.log("RabbitMQ connected");
+    const ch = await conn.createChannel();
+    await ch.assertExchange("usage.events", "topic", { durable: true });
+    rabbitChannel = ch;
+    console.log("🐰 RabbitMQ connected");
   } catch (err) {
-    console.error("RabbitMQ connection failed:", err.message);
+    console.error("🐰 RabbitMQ DOWN – fallback mode");
     rabbitChannel = null;
   }
 }
-
 await initRabbit();
 
-/* ─────────────────────────────────────────────
-   VERIFY API KEY ENDPOINT
-───────────────────────────────────────────── */
-app.get("/verify-api-key", async (req, res) => {
+/* ───────────────── AUTH + QUOTA MIDDLEWARE ───────────────── */
+async function authMiddleware(req, res, next) {
   const apiKey = req.header("x-api-key");
-  if (!apiKey) return res.sendStatus(401);
-  console.log('trigger verify key');
+  if (!apiKey) {
+    return res.status(401).json({ error: "missing_api_key" });
+  }
 
-  const apiKeyCache = `${REDIS_API_KEY_PREFIX}:${apiKey}`;
+  const cacheKey = `api_key:${apiKey}`;
 
   try {
-    /* ───── REDIS CACHE HIT ───── */
-    const cached = await redis.get(apiKeyCache);
-    if (cached != null) {
-      const data = JSON.parse(cached);
-      if (!data.valid) return res.sendStatus(401);
+    let data;
+    const cached = await redis.get(cacheKey);
 
-      const tokenKey = `${REDIS_SUB_PREFIX}:${data.subscription_id}:tokens`;
-
-      const remaining = await redis.decr(tokenKey);
-      console.log(tokenKey);
-      if (remaining < 0) {
-        await redis.incr(tokenKey);
-        return res.status(429).send("Token limit exceeded");
+    /* ───── CACHE ───── */
+    if (cached) {
+      data = JSON.parse(cached);
+      if (!data.valid) {
+        return res.status(401).json({ error: "invalid_api_key" });
       }
+    } else {
+      /* ───── DB ───── */
+      const hash = crypto
+        .createHash("sha256")
+        .update(apiKey, "utf8")
+        .digest("hex");
 
-      await publishTokenUsed(data.subscription_id, data.merchant_id, 1);
-
-      res.setHeader("X-Merchant-Id", data.merchant_id);
-      return res.sendStatus(200);
-    }
-
-    /* ───── DB LOOKUP ───── */
-    const keyHash = crypto
-      .createHash("sha256")
-      .update(apiKey, "utf8")
-      .digest("hex");
-
-      console.log(keyHash);
       const { rows } = await pool.query(
-
-      `
+        `
         SELECT
           mak.merchant_id,
           us.subscription_id,
@@ -124,61 +86,84 @@ app.get("/verify-api-key", async (req, res) => {
           AND mak.status = 'active'
           AND us.status = 'active'
         LIMIT 1
-      `,
-      [keyHash]
-    );
-
-    console.log(rows);
-
-    if (!rows.length) {
-      await redis.setEx(
-        apiKeyCache,
-        CACHE_TTL_INVALID,
-        JSON.stringify({ valid: false })
+        `,
+        [hash]
       );
-      return res.sendStatus(401);
-    }
 
-    const { merchant_id, subscription_id, tokens, used_tokens } = rows[0];
-    const remaining = tokens - used_tokens;
+      if (!rows.length) {
+        await redis.setEx(cacheKey, 60, JSON.stringify({ valid: false }));
+        return res.status(401).json({ error: "invalid_api_key" });
+      }
 
-    /* ───── WARM REDIS ───── */
-    await redis.setEx(
-      apiKeyCache,
-      CACHE_TTL_VALID,
-      JSON.stringify({
+      const row = rows[0];
+      data = {
         valid: true,
-        merchant_id,
-        subscription_id,
-      })
-    );
+        merchant_id: row.merchant_id,
+        subscription_id: row.subscription_id,
+        remaining: row.tokens - row.used_tokens,
+      };
 
-    const tokenKey = `${REDIS_SUB_PREFIX}:${subscription_id}:tokens`;
-    await redis.set(tokenKey, remaining);
-
-    /* ───── FIRST TOKEN CONSUME ───── */
-    const after = await redis.decr(tokenKey);
-    if (after < 0) {
-      await redis.incr(tokenKey);
-      return res.status(429).send("Token limit exceeded");
+      await redis.setEx(cacheKey, 300, JSON.stringify(data));
+      await redis.set(
+        `sub:${data.subscription_id}:tokens`,
+        data.remaining
+      );
     }
 
-    await publishTokenUsed(subscription_id, merchant_id, 1);
+    /* ───── QUOTA ───── */
+    const tokenKey = `sub:${data.subscription_id}:tokens`;
+    const left = await redis.decr(tokenKey);
 
-    res.setHeader("X-Merchant-Id", merchant_id);
-    return res.sendStatus(200);
+    if (left < 0) {
+      await redis.incr(tokenKey);
+      return res.status(429).json({ error: "quota_exceeded" });
+    }
+
+    /* ───── USAGE EVENT ───── */
+    publishUsage(data.subscription_id, data.merchant_id, 1);
+
+    /* ───── CONTEXT ───── */
+    req.headers["x-merchant-id"] = data.merchant_id;
+    next();
 
   } catch (err) {
-      console.error("VERIFY ERROR:", err);
-    console.error("STACK:", err.stack);
-    console.error("Verification error:", err);
-    return res.sendStatus(500);
+    console.error("GATEWAY ERROR:", err);
+    return res.status(500).json({ error: "gateway_error" });
+  }
+}
+
+/* ───────────────── PAYMENTS ROUTE ───────────────── */
+app.all("/api/v1/payments*", authMiddleware, (req, res) => {
+  proxy.web(req, res, {
+    target: PAYMENTS_URL,
+    changeOrigin: true,
+  });
+});
+
+/* ───────────────── FIX: BODY → PROXY ───────────────── */
+proxy.on("proxyReq", (proxyReq, req) => {
+  if (req.body && Object.keys(req.body).length) {
+    const bodyData = JSON.stringify(req.body);
+
+    proxyReq.setHeader("Content-Type", "application/json");
+    proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
+
+    proxyReq.write(bodyData);
   }
 });
 
-/* ─────────────────────────────────────────────
-   HEALTH CHECK
-───────────────────────────────────────────── */
+/* ───────────────── PROXY ERROR ───────────────── */
+proxy.on("error", (err, req, res) => {
+  console.error("Proxy error:", err.message);
+
+  if (!res.headersSent) {
+    res.status(502).json({
+      error: "payments_service_unreachable",
+    });
+  }
+});
+
+/* ───────────────── HEALTH ───────────────── */
 app.get("/health", async (_, res) => {
   try {
     await redis.ping();
@@ -189,52 +174,25 @@ app.get("/health", async (_, res) => {
   }
 });
 
-/* ─────────────────────────────────────────────
-   RABBITMQ PRODUCER
-───────────────────────────────────────────── */
-async function publishTokenUsed(subscriptionId, merchant_id, count) {
-  const payload = {
-    event_id: crypto.randomUUID(),
-    merchant_id: merchant_id,
-    amount: count,
-    event: "token_used",
-    subscription_id: subscriptionId,
-    timestamp: new Date().toISOString(),
-  };
-
-  /* Fallback ако Rabbit е down */
-  if (!rabbitChannel) {
-    await redis.rPush(
-      "usage:fallback",
-      JSON.stringify(payload)
-    );
-    return;
-  }
+/* ───────────────── USAGE EVENT ───────────────── */
+function publishUsage(subscriptionId, merchantId, amount) {
+  if (!rabbitChannel) return;
 
   rabbitChannel.publish(
-    RABBIT_EXCHANGE,
-    RABBIT_ROUTING_KEY,
-    Buffer.from(JSON.stringify(payload)),
+    "usage.events",
+    "token.used",
+    Buffer.from(JSON.stringify({
+      event_id: crypto.randomUUID(),
+      subscription_id: subscriptionId,
+      merchant_id: merchantId,
+      amount,
+      ts: new Date().toISOString(),
+    })),
     { persistent: true }
   );
 }
 
-/* ─────────────────────────────────────────────
-   GRACEFUL SHUTDOWN
-───────────────────────────────────────────── */
-process.on("SIGTERM", async () => {
-  console.log("Shutting down...");
-  try {
-    await redis.quit();
-    await pool.end();
-  } finally {
-    process.exit(0);
-  }
-});
-
-/* ─────────────────────────────────────────────
-   START SERVER
-───────────────────────────────────────────── */
+/* ───────────────── START ───────────────── */
 app.listen(PORT, () => {
-  console.log(`API verification service running on :${PORT}`);
+  console.log(`Application Gateway running on :${PORT}`);
 });

@@ -48,12 +48,13 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Subscriptions
                                 </NavLink>
+                                
                                 <NavLink
-                                    href={route('contacts.index')}
-                                    active={route().current('contacts.*')}
+                                    href={route('subscriptions.index')}
+                                    active={route().current('subscriptions.*')}
                                 >
-                                    Contact Form
-                                </NavLink>                         
+                                    API Requests
+                                </NavLink>                     
                             </div>
                         </div>
 
