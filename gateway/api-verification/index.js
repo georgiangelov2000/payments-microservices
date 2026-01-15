@@ -187,9 +187,9 @@ async function publishTokenUsed(subscriptionId, merchant_id, count) {
   const payload = {
     event_id: crypto.randomUUID(),
     merchant_id: merchant_id,
+    amount: count,
     event: "token_used",
     subscription_id: subscriptionId,
-    amount: count,
     timestamp: new Date().toISOString(),
   };
 

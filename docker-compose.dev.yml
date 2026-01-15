@@ -78,9 +78,12 @@ services:
     command: node index.js
     env_file: ./gateway-worker/.env
     depends_on:
-      - payments-db
-      - redis
-      - rabbitmq    
+      rabbitmq:
+        condition: service_healthy
+      payments-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   provider:
     build: ./providers

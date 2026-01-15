@@ -2,6 +2,10 @@ import amqp from "amqplib";
 import pg from "pg";
 import { createClient } from "redis";
 
+const EXCHANGE = "usage.events";
+const QUEUE = "usage.tokens";
+const ROUTING_KEY = "token.used";
+
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const redis = createClient({ url: process.env.REDIS_URL });
 await redis.connect();
@@ -9,8 +13,10 @@ await redis.connect();
 const conn = await amqp.connect(process.env.RABBITMQ_URL);
 const ch = await conn.createChannel();
 
-await ch.assertQueue("usage.tokens", { durable: true });
-await ch.bindQueue("usage.tokens", "usage.events", "token.used");
+await ch.assertExchange(EXCHANGE, "topic", { durable: true });
+
+await ch.assertQueue(QUEUE, { durable: true });
+await ch.bindQueue(QUEUE, EXCHANGE, ROUTING_KEY);
 
 const buffer = new Map(); // subscription_id => count
 
@@ -40,7 +46,6 @@ ch.consume("usage.tokens", async (msg) => {
   ch.ack(msg);
 });
 
-// flush на всеки 10 секунди
 setInterval(async () => {
   if (!buffer.size) return;
 
