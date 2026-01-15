@@ -76,20 +76,21 @@ await initRabbit();
 app.get("/verify-api-key", async (req, res) => {
   const apiKey = req.header("x-api-key");
   if (!apiKey) return res.sendStatus(401);
+  console.log('trigger verify key');
 
   const apiKeyCache = `${REDIS_API_KEY_PREFIX}:${apiKey}`;
 
   try {
     /* ───── REDIS CACHE HIT ───── */
     const cached = await redis.get(apiKeyCache);
-
-    if (cached) {
+    if (cached != null) {
       const data = JSON.parse(cached);
       if (!data.valid) return res.sendStatus(401);
 
       const tokenKey = `${REDIS_SUB_PREFIX}:${data.subscription_id}:tokens`;
 
       const remaining = await redis.decr(tokenKey);
+      console.log(tokenKey);
       if (remaining < 0) {
         await redis.incr(tokenKey);
         return res.status(429).send("Token limit exceeded");
@@ -107,21 +108,27 @@ app.get("/verify-api-key", async (req, res) => {
       .update(apiKey, "utf8")
       .digest("hex");
 
-    const { rows } = await pool.query(
+      console.log(keyHash);
+      const { rows } = await pool.query(
+
       `
-      SELECT
-        mak.merchant_id,
-        s.id AS subscription_id,
-        s.tokens,
-        COALESCE(s.used_tokens, 0) AS used_tokens
-      FROM merchant_api_keys mak
-      JOIN subscriptions s ON s.id = mak.subscription_id
-      WHERE mak.hash = $1
-        AND mak.status = 'active'
-      LIMIT 1
+        SELECT
+          mak.merchant_id,
+          us.subscription_id,
+          s.tokens,
+          us.used_tokens
+        FROM merchant_api_keys mak
+        JOIN user_subscriptions us ON us.user_id = mak.merchant_id
+        JOIN subscriptions s ON s.id = us.subscription_id
+        WHERE mak.hash = $1
+          AND mak.status = 'active'
+          AND us.status = 'active'
+        LIMIT 1
       `,
       [keyHash]
     );
+
+    console.log(rows);
 
     if (!rows.length) {
       await redis.setEx(
@@ -156,12 +163,14 @@ app.get("/verify-api-key", async (req, res) => {
       return res.status(429).send("Token limit exceeded");
     }
 
-    await publishTokenUsed(subscription_id, $merchant_id, 1);
+    await publishTokenUsed(subscription_id, merchant_id, 1);
 
     res.setHeader("X-Merchant-Id", merchant_id);
     return res.sendStatus(200);
 
   } catch (err) {
+      console.error("VERIFY ERROR:", err);
+    console.error("STACK:", err.stack);
     console.error("Verification error:", err);
     return res.sendStatus(500);
   }

@@ -10,11 +10,11 @@ app = FastAPI()
 
 handler = Payment()
 
-@app.get("/payments/ping")
+@app.get("/api/v1/payments/ping")
 def ping():
     return {"ok": True}
 
-@app.post("/payments")
+@app.post("/api/v1/payments")
 async def create_payment(
     request: CreatePaymentRequest,
     x_merchant_id: str = Header(..., alias="X-Merchant-Id"),
@@ -24,7 +24,7 @@ async def create_payment(
         merchant_id=x_merchant_id,
     )
 
-@app.post("/payments/webhook")
+@app.post("/api/v1/payments/webhook")
 async def webhook(request: PaymentWebhookRequest):
     return await handler.webhook(request)
 

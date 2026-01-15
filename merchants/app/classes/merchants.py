@@ -75,7 +75,7 @@ class Merchant:
                         "alias": alias,
                     },
                 )
-            except httpx.RequestError:
+            except httpx.HTTPStatusError as exc:
                 self._mark_failed(order.id)
                 raise HTTPException(502, "Payment gateway unreachable")
 

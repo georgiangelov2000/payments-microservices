@@ -23,22 +23,26 @@ services:
       payments-db:
         condition: service_healthy
 
-  gateway:
-    build: ./gateway
-    container_name: auth-gateway
+  gateway-verification:
+    build:
+      context: ./gateway-verification
+    container_name: gateway-verification
     env_file:
-      - gateway/.env
+      - gateway-verification/.env
     volumes:
-      - ./gateway:/api-verification
-    ports:
-      - "8080:80"
+      - ./gateway-verification/app:/app
+      - /app/node_modules
     depends_on:
       - payments
-    command: >
-      sh -c "
-      npm run dev &
-      nginx -g 'daemon off;'
-      "
+
+  gateway:
+      build: ./gateway
+      container_name: auth-gateway
+      ports:
+        - "8080:80"
+      depends_on:
+        payments:
+          condition: service_started
 
   payments:
     build: ./payments
@@ -92,11 +96,11 @@ services:
       - providers/.env.providers
     volumes:
       - ./providers:/app
-    ports:
-      - "9000:8000"
     command: >
       uvicorn app.main:app
-      --reload
+      --host 0.0.0.0
+      --port 8000
+
 
   merchants:
     build: ./merchants

@@ -45,7 +45,7 @@ class Payment:
                 select(PaymentModel)
                 .where(PaymentModel.order_id == request.order_id)
             ).scalar_one_or_none()
-
+            
             if existing:
                 return {
                     "message": "payment already exists",
@@ -83,7 +83,7 @@ class Payment:
                         "provider": provider_alias,
                     },
                 )
-        except httpx.RequestError:
+        except httpx.RequestError as exc:
             await self._mark_failed_if_pending(payment_id)
             raise HTTPException(status_code=502, detail="Provider unreachable")
 
@@ -94,6 +94,7 @@ class Payment:
                 detail="Provider URL generation failed",
             )
 
+    
         return {
             "payment_id": payment_id,
             "status": PaymentStatus.pending.value,
