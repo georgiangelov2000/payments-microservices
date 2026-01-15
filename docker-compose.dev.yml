@@ -76,9 +76,9 @@ services:
     build: ./gateway-worker
     container_name: gateway-worker
     command: node index.js
-    env_file: .env
+    env_file: ./gateway-worker/.env
     depends_on:
-      - postgres
+      - payments-db
       - redis
       - rabbitmq    
 

@@ -2,9 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY gateway-worker/app/package*.json ./
+COPY app/package*.json ./
 
-RUN npm ci --only=production
+RUN npm install
 
-COPY gateway-worker/app .
-
+COPY app .
