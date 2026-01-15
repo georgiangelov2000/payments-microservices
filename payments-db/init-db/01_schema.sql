@@ -91,6 +91,7 @@ CREATE TABLE user_subscriptions (
 
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     subscription_id BIGINT NOT NULL REFERENCES subscriptions(id),
+    used_tokens = BIGINT NOT NULL DEFAULT 0,
 
     status subscription_status NOT NULL DEFAULT 'active',
 

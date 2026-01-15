@@ -72,6 +72,16 @@ services:
         condition: service_healthy
     command: python -m app.workers.payment_events
 
+  gateway-worker:
+    build: ./gateway-worker
+    container_name: gateway-worker
+    command: node index.js
+    env_file: .env
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq    
+
   provider:
     build: ./providers
     container_name: provider

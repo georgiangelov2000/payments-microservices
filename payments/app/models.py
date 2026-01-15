@@ -231,6 +231,8 @@ class UserSubscription(Base):
     id = Column(BigInteger, primary_key=True)
     user_id = Column(BigInteger, nullable=False)
     subscription_id = Column(BigInteger, nullable=False)
+    used_tokens = Column(BigInteger, nullable = False, server_default = 0)
+    
     status = Column(
         Enum(SubscriptionStatus, name="subscription_status"),
         nullable=False,
