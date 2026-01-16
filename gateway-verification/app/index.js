@@ -38,9 +38,9 @@ async function initRabbit() {
     const ch = await conn.createChannel();
     await ch.assertExchange("usage.events", "topic", { durable: true });
     rabbitChannel = ch;
-    console.log("🐰 RabbitMQ connected");
+    console.log("RabbitMQ connected");
   } catch (err) {
-    console.error("🐰 RabbitMQ DOWN – fallback mode");
+    console.error("RabbitMQ DOWN – fallback mode");
     rabbitChannel = null;
   }
 }
