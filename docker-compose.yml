@@ -128,23 +128,6 @@ services:
       payments-db:
         condition: service_healthy
     command: python -m app.workers.payment_events
-
-  gateway-worker:
-    build: ./gateway-worker
-    container_name: gateway-worker
-    command: npm run dev
-    env_file: ./gateway-worker/.env
-    working_dir: /app
-    volumes:
-      - ./gateway-worker/app:/app
-      - gateway_worker_node_modules:/app/node_modules
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      payments-db:
-        condition: service_healthy
-      redis:
-        condition: service_started
     
   provider:
     build: ./providers
