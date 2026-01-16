@@ -3,7 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Payment;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PaymentRepository
 {
@@ -11,7 +11,8 @@ class PaymentRepository
         int $merchantId,
         int $perPage = 15
     ): LengthAwarePaginator {
-        return Payment::where('merchant_id', $merchantId)
+        return Payment::with(['provider:id,name'])
+            ->where('merchant_id', $merchantId)
             ->latest()
             ->paginate($perPage);
     }

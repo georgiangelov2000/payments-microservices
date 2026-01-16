@@ -29,8 +29,8 @@ await redis.connect();
 
 /* ───────────────── CIRCUIT BREAKER ───────────────── */
 const CB_KEY = "cb:payments";
-const CB_FAILURE_THRESHOLD = 5; // open after 5 failures
-const CB_OPEN_TTL = 30;         // seconds
+const CB_FAILURE_THRESHOLD = 5;
+const CB_OPEN_TTL = 30; // seconds
 
 async function isCircuitOpen() {
   return (await redis.get(CB_KEY)) === "open";
@@ -109,7 +109,7 @@ async function authMiddleware(req, res, next) {
       await redis.set(`sub:${data.subscription_id}:tokens`, data.remaining);
     }
 
-    // ───── QUOTA ─────
+    /* ───── QUOTA ───── */
     const tokenKey = `sub:${data.subscription_id}:tokens`;
     const left = await redis.decr(tokenKey);
 
@@ -118,7 +118,16 @@ async function authMiddleware(req, res, next) {
       return res.status(429).json({ error: "quota_exceeded" });
     }
 
+    /* ───── ENRICH REQUEST (NO ts) ───── */
+    req.body = {
+      ...req.body,
+      subscription_id: data.subscription_id,
+      event_id: crypto.randomUUID(),
+    };
+
+    console.log(req.body);
     req.headers["x-merchant-id"] = data.merchant_id;
+
     next();
 
   } catch (err) {
@@ -129,7 +138,6 @@ async function authMiddleware(req, res, next) {
 
 /* ───────────────── PAYMENTS ROUTE (CIRCUIT BREAKER) ───────────────── */
 app.all("/api/v1/payments*", authMiddleware, async (req, res) => {
-  // Fail fast if circuit is open
   if (await isCircuitOpen()) {
     return res.status(503).json({
       error: "payments_service_unavailable",
@@ -195,5 +203,5 @@ app.get("/health", async (_, res) => {
 
 /* ───────────────── START ───────────────── */
 app.listen(PORT, () => {
-  console.log(`🚀 Application Gateway running on :${PORT}`);
+  console.log(`Application Gateway running on :${PORT}`);
 });

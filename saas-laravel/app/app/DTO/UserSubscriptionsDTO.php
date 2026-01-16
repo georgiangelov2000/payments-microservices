@@ -10,7 +10,7 @@ final class UserSubscriptionsDTO
         public int $id,
         public string $name,
         public int $tokens,
-        public string $price,
+        public float $price,
         public int $usedTokens,
         public string $status,
     ) {}
@@ -21,9 +21,21 @@ final class UserSubscriptionsDTO
             id: $userSubscription->id,
             name: $userSubscription->subscription->name,
             tokens: $userSubscription->subscription->tokens,
-            price: $userSubscription->subscription->price,
+            price: (float) $userSubscription->subscription->price,
             usedTokens: $userSubscription->used_tokens,
             status: $userSubscription->status->value,
         );
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'tokens' => $this->tokens,
+            'price' => $this->price,
+            'used_tokens' => $this->usedTokens,
+            'status' => $this->status,
+        ];
     }
 }

@@ -22,8 +22,8 @@ final class SubscriptionService
             perPage: $perPage
         );
 
-        $paginator->getCollection()->transform(
-            fn ($subscription) => UserSubscriptionsDTO::fromModel($subscription)
+        $paginator = $paginator->through(
+            fn ($subscription) => UserSubscriptionsDTO::fromModel($subscription)->toArray()
         );
 
         return $paginator;

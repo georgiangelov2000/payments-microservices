@@ -12,8 +12,12 @@ class ApiRequestRepository
         int $perPage = 15
     ): LengthAwarePaginator {
         return ApiRequest::query()
+            ->with([
+                'subscription:id,name',
+                'payment:id,order_id,status'
+            ])
             ->where('user_id', $merchantId)
-            ->orderByDesc('ts')
+            ->orderByDesc('created_at')
             ->paginate($perPage);
     }
 }

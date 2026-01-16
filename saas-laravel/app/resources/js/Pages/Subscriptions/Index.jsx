@@ -63,7 +63,7 @@ export default function Subscriptions() {
 
                   {/* Usage */}
                   <td className="px-4 py-3">
-                    {sub.usedTokens} / {sub.tokens}
+                    {sub.used_tokens} / {sub.tokens}
                   </td>
 
                   {/* Status */}

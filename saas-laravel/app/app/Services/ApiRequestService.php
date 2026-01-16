@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
+use App\DTO\ApiRequestsDTO;
 use App\Repositories\ApiRequestRepository;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ApiRequestService
 {
@@ -18,9 +19,13 @@ class ApiRequestService
         int $merchantId,
         int $perPage = 15
     ): LengthAwarePaginator {
-        return $this->apiRequestRepository->getByMerchantId(
-            merchantId: $merchantId,
-            perPage: $perPage
-        );
+        return $this->apiRequestRepository
+            ->getByMerchantId(
+                merchantId: $merchantId,
+                perPage: $perPage
+            )
+            ->through(
+                fn ($apiRequest) => ApiRequestsDTO::fromModel($apiRequest)->toArray()
+            );
     }
 }

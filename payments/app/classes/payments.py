@@ -32,7 +32,7 @@ class Payment:
     # --------------------------------------------------
     # Create payment
     # --------------------------------------------------
-    async def create_payment(self, request: CreatePaymentRequest, merchant_id: int):
+    async def create_payment(self, request: CreatePaymentRequest, merchant_id: str):
         db: Session = SessionLocal()
 
         try:
@@ -115,10 +115,9 @@ class Payment:
                 event_id=request.event_id,
                 user_id=merchant_id,
                 subscription_id=request.subscription_id,
-                order_id=request.order_id,
+                payment_id=payment.id,
                 amount=request.amount,
                 source="payments:create",
-                ts=request.ts,
             )
 
             db.add(api_request)

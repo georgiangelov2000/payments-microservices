@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
+use App\DTO\PaymentsDTO;
 use App\Repositories\PaymentRepository;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class PaymentService
 {
@@ -15,9 +16,15 @@ class PaymentService
         int $merchantId,
         int $perPage = 15
     ): LengthAwarePaginator {
-        return $this->payments->paginateByMerchant(
+        $paginator = $this->payments->paginateByMerchant(
             merchantId: $merchantId,
             perPage: $perPage
         );
+
+        $paginator = $paginator->through(
+            fn ($payment) => PaymentsDTO::fromModel($payment)->toArray()
+        );
+
+        return $paginator;
     }
 }

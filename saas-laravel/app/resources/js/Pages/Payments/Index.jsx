@@ -145,6 +145,7 @@ export default function Payments({ payments, filters = {} }) {
                 <th className="px-4 py-3 text-left">Amount</th>
                 <th className="px-4 py-3 text-left">Status</th>
                 <th className="px-4 py-3 text-left">Date</th>
+                <th className="px-4 py-3 text-left">Provider</th>              
               </tr>
             </thead>
 
@@ -169,7 +170,7 @@ export default function Payments({ payments, filters = {} }) {
                   </td>
 
                   <td className="px-4 py-3 font-medium">
-                    ${Number(payment.amount).toFixed(2)}
+                    ${payment.price}
                   </td>
 
                   <td className="px-4 py-3">
@@ -190,6 +191,11 @@ export default function Payments({ payments, filters = {} }) {
                   <td className="px-4 py-3 text-gray-600">
                     {new Date(payment.created_at).toLocaleString('sv-SE')}
                   </td>
+                  
+                  <td className="px-4 py-3 font-medium">
+                    {payment.provider}
+                  </td>
+
                 </tr>
               ))}
             </tbody>

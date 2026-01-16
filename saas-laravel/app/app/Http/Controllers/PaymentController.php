@@ -20,9 +20,7 @@ class PaymentController extends Controller
 
         abort_if(!$user, 403);
 
-        // merchant_id comes from the authenticated user
         $merchantId = $user->id;
-
         $perPage = $request->integer('per_page', 15);
 
         $payments = $this->payments->getMerchantPayments(

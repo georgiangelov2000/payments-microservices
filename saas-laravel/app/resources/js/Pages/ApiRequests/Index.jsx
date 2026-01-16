@@ -44,7 +44,7 @@ export default function ApiRequests() {
           API Requests
         </h1>
 
-        {/* 🔢 SUMMARY */}
+        {/* UMMARY */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
           <div>
             Showing{' '}
@@ -87,10 +87,10 @@ export default function ApiRequests() {
               onChange={e => setData('source', e.target.value)}
               className="mt-1 w-full rounded border-gray-300 text-sm"
             >
-              <option value="">All</option>
-              <option value="gateway">Gateway</option>
-              <option value="webhook">Webhook</option>
-              <option value="cron">Cron</option>
+            <option value="">All</option>
+            <option value="payments:pending">Payment pending</option>
+            <option value="payments:finished">Payment finished</option>
+            <option value="payments:failed">Payment failed</option>
             </select>
           </div>
 
@@ -141,19 +141,18 @@ export default function ApiRequests() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left">Event ID</th>
-                <th className="px-4 py-3 text-left">Order ID</th>
+                <th className="px-4 py-3 text-left">Event</th>
                 <th className="px-4 py-3 text-left">Subscription</th>
-                <th className="px-4 py-3 text-left">Amount</th>
+                <th className="px-4 py-3 text-left">Payment</th>
                 <th className="px-4 py-3 text-left">Source</th>
-                <th className="px-4 py-3 text-left">Time</th>
+                <th className="px-4 py-3 text-left">Created</th>
               </tr>
             </thead>
 
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan="12" className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan="6" className="px-4 py-6 text-center text-gray-500">
                     No API requests found
                   </td>
                 </tr>
@@ -161,34 +160,47 @@ export default function ApiRequests() {
 
               {rows.map(req => (
                 <tr key={req.id} className="border-b last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs">
+                  {/* Event */}
+                  <td className="px-4 py-3 font-mono text-xs text-gray-700">
                     {req.event_id}
                   </td>
 
-                  <td className="px-4 py-3 font-mono text-xs">
-                    {req.order_id}
-                  </td>
-
+                  {/* Subscription */}
                   <td className="px-4 py-3">
-                    #{req.subscription_id}
+                    {req.subscription_name}
                   </td>
 
+                  {/* Payment */}
                   <td className="px-4 py-3">
-                    {req.amount}
+                    {req.payment_id ? `${req.payment_id}` : '—'}
                   </td>
 
+                  {/* Source */}
                   <td className="px-4 py-3">
-                    {req.source}
+                    <span
+                      className={`inline-flex px-2 py-1 rounded text-xs font-medium
+                        ${
+                          req.source === 'payments:create'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-purple-100 text-purple-700'
+                        }`}
+                    >
+                      {req.source === 'payments:create'
+                        ? 'Payment pending'
+                        : 'Payment finished'}
+                    </span>
                   </td>
 
+                  {/* Created */}
                   <td className="px-4 py-3 text-gray-600">
-                    {new Date(req.ts).toLocaleString()}
+                    {new Date(req.created_at).toLocaleString()}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
 
         {/* PAGINATION */}
         {apiRequests.links?.length > 1 && (

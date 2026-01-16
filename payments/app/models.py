@@ -277,8 +277,7 @@ class ApiRequest(Base):
     subscription_id = Column(BigInteger, nullable=False)
     user_id = Column(BigInteger, nullable=False)
 
-    order_id = Column(BigInteger, nullable=True)
-
+    payment_id = Column(BigInteger, nullable=False)
     amount = Column(Numeric(10, 8), nullable=False)
 
     source = Column(String(50), nullable=False)
@@ -321,15 +320,13 @@ class ApiRequest(Base):
         # fast lookups
         Index("ix_api_requests_user_id", "user_id"),
         Index("ix_api_requests_subscription_id", "subscription_id"),
-        Index("ix_api_requests_order_id", "order_id"),
+        Index("ix_api_requests_payemnt_id", "payment_id"),
         Index("ix_api_requests_source", "source"),
-        Index("ix_api_requests_ts", "ts"),
 
         # common filters
         Index(
-            "ix_api_requests_user_subscription_ts",
+            "ix_api_requests_user_subscription",
             "user_id",
             "subscription_id",
-            "ts",
         ),
     )
