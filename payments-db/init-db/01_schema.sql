@@ -112,6 +112,7 @@ CREATE TABLE api_requests (
     amount NUMERIC(10,8) NOT NULL,
     ts TIMESTAMPTZ NOT NULL DEFAULT now(),
     source VARCHAR(255) NOT NULL,
+    order_id BIGINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

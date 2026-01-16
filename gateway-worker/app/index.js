@@ -30,6 +30,7 @@ ch.consume(QUEUE, async (msg) => {
       event_id,
       subscription_id,
       merchant_id,
+      order_id,
       amount,
       ts
     } = payload;
@@ -72,11 +73,11 @@ ch.consume(QUEUE, async (msg) => {
     await client.query(
       `
       INSERT INTO api_requests
-        (event_id, subscription_id, user_id, amount, ts, source)
+        (event_id, subscription_id, user_id, amount, ts, source, order_id)
       VALUES
-        ($1, $2, $3, $4, $5, 'gateway')
+        ($1, $2, $3, $4, $5, 'gateway', $6)
       `,
-      [event_id, subscription_id, merchant_id, amount, ts]
+      [event_id, subscription_id, merchant_id, amount, ts, order_id]
     );
 
     await client.query("COMMIT");

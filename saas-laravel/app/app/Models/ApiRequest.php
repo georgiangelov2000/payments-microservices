@@ -15,6 +15,7 @@ class ApiRequest extends Model
         'amount',
         'ts',
         'source',
+        'order_id'
     ];
 
     protected $casts = [

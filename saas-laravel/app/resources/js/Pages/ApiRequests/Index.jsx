@@ -136,12 +136,13 @@ export default function ApiRequests() {
           </div>
         </form>
 
-        {/* 📋 TABLE */}
+        {/* TABLE */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left">Event ID</th>
+                <th className="px-4 py-3 text-left">Order ID</th>
                 <th className="px-4 py-3 text-left">Subscription</th>
                 <th className="px-4 py-3 text-left">Amount</th>
                 <th className="px-4 py-3 text-left">Source</th>
@@ -152,7 +153,7 @@ export default function ApiRequests() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan="12" className="px-4 py-6 text-center text-gray-500">
                     No API requests found
                   </td>
                 </tr>
@@ -162,6 +163,10 @@ export default function ApiRequests() {
                 <tr key={req.id} className="border-b last:border-0">
                   <td className="px-4 py-3 font-mono text-xs">
                     {req.event_id}
+                  </td>
+
+                  <td className="px-4 py-3 font-mono text-xs">
+                    {req.order_id}
                   </td>
 
                   <td className="px-4 py-3">
