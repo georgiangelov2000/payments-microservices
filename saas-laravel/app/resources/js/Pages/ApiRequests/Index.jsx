@@ -7,8 +7,7 @@ export default function ApiRequests() {
 
   /* 🔍 Filters (synced with backend) */
   const { data, setData, get, processing } = useForm({
-    subscription_id: filters.subscription_id || '',
-    source: filters.source || '',
+    plan: filters.plan || '',
     from: filters.from || '',
     to: filters.to || '',
   })
@@ -23,7 +22,7 @@ export default function ApiRequests() {
 
   const resetFilters = () => {
     setData({
-      subscription_id: '',
+      plan: '',
       source: '',
       from: '',
       to: '',
@@ -60,23 +59,11 @@ export default function ApiRequests() {
           </div>
         </div>
 
-        {/* 🔍 FILTERS */}
+        {/* FILTERS */}
         <form
           onSubmit={submitFilters}
           className="bg-white rounded-lg border p-4 grid gap-4 md:grid-cols-5 items-end"
         >
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Subscription ID
-            </label>
-            <input
-              type="number"
-              value={data.subscription_id}
-              onChange={e => setData('subscription_id', e.target.value)}
-              className="mt-1 w-full rounded border-gray-300 text-sm"
-              placeholder="123"
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -84,13 +71,13 @@ export default function ApiRequests() {
             </label>
             <select
               value={data.source}
-              onChange={e => setData('source', e.target.value)}
+              onChange={e => setData('plan', e.target.value)}
               className="mt-1 w-full rounded border-gray-300 text-sm"
             >
             <option value="">All</option>
-            <option value="payments:pending">Payment pending</option>
-            <option value="payments:finished">Payment finished</option>
-            <option value="payments:failed">Payment failed</option>
+            <option value="basic_plan">Basic Plan</option>
+            <option value="premium_plan">Premium Plan</option>
+            <option value="enterprise_plan">Enterprise Plan</option>
             </select>
           </div>
 
@@ -144,7 +131,6 @@ export default function ApiRequests() {
                 <th className="px-4 py-3 text-left">Event</th>
                 <th className="px-4 py-3 text-left">Subscription</th>
                 <th className="px-4 py-3 text-left">Payment</th>
-                <th className="px-4 py-3 text-left">Source</th>
                 <th className="px-4 py-3 text-left">Created</th>
               </tr>
             </thead>
@@ -172,22 +158,8 @@ export default function ApiRequests() {
 
                   {/* Payment */}
                   <td className="px-4 py-3">
-                    {req.payment_id ? `${req.payment_id}` : '—'}
-                  </td>
-
-                  {/* Source */}
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-1 rounded text-xs font-medium
-                        ${
-                          req.source === 'payments:create'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-purple-100 text-purple-700'
-                        }`}
-                    >
-                      {req.source === 'payments:create'
-                        ? 'Payment pending'
-                        : 'Payment finished'}
+                    <span className="inline-flex px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                      #{req.payment_id ? `${req.payment_id}` : '—'}
                     </span>
                   </td>
 
