@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-COMPOSE="docker compose -f docker-compose.yml -f docker-compose.dev.yml"
+COMPOSE="docker compose"
 
 echo "STOPPING AND REMOVING CONTAINERS + VOLUMES"
 $COMPOSE down -v

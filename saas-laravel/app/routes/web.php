@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ApiKeyController;
+use App\Http\Controllers\ApiRequestController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\ContactFormController;
@@ -29,6 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::get('/contacts', [ContactFormController::class, 'index'])->name('contacts.index');
     Route::post('/contacts', [ContactFormController::class, 'store'])->name('contacts.store');
+    Route::get('/api-requests',[ApiRequestController::class, 'index'])->name('api-requests.index');
 });
 
 require __DIR__.'/auth.php';

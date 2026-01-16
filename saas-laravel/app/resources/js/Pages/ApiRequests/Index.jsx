@@ -1,31 +1,37 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, usePage } from '@inertiajs/react'
 
-export default function ApiKeys({ keys }) {
-  const rows = keys.data ?? []
+export default function ApiRequests() {
+  const { apiRequests } = usePage().props
+  const rows = apiRequests.data ?? []
 
   return (
     <AuthenticatedLayout>
-      <Head title="API Keys" />
+      <Head title="API Requests" />
 
       <div className="p-6 max-w-7xl mx-auto">
         <h1 className="text-2xl font-semibold mb-6">
-          API Keys
+          API Requests
         </h1>
 
         {/* SUMMARY */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="text-sm text-gray-600">
             Showing{' '}
-            <span className="font-medium">{keys.from ?? 0}</span>–
-            <span className="font-medium">{keys.to ?? 0}</span> of{' '}
-            <span className="font-medium">{keys.total}</span> keys
+            <span className="font-medium">{apiRequests.from ?? 0}</span>–
+            <span className="font-medium">{apiRequests.to ?? 0}</span> of{' '}
+            <span className="font-medium">{apiRequests.total}</span> requests
           </div>
 
           <div className="text-sm text-gray-600">
             Page{' '}
-            <span className="font-medium">{keys.current_page}</span> of{' '}
-            <span className="font-medium">{keys.last_page}</span>
+            <span className="font-medium">
+              {apiRequests.current_page}
+            </span>{' '}
+            of{' '}
+            <span className="font-medium">
+              {apiRequests.last_page}
+            </span>
           </div>
         </div>
 
@@ -34,8 +40,11 @@ export default function ApiKeys({ keys }) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left">Key Hash</th>
-                <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-left">Event ID</th>
+                <th className="px-4 py-3 text-left">Subscription</th>
+                <th className="px-4 py-3 text-left">Amount</th>
+                <th className="px-4 py-3 text-left">Source</th>
+                <th className="px-4 py-3 text-left">Time</th>
               </tr>
             </thead>
 
@@ -43,31 +52,34 @@ export default function ApiKeys({ keys }) {
               {rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan="2"
+                    colSpan="5"
                     className="px-4 py-6 text-center text-gray-500"
                   >
-                    No API keys yet
+                    No API requests yet
                   </td>
                 </tr>
               )}
 
-              {rows.map(key => (
-                <tr key={key.id} className="border-b last:border-0">
+              {rows.map(req => (
+                <tr key={req.id} className="border-b last:border-0">
                   <td className="px-4 py-3 font-mono text-xs">
-                    {key.hash}
+                    {req.event_id}
                   </td>
 
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-1 rounded text-xs font-medium
-                        ${
-                          key.status === 'active'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}
-                    >
-                      {key.status === 'active' ? 'Active' : 'Expired'}
-                    </span>
+                    #{req.subscription_id}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {req.amount}
+                  </td>
+
+                  <td className="px-4 py-3">
+                    {req.source}
+                  </td>
+
+                  <td className="px-4 py-3 text-gray-600">
+                    {new Date(req.ts).toLocaleString()}
                   </td>
                 </tr>
               ))}
@@ -76,10 +88,10 @@ export default function ApiKeys({ keys }) {
         </div>
 
         {/* PAGINATION */}
-        {keys.links?.length > 1 && (
+        {apiRequests.links?.length > 1 && (
           <>
             <div className="mt-6 flex justify-center gap-1 flex-wrap">
-              {keys.links.map((link, index) => (
+              {apiRequests.links.map((link, index) => (
                 <Link
                   key={index}
                   href={link.url ?? '#'}
@@ -98,7 +110,7 @@ export default function ApiKeys({ keys }) {
             </div>
 
             <p className="mt-3 text-sm text-gray-600 text-center">
-              Page {keys.current_page} of {keys.last_page}
+              Page {apiRequests.current_page} of {apiRequests.last_page}
             </p>
           </>
         )}

@@ -14,6 +14,23 @@ export default function Subscriptions() {
           Subscriptions
         </h1>
 
+        {/* 🔢 SUMMARY */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+          <div>
+            Showing{' '}
+            <span className="font-medium">{subscriptions.from ?? 0}</span>–
+            <span className="font-medium">{subscriptions.to ?? 0}</span> of{' '}
+            <span className="font-medium">{subscriptions.total}</span> subscriptions
+          </div>
+
+          <div>
+            Page{' '}
+            <span className="font-medium">{subscriptions.current_page}</span> of{' '}
+            <span className="font-medium">{subscriptions.last_page}</span>
+          </div>
+        </div>
+
+        {/* TABLE */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
@@ -21,7 +38,7 @@ export default function Subscriptions() {
                 <th className="px-4 py-3 text-left">Plan</th>
                 <th className="px-4 py-3 text-left">Usage</th>
                 <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Price</th>              
+                <th className="px-4 py-3 text-left">Price</th>
               </tr>
             </thead>
 
@@ -29,13 +46,14 @@ export default function Subscriptions() {
               {rows.length === 0 && (
                 <tr>
                   <td
-                    colSpan="5"
+                    colSpan="4"
                     className="px-4 py-6 text-center text-gray-500"
                   >
                     No subscriptions yet
                   </td>
                 </tr>
               )}
+
               {rows.map(sub => (
                 <tr key={sub.id} className="border-b last:border-0">
                   {/* Plan */}
@@ -43,7 +61,7 @@ export default function Subscriptions() {
                     {sub.name}
                   </td>
 
-                  {/* Tokens */}
+                  {/* Usage */}
                   <td className="px-4 py-3">
                     {sub.usedTokens} / {sub.tokens}
                   </td>
@@ -62,17 +80,17 @@ export default function Subscriptions() {
                     </span>
                   </td>
 
+                  {/* Price */}
                   <td className="px-4 py-3">
                     {sub.price}
                   </td>
-
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* PAGINATION */}
         {subscriptions.links?.length > 1 && (
           <>
             <div className="mt-6 flex justify-center gap-1 flex-wrap">

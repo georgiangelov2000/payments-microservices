@@ -1,8 +1,8 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
+import { Head, Link, useForm } from '@inertiajs/react'
 
 export default function Payments({ payments, filters = {} }) {
-  const rows = payments.data ?? [];
+  const rows = payments.data ?? []
 
   // 🔹 Filter state (syncs with backend)
   const { data, setData, get, processing } = useForm({
@@ -10,15 +10,15 @@ export default function Payments({ payments, filters = {} }) {
     status: filters.status || '',
     from: filters.from || '',
     to: filters.to || '',
-  });
+  })
 
   const submitFilters = (e) => {
-    e.preventDefault();
+    e.preventDefault()
     get(route('payments.index'), {
       preserveScroll: true,
       preserveState: true,
-    });
-  };
+    })
+  }
 
   const resetFilters = () => {
     setData({
@@ -26,20 +26,38 @@ export default function Payments({ payments, filters = {} }) {
       status: '',
       from: '',
       to: '',
-    });
+    })
 
     get(route('payments.index'), {
       preserveScroll: true,
       preserveState: false,
-    });
-  };
+    })
+  }
 
   return (
     <AuthenticatedLayout>
       <Head title="Payments" />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold">Payments</h1>
+        <h1 className="text-2xl font-semibold">
+          Payments
+        </h1>
+
+        {/* 🔢 SUMMARY */}
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
+          <div>
+            Showing{' '}
+            <span className="font-medium">{payments.from ?? 0}</span>–
+            <span className="font-medium">{payments.to ?? 0}</span> of{' '}
+            <span className="font-medium">{payments.total}</span> payments
+          </div>
+
+          <div>
+            Page{' '}
+            <span className="font-medium">{payments.current_page}</span> of{' '}
+            <span className="font-medium">{payments.last_page}</span>
+          </div>
+        </div>
 
         {/* 🔍 Filters */}
         <form
@@ -133,18 +151,23 @@ export default function Payments({ payments, filters = {} }) {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan="12" className="px-4 py-6 text-center text-gray-500">
+                  <td
+                    colSpan="5"
+                    className="px-4 py-6 text-center text-gray-500"
+                  >
                     No payments found
                   </td>
                 </tr>
               )}
 
-              {rows.map((payment) => (
+              {rows.map(payment => (
                 <tr key={payment.id} className="border-b last:border-0">
                   <td className="px-4 py-3">{payment.id}</td>
+
                   <td className="px-4 py-3 font-medium">
                     {payment.order_id}
                   </td>
+
                   <td className="px-4 py-3 font-medium">
                     ${Number(payment.amount).toFixed(2)}
                   </td>
@@ -202,5 +225,5 @@ export default function Payments({ payments, filters = {} }) {
         )}
       </div>
     </AuthenticatedLayout>
-  );
+  )
 }

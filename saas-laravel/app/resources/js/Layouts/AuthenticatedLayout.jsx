@@ -50,8 +50,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                 </NavLink>
                                 
                                 <NavLink
-                                    href={route('subscriptions.index')}
-                                    active={route().current('subscriptions.*')}
+                                    href={route('api-requests.index')}
+                                    active={route().current('api-requests.*')}
                                 >
                                     API Requests
                                 </NavLink>                     

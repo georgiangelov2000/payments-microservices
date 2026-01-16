@@ -106,21 +106,14 @@ CREATE INDEX ix_user_subscriptions_subscription_id ON user_subscriptions(subscri
 
 CREATE TABLE api_requests (
     id BIGSERIAL PRIMARY KEY,
-    ts TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-    request_id UUID NOT NULL,
-    api_key TEXT NOT NULL,
+    event_id VARCHAR(255) NOT NULL,
+    subscription_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
-
-    method VARCHAR(10) NOT NULL,
-    path TEXT NOT NULL,
-
-    status_code SMALLINT NOT NULL,
-    latency_ms INTEGER NOT NULL,
-
-    ip INET,
-    user_agent TEXT,
-    error TEXT
+    amount NUMERIC(10,8) NOT NULL,
+    ts TIMESTAMPTZ NOT NULL DEFAULT now(),
+    source VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_api_requests_merchant_id ON api_requests(user_id);

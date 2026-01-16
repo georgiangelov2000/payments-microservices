@@ -22,9 +22,17 @@ ch.prefetch(1);
 ch.consume(QUEUE, async (msg) => {
   if (!msg) return;
 
+  const client = await pool.connect();
+
   try {
     const payload = JSON.parse(msg.content.toString());
-    const { event_id, subscription_id, amount } = payload;
+    const {
+      event_id,
+      subscription_id,
+      merchant_id,
+      amount,
+      ts
+    } = payload;
 
     // idempotency
     const seen = await redis.set(
@@ -35,11 +43,15 @@ ch.consume(QUEUE, async (msg) => {
 
     if (!seen) {
       ch.ack(msg);
+      client.release();
       return;
     }
 
-    // DURABLE WRITE
-    await pool.query(
+    // DB TRANSACTION
+    await client.query("BEGIN");
+
+    // 1update tokens
+    await client.query(
       `
       UPDATE user_subscriptions
       SET used_tokens = used_tokens + $1
@@ -48,11 +60,32 @@ ch.consume(QUEUE, async (msg) => {
       [amount, subscription_id]
     );
 
+    // insert api request log
+    await client.query(
+      `
+      INSERT INTO api_requests
+        (event_id, subscription_id, user_id, amount, ts, source)
+      VALUES
+        ($1, $2, $3, $4, $5, 'gateway')
+      `,
+      [event_id, subscription_id, merchant_id, amount, ts]
+    );
+
+    await client.query("COMMIT");
+
     ch.ack(msg);
 
   } catch (err) {
+    await client.query("ROLLBACK");
+    client.release();
+
     console.error("Consumer error:", err);
-    // message stays in queue → retry
+
+    // retry
     ch.nack(msg, false, true);
+    return;
   }
+
+  client.release();
 });
+

@@ -1,4 +1,4 @@
-# Docker Compose configuration for RabbitMQ, Redis, and PostgreSQL databases
+# Docker Compose configuration for development environment
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -53,3 +53,128 @@ services:
       timeout: 5s
       retries: 5
 
+  saas-gateway:
+    image: nginx:alpine
+    container_name: saas-gateway
+    volumes:
+      - ./saas-gateway/nginx.conf:/etc/nginx/nginx.conf
+      - ./saas-gateway/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - saas-laravel
+
+  saas-laravel:
+    build: ./saas-laravel
+    container_name: saas-laravel
+    volumes:
+      - ./saas-laravel/app:/var/www
+    ports:
+      - "8000:8000"
+      - "5173:5173"
+    depends_on:
+      payments-db:
+        condition: service_healthy
+
+  gateway-verification:
+    build:
+      context: ./gateway-verification
+    container_name: gateway-verification
+    env_file:
+      - gateway-verification/.env
+    volumes:
+      - ./gateway-verification/app:/app
+      - /app/node_modules
+    depends_on:
+      - payments
+
+  gateway:
+      build: ./gateway
+      container_name: auth-gateway
+      ports:
+        - "8080:80"
+      depends_on:
+        payments:
+          condition: service_started
+
+  payments:
+    build: ./payments
+    container_name: payments
+    env_file: payments/.env.payments
+    volumes:
+      - ./payments:/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      payments-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+
+  payments-worker:
+    build: ./payments
+    container_name: payments-worker
+    env_file: payments/.env.payments
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      payments-db:
+        condition: service_healthy
+    command: python -m app.workers.payment_events
+
+  gateway-worker:
+    build: ./gateway-worker
+    container_name: gateway-worker
+    command: npm run dev
+    env_file: ./gateway-worker/.env
+    working_dir: /app
+    volumes:
+      - ./gateway-worker/app:/app
+      - gateway_worker_node_modules:/app/node_modules
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      payments-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    
+  provider:
+    build: ./providers
+    container_name: provider
+    env_file:
+      - providers/.env.providers
+    volumes:
+      - ./providers:/app
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+
+  merchants:
+    build: ./merchants
+    container_name: merchants
+    env_file:
+      - merchants/.env.merchants
+    volumes:
+      - ./merchants:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      merchants-db:
+        condition: service_healthy
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+
+volumes:
+  gateway_worker_node_modules:
