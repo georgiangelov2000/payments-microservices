@@ -123,4 +123,4 @@ CREATE TABLE api_requests (
     error TEXT
 );
 
-CREATE INDEX idx_api_requests_merchant_id ON api_requests(merchant_id);
+CREATE INDEX idx_api_requests_merchant_id ON api_requests(user_id);
