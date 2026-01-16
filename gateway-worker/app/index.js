@@ -53,9 +53,17 @@ ch.consume(QUEUE, async (msg) => {
     // 1update tokens
     await client.query(
       `
-      UPDATE user_subscriptions
-      SET used_tokens = used_tokens + $1
-      WHERE subscription_id = $2
+        UPDATE user_subscriptions us
+        SET
+          used_tokens = used_tokens + $1,
+          status = CASE
+            WHEN used_tokens + $1 >= s.tokens THEN 'inactive'
+            ELSE us.status
+          END
+        FROM subscriptions s
+        WHERE us.subscription_id = $2
+          AND s.id = us.subscription_id
+        RETURNING us.status;
       `,
       [amount, subscription_id]
     );
