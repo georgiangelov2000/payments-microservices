@@ -263,3 +263,73 @@ class UserSubscription(Base):
         Index("ix_user_subscriptions_user_id", "user_id"),
         Index("ix_user_subscriptions_subscription_id", "subscription_id"),
     )
+
+# =========================
+# API Requests (Usage / Audit)
+# =========================
+
+class ApiRequest(Base):
+    __tablename__ = "api_requests"
+
+    id = Column(BigInteger, primary_key=True)
+
+    event_id = Column(String(255), nullable=False)
+    subscription_id = Column(BigInteger, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
+
+    order_id = Column(BigInteger, nullable=True)
+
+    amount = Column(Numeric(10, 8), nullable=False)
+
+    source = Column(String(50), nullable=False)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # =========================
+    # Relationships
+    # =========================
+
+    user = relationship(
+        "User",
+        primaryjoin="foreign(ApiRequest.user_id) == User.id",
+        viewonly=True,
+    )
+
+    subscription = relationship(
+        "Subscription",
+        primaryjoin="foreign(ApiRequest.subscription_id) == Subscription.id",
+        viewonly=True,
+    )
+
+    # =========================
+    # Constraints & Indexes
+    # =========================
+    __table_args__ = (
+        # idempotency
+        UniqueConstraint("event_id", name="uq_api_requests_event_id"),
+
+        # fast lookups
+        Index("ix_api_requests_user_id", "user_id"),
+        Index("ix_api_requests_subscription_id", "subscription_id"),
+        Index("ix_api_requests_order_id", "order_id"),
+        Index("ix_api_requests_source", "source"),
+        Index("ix_api_requests_ts", "ts"),
+
+        # common filters
+        Index(
+            "ix_api_requests_user_subscription_ts",
+            "user_id",
+            "subscription_id",
+            "ts",
+        ),
+    )

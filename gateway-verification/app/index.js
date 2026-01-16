@@ -2,7 +2,6 @@ import express from "express";
 import pg from "pg";
 import crypto from "crypto";
 import { createClient } from "redis";
-import amqp from "amqplib";
 import dotenv from "dotenv";
 import httpProxy from "http-proxy";
 
@@ -27,24 +26,6 @@ const pool = new pg.Pool({
 /* ───────────────── REDIS ───────────────── */
 const redis = createClient({ url: process.env.REDIS_URL });
 await redis.connect();
-
-/* ───────────────── RABBITMQ ───────────────── */
-let rabbitChannel = null;
-
-async function initRabbit() {
-  try {
-    const conn = await amqp.connect(process.env.RABBITMQ_URL);
-    const ch = await conn.createConfirmChannel();
-    await ch.assertExchange("usage.events", "topic", { durable: true });
-    rabbitChannel = ch;
-    console.log("RabbitMQ connected (confirm channel)");
-  } catch (err) {
-    console.error("RabbitMQ DOWN – fallback mode", err);
-    rabbitChannel = null;
-  }
-}
-
-await initRabbit();
 
 /* ───────────────── AUTH + QUOTA MIDDLEWARE ───────────────── */
 async function authMiddleware(req, res, next) {
@@ -102,10 +83,6 @@ async function authMiddleware(req, res, next) {
         merchant_id: row.merchant_id,
         subscription_id: row.subscription_id,
         remaining: row.tokens - row.used_tokens,
-        order_id:
-          req.body?.order_id ??
-          req.query?.order_id ??
-          null,
       };
 
       await redis.setEx(cacheKey, 300, JSON.stringify(data));
@@ -123,14 +100,6 @@ async function authMiddleware(req, res, next) {
       await redis.incr(tokenKey);
       return res.status(429).json({ error: "quota_exceeded" });
     }
-
-    /* ───── USAGE EVENT ───── */
-    await publishUsage(
-      data.subscription_id,
-      data.merchant_id,
-      1,
-      data.order_id
-    );
 
     /* ───── CONTEXT ───── */
     req.headers["x-merchant-id"] = data.merchant_id;
@@ -182,31 +151,6 @@ app.get("/health", async (_, res) => {
     res.sendStatus(503);
   }
 });
-
-/* ───────────────── USAGE EVENT ───────────────── */
-async function publishUsage(subscriptionId, merchantId, amount, orderId) {
-  if (!rabbitChannel) return;
-
-  const ok = rabbitChannel.publish(
-    "usage.events",
-    "token.used",
-    Buffer.from(JSON.stringify({
-      event_id: crypto.randomUUID(),
-      subscription_id: subscriptionId,
-      merchant_id: merchantId,
-      order_id: orderId,
-      amount,
-      ts: new Date().toISOString(),
-    })),
-    { persistent: true }
-  );
-
-  if (!ok) {
-    console.warn("RabbitMQ write buffer full");
-  }
-
-  await rabbitChannel.waitForConfirms();
-}
 
 /* ───────────────── START ───────────────── */
 app.listen(PORT, () => {

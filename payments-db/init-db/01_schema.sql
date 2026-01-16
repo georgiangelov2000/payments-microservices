@@ -106,15 +106,32 @@ CREATE INDEX ix_user_subscriptions_subscription_id ON user_subscriptions(subscri
 
 CREATE TABLE api_requests (
     id BIGSERIAL PRIMARY KEY,
+
     event_id VARCHAR(255) NOT NULL,
+
+    payment_id BIGINT NOT NULL,
     subscription_id BIGINT NOT NULL,
     user_id BIGINT NOT NULL,
+
     amount NUMERIC(10,8) NOT NULL,
-    ts TIMESTAMPTZ NOT NULL DEFAULT now(),
     source VARCHAR(255) NOT NULL,
-    order_id BIGINT NOT NULL,
+
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_api_requests_merchant_id ON api_requests(user_id);
+
+CREATE INDEX idx_api_requests_user_id
+    ON api_requests(user_id);
+
+CREATE INDEX idx_api_requests_subscription_id
+    ON api_requests(subscription_id);
+
+CREATE UNIQUE INDEX idx_api_requests_event_id
+    ON api_requests(event_id);
+
+CREATE INDEX idx_api_requests_payment_id
+    ON api_requests(payment_id);
+
+CREATE INDEX idx_api_requests_created_at
+    ON api_requests(created_at DESC);

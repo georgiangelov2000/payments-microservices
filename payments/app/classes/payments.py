@@ -11,6 +11,10 @@ from app.models import (
     Provider,
     Payment as PaymentModel,
     PaymentStatus,
+    ApiRequest,
+    UserSubscription,
+    Subscription,
+    SubscriptionStatus,
 )
 from app.db import SessionLocal
 from app.classes import rabbitmq
@@ -23,16 +27,18 @@ class Payment:
     - create payment
     - provider interaction
     - webhook updates
-    - event publishing (ONLY via webhook)
     """
 
     # --------------------------------------------------
     # Create payment
     # --------------------------------------------------
-    async def create_payment(self, request: CreatePaymentRequest, merchant_id: str):
+    async def create_payment(self, request: CreatePaymentRequest, merchant_id: int):
         db: Session = SessionLocal()
 
         try:
+            # ---------------------------
+            # Provider lookup
+            # ---------------------------
             provider = db.execute(
                 select(Provider).where(Provider.alias == request.alias)
             ).scalar_one_or_none()
@@ -40,12 +46,14 @@ class Payment:
             if not provider:
                 raise HTTPException(status_code=400, detail="Provider not found")
 
-            # Explicit idempotency check
+            # ---------------------------
+            # Idempotency (order_id)
+            # ---------------------------
             existing = db.execute(
                 select(PaymentModel)
                 .where(PaymentModel.order_id == request.order_id)
             ).scalar_one_or_none()
-            
+
             if existing:
                 return {
                     "message": "payment already exists",
@@ -53,6 +61,33 @@ class Payment:
                     "status": existing.status.value,
                 }
 
+            # ---------------------------
+            # Load user subscription
+            # ---------------------------
+            user_sub = db.execute(
+                select(UserSubscription, Subscription)
+                .join(
+                    Subscription,
+                    Subscription.id == UserSubscription.subscription_id,
+                )
+                .where(
+                    UserSubscription.user_id == merchant_id,
+                    UserSubscription.subscription_id == request.subscription_id,
+                    UserSubscription.status == SubscriptionStatus.active,
+                )
+            ).first()
+
+            if not user_sub:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Active subscription not found",
+                )
+
+            user_subscription, subscription = user_sub
+
+            # ---------------------------
+            # Create payment
+            # ---------------------------
             payment = PaymentModel(
                 order_id=request.order_id,
                 amount=request.amount,
@@ -63,16 +98,49 @@ class Payment:
             )
 
             db.add(payment)
+            db.flush()  # get payment.id without commit
+
+            # ---------------------------
+            # Update subscription usage
+            # ---------------------------
+            user_subscription.used_tokens += 1
+
+            if user_subscription.used_tokens >= subscription.tokens:
+                user_subscription.status = SubscriptionStatus.inactive
+
+            # ---------------------------
+            # Log API request
+            # ---------------------------
+            api_request = ApiRequest(
+                event_id=request.event_id,
+                user_id=merchant_id,
+                subscription_id=request.subscription_id,
+                order_id=request.order_id,
+                amount=request.amount,
+                source="payments:create",
+                ts=request.ts,
+            )
+
+            db.add(api_request)
+
+            # ---------------------------
+            # Commit atomically
+            # ---------------------------
             db.commit()
             db.refresh(payment)
 
             payment_id = payment.id
             provider_alias = provider.alias
 
+        except Exception:
+            db.rollback()
+            raise
         finally:
             db.close()
 
-        # Call provider AFTER payment is committed
+        # ---------------------------
+        # Call provider AFTER commit
+        # ---------------------------
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.post(
@@ -83,7 +151,7 @@ class Payment:
                         "provider": provider_alias,
                     },
                 )
-        except httpx.RequestError as exc:
+        except httpx.RequestError:
             await self._mark_failed_if_pending(payment_id)
             raise HTTPException(status_code=502, detail="Provider unreachable")
 
@@ -94,7 +162,6 @@ class Payment:
                 detail="Provider URL generation failed",
             )
 
-    
         return {
             "payment_id": payment_id,
             "status": PaymentStatus.pending.value,
@@ -113,7 +180,6 @@ class Payment:
             if not payment:
                 return {"message": "payment not found"}
 
-            # Idempotency guard
             if payment.status in (
                 PaymentStatus.finished,
                 PaymentStatus.failed,
@@ -144,7 +210,6 @@ class Payment:
         finally:
             db.close()
 
-        # Publish AFTER commit
         await rabbitmq.publish_payment_event(payment_dto)
 
         return {
