@@ -27,6 +27,29 @@ const pool = new pg.Pool({
 const redis = createClient({ url: process.env.REDIS_URL });
 await redis.connect();
 
+/* ───────────────── CIRCUIT BREAKER ───────────────── */
+const CB_KEY = "cb:payments";
+const CB_FAILURE_THRESHOLD = 5; // open after 5 failures
+const CB_OPEN_TTL = 30;         // seconds
+
+async function isCircuitOpen() {
+  return (await redis.get(CB_KEY)) === "open";
+}
+
+async function recordFailure() {
+  const failures = await redis.incr(`${CB_KEY}:failures`);
+  if (failures >= CB_FAILURE_THRESHOLD) {
+    await redis.setEx(CB_KEY, CB_OPEN_TTL, "open");
+    await redis.del(`${CB_KEY}:failures`);
+    console.warn("Circuit breaker OPEN (payments)");
+  }
+}
+
+async function recordSuccess() {
+  await redis.del(CB_KEY);
+  await redis.del(`${CB_KEY}:failures`);
+}
+
 /* ───────────────── AUTH + QUOTA MIDDLEWARE ───────────────── */
 async function authMiddleware(req, res, next) {
   const apiKey = req.header("x-api-key");
@@ -40,14 +63,12 @@ async function authMiddleware(req, res, next) {
     let data;
     const cached = await redis.get(cacheKey);
 
-    /* ───── CACHE ───── */
     if (cached) {
       data = JSON.parse(cached);
       if (!data.valid) {
         return res.status(401).json({ error: "invalid_api_key" });
       }
     } else {
-      /* ───── DB ───── */
       const hash = crypto
         .createHash("sha256")
         .update(apiKey, "utf8")
@@ -77,7 +98,6 @@ async function authMiddleware(req, res, next) {
       }
 
       const row = rows[0];
-
       data = {
         valid: true,
         merchant_id: row.merchant_id,
@@ -86,13 +106,10 @@ async function authMiddleware(req, res, next) {
       };
 
       await redis.setEx(cacheKey, 300, JSON.stringify(data));
-      await redis.set(
-        `sub:${data.subscription_id}:tokens`,
-        data.remaining
-      );
+      await redis.set(`sub:${data.subscription_id}:tokens`, data.remaining);
     }
 
-    /* ───── QUOTA ───── */
+    // ───── QUOTA ─────
     const tokenKey = `sub:${data.subscription_id}:tokens`;
     const left = await redis.decr(tokenKey);
 
@@ -101,43 +118,67 @@ async function authMiddleware(req, res, next) {
       return res.status(429).json({ error: "quota_exceeded" });
     }
 
-    /* ───── CONTEXT ───── */
     req.headers["x-merchant-id"] = data.merchant_id;
     next();
 
   } catch (err) {
-    console.error("GATEWAY ERROR:", err);
-    return res.status(500).json({ error: "gateway_error" });
+    console.error("Gateway auth error:", err);
+    res.status(500).json({ error: "gateway_error" });
   }
 }
 
-/* ───────────────── PAYMENTS ROUTE ───────────────── */
-app.all("/api/v1/payments*", authMiddleware, (req, res) => {
-  proxy.web(req, res, {
-    target: PAYMENTS_URL,
-    changeOrigin: true,
-  });
-});
+/* ───────────────── PAYMENTS ROUTE (CIRCUIT BREAKER) ───────────────── */
+app.all("/api/v1/payments*", authMiddleware, async (req, res) => {
+  // Fail fast if circuit is open
+  if (await isCircuitOpen()) {
+    return res.status(503).json({
+      error: "payments_service_unavailable",
+      reason: "circuit_open",
+    });
+  }
 
-/* ───────────────── FIX: BODY → PROXY ───────────────── */
-proxy.on("proxyReq", (proxyReq, req) => {
-  if (req.body && Object.keys(req.body).length) {
-    const bodyData = JSON.stringify(req.body);
+  try {
+    proxy.web(
+      req,
+      res,
+      {
+        target: PAYMENTS_URL,
+        changeOrigin: true,
+        timeout: 3000,
+      },
+      async (err) => {
+        if (err) {
+          await recordFailure();
 
-    proxyReq.setHeader("Content-Type", "application/json");
-    proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
-    proxyReq.write(bodyData);
+          if (!res.headersSent) {
+            res.status(502).json({
+              error: "payments_service_unreachable",
+            });
+          }
+        } else {
+          await recordSuccess();
+        }
+      }
+    );
+  } catch (err) {
+    console.error("Payments proxy exception:", err);
+    await recordFailure();
+
+    if (!res.headersSent) {
+      res.status(502).json({
+        error: "payments_service_unreachable",
+      });
+    }
   }
 });
 
-/* ───────────────── PROXY ERROR ───────────────── */
-proxy.on("error", (err, req, res) => {
-  console.error("Proxy error:", err.message);
-
-  if (!res.headersSent) {
-    res.status(502).json({
-      error: "payments_service_unreachable",
-    });
+/* ───────────────── PROXY BODY FIX ───────────────── */
+proxy.on("proxyReq", (proxyReq, req) => {
+  if (req.body && Object.keys(req.body).length) {
+    const bodyData = JSON.stringify(req.body);
+    proxyReq.setHeader("Content-Type", "application/json");
+    proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
+    proxyReq.write(bodyData);
   }
 });
 
@@ -154,5 +195,5 @@ app.get("/health", async (_, res) => {
 
 /* ───────────────── START ───────────────── */
 app.listen(PORT, () => {
-  console.log(`Application Gateway running on :${PORT}`);
+  console.log(`🚀 Application Gateway running on :${PORT}`);
 });
