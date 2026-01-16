@@ -19,7 +19,6 @@ const PAYMENTS_URL = process.env.PAYMENTS_URL;
 
 /* ───────────────── PROXY ───────────────── */
 const proxy = httpProxy.createProxyServer();
-
 /* ───────────────── POSTGRES ───────────────── */
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -35,15 +34,16 @@ let rabbitChannel = null;
 async function initRabbit() {
   try {
     const conn = await amqp.connect(process.env.RABBITMQ_URL);
-    const ch = await conn.createChannel();
+    const ch = await conn.createConfirmChannel();
     await ch.assertExchange("usage.events", "topic", { durable: true });
     rabbitChannel = ch;
-    console.log("RabbitMQ connected");
+    console.log("RabbitMQ connected (confirm channel)");
   } catch (err) {
-    console.error("RabbitMQ DOWN – fallback mode");
+    console.error("RabbitMQ DOWN – fallback mode", err);
     rabbitChannel = null;
   }
 }
+
 await initRabbit();
 
 /* ───────────────── AUTH + QUOTA MIDDLEWARE ───────────────── */
@@ -52,13 +52,13 @@ async function authMiddleware(req, res, next) {
   if (!apiKey) {
     return res.status(401).json({ error: "missing_api_key" });
   }
-
+  
   const cacheKey = `api_key:${apiKey}`;
 
   try {
     let data;
     const cached = await redis.get(cacheKey);
-
+    
     /* ───── CACHE ───── */
     if (cached) {
       data = JSON.parse(cached);
@@ -89,7 +89,7 @@ async function authMiddleware(req, res, next) {
         `,
         [hash]
       );
-
+      
       if (!rows.length) {
         await redis.setEx(cacheKey, 60, JSON.stringify({ valid: false }));
         return res.status(401).json({ error: "invalid_api_key" });
@@ -102,7 +102,7 @@ async function authMiddleware(req, res, next) {
         subscription_id: row.subscription_id,
         remaining: row.tokens - row.used_tokens,
       };
-
+      
       await redis.setEx(cacheKey, 300, JSON.stringify(data));
       await redis.set(
         `sub:${data.subscription_id}:tokens`,
@@ -120,7 +120,7 @@ async function authMiddleware(req, res, next) {
     }
 
     /* ───── USAGE EVENT ───── */
-    publishUsage(data.subscription_id, data.merchant_id, 1);
+    await publishUsage(data.subscription_id, data.merchant_id, 1);
 
     /* ───── CONTEXT ───── */
     req.headers["x-merchant-id"] = data.merchant_id;
@@ -144,7 +144,7 @@ app.all("/api/v1/payments*", authMiddleware, (req, res) => {
 proxy.on("proxyReq", (proxyReq, req) => {
   if (req.body && Object.keys(req.body).length) {
     const bodyData = JSON.stringify(req.body);
-
+    
     proxyReq.setHeader("Content-Type", "application/json");
     proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
 
@@ -175,10 +175,10 @@ app.get("/health", async (_, res) => {
 });
 
 /* ───────────────── USAGE EVENT ───────────────── */
-function publishUsage(subscriptionId, merchantId, amount) {
+async function publishUsage(subscriptionId, merchantId, amount) {
   if (!rabbitChannel) return;
 
-  rabbitChannel.publish(
+  const ok = rabbitChannel.publish(
     "usage.events",
     "token.used",
     Buffer.from(JSON.stringify({
@@ -190,7 +190,15 @@ function publishUsage(subscriptionId, merchantId, amount) {
     })),
     { persistent: true }
   );
+
+  console.log(ok);
+  if (!ok) {
+    console.warn("RabbitMQ write buffer full");
+  }
+
+  await rabbitChannel.waitForConfirms();
 }
+
 
 /* ───────────────── START ───────────────── */
 app.listen(PORT, () => {

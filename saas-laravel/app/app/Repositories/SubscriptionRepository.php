@@ -3,7 +3,7 @@ namespace App\Repositories;
 use App\Models\UserSubscription;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class SubscriptionRepository
+final class SubscriptionRepository
 {
     public function getByMerchantId(
         int $merchantId,

@@ -1,5 +1,58 @@
 # Docker Compose configuration for development environment
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "15672:15672"
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: ["redis-server"]
+
+    restart: unless-stopped
+
+  payments-db:
+    image: postgres:15
+    container_name: payments-db
+    env_file:
+      - payments/.env.payments-db
+    volumes:
+      - ./payments-db/init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payments"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  providers-db:
+    image: postgres:15
+    container_name: providers-db
+    env_file:
+      - providers/.env.providers-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U providers"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  merchants-db:
+    image: postgres:15
+    container_name: merchants-db
+    env_file:
+      - merchants/.env.merchants-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U merchants"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   saas-gateway:
     image: nginx:alpine
     container_name: saas-gateway
@@ -79,16 +132,14 @@ services:
   gateway-worker:
     build: ./gateway-worker
     container_name: gateway-worker
-    command: node index.js
+    command: npm run dev
     env_file: ./gateway-worker/.env
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      payments-db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+    working_dir: /app
+    volumes:
+      - ./gateway-worker/app:/app
+      - gateway_worker_node_modules:/app/node_modules
 
+    
   provider:
     build: ./providers
     container_name: provider
@@ -100,7 +151,6 @@ services:
       uvicorn app.main:app
       --host 0.0.0.0
       --port 8000
-
 
   merchants:
     build: ./merchants
@@ -120,3 +170,5 @@ services:
       --port 8000
       --reload
 
+volumes:
+  gateway_worker_node_modules:

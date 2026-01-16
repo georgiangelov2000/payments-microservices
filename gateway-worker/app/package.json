@@ -6,7 +6,8 @@
   "description": "Usage consumer for token tracking",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "engines": {
     "node": ">=18"

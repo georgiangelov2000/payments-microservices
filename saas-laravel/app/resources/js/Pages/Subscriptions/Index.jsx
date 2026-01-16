@@ -19,10 +19,9 @@ export default function Subscriptions() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left">Plan</th>
-                <th className="px-4 py-3 text-left">Price</th>
-                <th className="px-4 py-3 text-left">Tokens</th>
+                <th className="px-4 py-3 text-left">Usage</th>
                 <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Created</th>
+                <th className="px-4 py-3 text-left">Price</th>              
               </tr>
             </thead>
 
@@ -37,21 +36,19 @@ export default function Subscriptions() {
                   </td>
                 </tr>
               )}
-
               {rows.map(sub => (
                 <tr key={sub.id} className="border-b last:border-0">
+                  {/* Plan */}
                   <td className="px-4 py-3 font-medium">
-                    {sub.subscription?.name ?? '—'}
+                    {sub.name}
                   </td>
 
+                  {/* Tokens */}
                   <td className="px-4 py-3">
-                    €{sub.subscription?.price}
+                    {sub.usedTokens} / {sub.tokens}
                   </td>
 
-                  <td className="px-4 py-3">
-                    {sub.subscription?.tokens}
-                  </td>
-
+                  {/* Status */}
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex px-2 py-1 rounded text-xs font-medium
@@ -65,9 +62,10 @@ export default function Subscriptions() {
                     </span>
                   </td>
 
-                  <td className="px-4 py-3 text-gray-600">
-                    {new Date(sub.created_at).toLocaleDateString()}
+                  <td className="px-4 py-3">
+                    {sub.price}
                   </td>
+
                 </tr>
               ))}
             </tbody>
