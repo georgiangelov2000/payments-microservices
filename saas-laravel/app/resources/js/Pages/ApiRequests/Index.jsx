@@ -22,7 +22,7 @@ export default function ApiRequests() {
 
   const resetFilters = () => {
     setData({
-      plan: '',
+      plan  : '',
       source: '',
       from: '',
       to: '',
