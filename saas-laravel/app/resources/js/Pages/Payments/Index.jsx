@@ -1,8 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
-import { Head, Link, useForm } from '@inertiajs/react'
+import { Head, Link, useForm, usePage } from '@inertiajs/react'
 
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
+  const page = usePage()
 
   /* Filters (sync with backend) */
   const { data, setData, get, processing } = useForm({
@@ -11,6 +12,7 @@ export default function Payments({ payments, filters = {} }) {
     from: filters.from || '',
     to: filters.to || '',
   })
+  const { csrf_token } = usePage().props
 
   const submitFilters = (e) => {
     e.preventDefault()
@@ -34,15 +36,28 @@ export default function Payments({ payments, filters = {} }) {
     })
   }
 
-  /* 📤 EXPORT */
-  const exportPayments = (format) => {
-    const params = new URLSearchParams({
-      ...data,
-      format,
+  /* EXPORT */
+  const exportPayments = async (format) => {
+    const response = await fetch(route('payments.export'), {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrf_token,
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify({
+        from: data.from,
+        to: data.to,
+        format,
+      }),
     })
 
-    window.location.href = route('payments.export') + `?${params.toString()}`
+    const result = await response.json()
+    console.log(result);
   }
+
+
 
   return (
     <AuthenticatedLayout>

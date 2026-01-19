@@ -9,12 +9,27 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libpq-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
     ca-certificates \
     gnupg \
-    && docker-php-ext-install pdo pdo_pgsql
+    && rm -rf /var/lib/apt/lists/*
 
 # -------------------------
-# Install Node.js (LTS) properly
+# PHP extensions
+# -------------------------
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+        pdo \
+        pdo_pgsql \
+        zip \
+        gd \
+        pcntl
+
+# -------------------------
+# Install Node.js 20 (LTS)
 # -------------------------
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
@@ -29,15 +44,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # -------------------------
 WORKDIR /var/www
 
-# Copy Laravel source
 COPY . .
 
 # -------------------------
-# Expose PHP-FPM port
+# Expose PHP-FPM
 # -------------------------
 EXPOSE 9000
 
-# -------------------------
-# Start PHP-FPM
-# -------------------------
 CMD ["php-fpm"]

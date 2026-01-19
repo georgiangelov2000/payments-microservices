@@ -21,16 +21,45 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
-    Route::get('/api-keys', [ApiKeyController::class, 'index'])->name('api-keys.index');
-    Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
-    Route::get('/contacts', [ContactFormController::class, 'index'])->name('contacts.index');
-    Route::post('/contacts', [ContactFormController::class, 'store'])->name('contacts.store');
-    Route::get('/api-requests',[ApiRequestController::class, 'index'])->name('api-requests.index');
+
+    /* Dashboard */
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    /* Profile */
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
+
+    /* Payments */
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('/', [PaymentController::class, 'index'])->name('index');
+        Route::post('/exports', [PaymentController::class, 'export'])->name('export');
+    });
+
+    /* API Keys */
+    Route::prefix('api-keys')->name('api-keys.')->group(function () {
+        Route::get('/', [ApiKeyController::class, 'index'])->name('index');
+    });
+
+    /* Subscriptions */
+    Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+        Route::get('/', [SubscriptionController::class, 'index'])->name('index');
+    });
+
+    /* Contacts */
+    Route::prefix('contacts')->name('contacts.')->group(function () {
+        Route::get('/', [ContactFormController::class, 'index'])->name('index');
+        Route::post('/', [ContactFormController::class, 'store'])->name('store');
+    });
+
+    /* API Requests */
+    Route::prefix('api-requests')->name('api-requests.')->group(function () {
+        Route::get('/', [ApiRequestController::class, 'index'])->name('index');
+    });
+
 });
 
 require __DIR__.'/auth.php';

@@ -33,4 +33,15 @@ class PaymentController extends Controller
             'payments' => $payments,
         ]);
     }
+
+    public function export(Request $request)
+    {
+        $from = $request->input('from');
+        $to = $request->input('to');
+        $format = $request->input('format');
+
+        return response()->json([
+            'message' => 'Export request received. You will get the file by email.',
+        ]);
+    }
 }
