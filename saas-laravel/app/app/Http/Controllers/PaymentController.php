@@ -19,13 +19,14 @@ class PaymentController extends Controller
         $user = Auth::user();
 
         abort_if(!$user, 403);
-
+        
         $merchantId = $user->id;
         $perPage = $request->integer('per_page', 15);
 
         $payments = $this->payments->getMerchantPayments(
             merchantId: $merchantId,
-            perPage: $perPage
+            perPage: $perPage,
+            filters: $request->all()
         );
 
         return Inertia::render('Payments/Index', [

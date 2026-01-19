@@ -14,11 +14,14 @@ class PaymentService
 
     public function getMerchantPayments(
         int $merchantId,
-        int $perPage = 15
+        int $perPage = 15,
+        array $filters = [],
     ): LengthAwarePaginator {
+
         $paginator = $this->payments->paginateByMerchant(
             merchantId: $merchantId,
-            perPage: $perPage
+            perPage: $perPage,
+            filters: $filters
         );
 
         $paginator = $paginator->through(
