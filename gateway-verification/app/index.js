@@ -4,20 +4,30 @@ import crypto from "crypto";
 import { createClient } from "redis";
 import dotenv from "dotenv";
 import httpProxy from "http-proxy";
+import helmet from "helmet";
 
 dotenv.config();
 
-
 /* ───────────────── APP ───────────────── */
 const app = express();
-app.use(
-  express.json({
-    verify: (req, res, buf) => {
-      req.rawBody = buf;
-    },
-  })
-);
 
+/* ───────────────── SECURITY ───────────────── */
+app.use(helmet());
+app.disable("x-powered-by");
+
+app.use(express.json({
+  limit: "256kb",
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+
+/* ───────────────── REQUEST ID ───────────────── */
+app.use((req, res, next) => {
+  req.id = crypto.randomUUID();
+  res.setHeader("X-Request-ID", req.id);
+  next();
+});
 
 /* ───────────────── CONFIG ───────────────── */
 const PORT = process.env.PORT || 3000;
@@ -25,11 +35,14 @@ const PAYMENTS_URL = process.env.PAYMENTS_URL;
 const INTERNAL_WEBHOOK_SECRET = process.env.INTERNAL_WEBHOOK_SECRET;
 
 /* ───────────────── PROXY ───────────────── */
-const proxy = httpProxy.createProxyServer();
+const proxy = httpProxy.createProxyServer({
+  proxyTimeout: 3000,
+});
 
 /* ───────────────── POSTGRES ───────────────── */
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
+  max: 10,
 });
 
 /* ───────────────── REDIS ───────────────── */
@@ -39,24 +52,23 @@ await redis.connect();
 /* ───────────────── CIRCUIT BREAKER ───────────────── */
 const CB_KEY = "cb:payments";
 const CB_FAILURE_THRESHOLD = 5;
-const CB_OPEN_TTL = 30; // seconds
+const CB_OPEN_TTL = 30;
 
 async function isCircuitOpen() {
   return (await redis.get(CB_KEY)) === "open";
 }
 
 async function recordFailure() {
-  const failures = await redis.incr(`${CB_KEY}:failures`);
-  if (failures >= CB_FAILURE_THRESHOLD) {
+  const fails = await redis.incr(`${CB_KEY}:fails`);
+  if (fails >= CB_FAILURE_THRESHOLD) {
     await redis.setEx(CB_KEY, CB_OPEN_TTL, "open");
-    await redis.del(`${CB_KEY}:failures`);
-    console.warn("Circuit breaker OPEN (payments)");
+    await redis.del(`${CB_KEY}:fails`);
   }
 }
 
 async function recordSuccess() {
   await redis.del(CB_KEY);
-  await redis.del(`${CB_KEY}:failures`);
+  await redis.del(`${CB_KEY}:fails`);
 }
 
 /* ───────────────── HMAC VERIFICATION ───────────────── */
@@ -68,18 +80,18 @@ function verifyInternalSignature(req) {
     .createHmac("sha256", INTERNAL_WEBHOOK_SECRET)
     .update(req.rawBody)
     .digest("hex");
-    
+
   try {
     return crypto.timingSafeEqual(
-      Buffer.from(signature, "hex"), // provider HMAC
-      Buffer.from(expected, "hex") // gateway HMAC 
+      Buffer.from(signature, "hex"),
+      Buffer.from(expected, "hex")
     );
   } catch {
     return false;
   }
 }
 
-/* ───────────────── AUTH + QUOTA MIDDLEWARE ───────────────── */
+/* ───────────────── AUTH + QUOTA ───────────────── */
 async function authMiddleware(req, res, next) {
   const apiKey = req.header("x-api-key");
   if (!apiKey) {
@@ -87,9 +99,9 @@ async function authMiddleware(req, res, next) {
   }
 
   const cacheKey = `api_key:${apiKey}`;
+  let data;
 
   try {
-    let data;
     const cached = await redis.get(cacheKey);
 
     if (cached) {
@@ -98,13 +110,9 @@ async function authMiddleware(req, res, next) {
         return res.status(401).json({ error: "invalid_api_key" });
       }
     } else {
-      const hash = crypto
-        .createHash("sha256")
-        .update(apiKey, "utf8")
-        .digest("hex");
+      const hash = crypto.createHash("sha256").update(apiKey).digest("hex");
 
-      const { rows } = await pool.query(
-        `
+      const { rows } = await pool.query(`
         SELECT
           mak.merchant_id,
           us.subscription_id,
@@ -117,28 +125,25 @@ async function authMiddleware(req, res, next) {
           AND mak.status = 'active'
           AND us.status = 'active'
         LIMIT 1
-        `,
-        [hash]
-      );
+      `, [hash]);
 
       if (!rows.length) {
         await redis.setEx(cacheKey, 60, JSON.stringify({ valid: false }));
         return res.status(401).json({ error: "invalid_api_key" });
       }
 
-      const row = rows[0];
+      const r = rows[0];
       data = {
         valid: true,
-        merchant_id: row.merchant_id,
-        subscription_id: row.subscription_id,
-        remaining: row.tokens - row.used_tokens,
+        merchant_id: r.merchant_id,
+        subscription_id: r.subscription_id,
+        remaining: r.tokens - r.used_tokens,
       };
 
       await redis.setEx(cacheKey, 300, JSON.stringify(data));
       await redis.set(`sub:${data.subscription_id}:tokens`, data.remaining);
     }
 
-    /* ───── QUOTA ───── */
     const tokenKey = `sub:${data.subscription_id}:tokens`;
     const left = await redis.decr(tokenKey);
 
@@ -147,97 +152,62 @@ async function authMiddleware(req, res, next) {
       return res.status(429).json({ error: "quota_exceeded" });
     }
 
-    /* ───── ENRICH REQUEST (NO ts) ───── */
+    req.headers["x-merchant-id"] = data.merchant_id;
     req.body = {
       ...req.body,
       subscription_id: data.subscription_id,
       event_id: crypto.randomUUID(),
     };
 
-  
-    req.headers["x-merchant-id"] = data.merchant_id;
-
     next();
 
   } catch (err) {
-    console.error("Gateway auth error:", err);
+    console.error("AUTH ERROR", req.id, err);
     res.status(500).json({ error: "gateway_error" });
   }
 }
 
-/* ───────────────── PAYMENTS ROUTE (CIRCUIT BREAKER) ───────────────── */
+/* ───────────────── PAYMENTS ROUTE ───────────────── */
 app.all("/api/v1/payments", authMiddleware, async (req, res) => {
   if (await isCircuitOpen()) {
     return res.status(503).json({
-      error: "payments_service_unavailable",
-      reason: "circuit_open",
+      error: "payments_unavailable",
+      request_id: req.id,
     });
   }
 
-  try {
-    proxy.web(
-      req,
-      res,
-      {
-        target: PAYMENTS_URL,
-        changeOrigin: true,
-        timeout: 3000,
-      },
-      async (err) => {
-        if (err) {
-          await recordFailure();
-
-          if (!res.headersSent) {
-            res.status(502).json({
-              error: "payments_service_unreachable",
-            });
-          }
-        } else {
-          await recordSuccess();
-        }
+  proxy.web(req, res, { target: PAYMENTS_URL }, async (err) => {
+    if (err) {
+      await recordFailure();
+      if (!res.headersSent) {
+        res.status(502).json({ error: "payments_unreachable" });
       }
-    );
-  } catch (err) {
-    console.error("Payments proxy exception:", err);
-    await recordFailure();
-
-    if (!res.headersSent) {
-      res.status(502).json({
-        error: "payments_service_unreachable",
-      });
+    } else {
+      await recordSuccess();
     }
-  }
+  });
 });
 
-app.post("/api/v1/payments/webhook", async (req, res) => {
-
+/* ───────────────── WEBHOOK ───────────────── */
+app.post("/api/v1/payments/webhook", (req, res) => {
   if (!verifyInternalSignature(req)) {
     return res.status(403).json({ error: "invalid_signature" });
   }
 
-  proxy.web(
-    req,
-    res,
-    {
-      target: PAYMENTS_URL,
-      changeOrigin: true,
-      timeout: 3000,
-    },
-    (err) => {
-      if (err && !res.headersSent) {
-        res.status(502).json({ error: "webhook_forward_failed" });
-      }
+  proxy.web(req, res, { target: PAYMENTS_URL }, (err) => {
+    if (err && !res.headersSent) {
+      res.status(502).json({ error: "webhook_forward_failed" });
     }
-  );
+  });
 });
 
 /* ───────────────── PROXY BODY FIX ───────────────── */
 proxy.on("proxyReq", (proxyReq, req) => {
   if (req.body && Object.keys(req.body).length) {
-    const bodyData = JSON.stringify(req.body);
+    const body = JSON.stringify(req.body);
     proxyReq.setHeader("Content-Type", "application/json");
-    proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
-    proxyReq.write(bodyData);
+    proxyReq.setHeader("Content-Length", Buffer.byteLength(body));
+    proxyReq.write(body);
   }
 });
 
@@ -254,5 +224,5 @@ app.get("/health", async (_, res) => {
 
 /* ───────────────── START ───────────────── */
 app.listen(PORT, () => {
-  console.log(`Application Gateway running on :${PORT}`);
+  console.log(`Gateway running on :${PORT}`);
 });
