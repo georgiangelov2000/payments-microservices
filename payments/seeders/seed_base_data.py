@@ -36,9 +36,9 @@ def seed_providers(db):
 
 def seed_subscriptions(db):
     subscriptions = [
-        {"name": "Basic Plan", "price": 9.99, "tokens": 30},
-        {"name": "Premium Plan", "price": 19.99, "tokens": 100},
-        {"name": "Enterprise Plan", "price": 49.99, "tokens": 500},
+        {"name": "Basic Plan", "price": 9.99, "tokens": 1000000},
+        {"name": "Premium Plan", "price": 19.99, "tokens": 10000000},
+        {"name": "Enterprise Plan", "price": 49.99, "tokens": 100000000},
     ]
 
     for s in subscriptions:

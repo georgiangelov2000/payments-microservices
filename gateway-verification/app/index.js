@@ -154,7 +154,7 @@ async function authMiddleware(req, res, next) {
       event_id: crypto.randomUUID(),
     };
 
-    console.log(req.body);
+  
     req.headers["x-merchant-id"] = data.merchant_id;
 
     next();
