@@ -135,3 +135,36 @@ CREATE INDEX idx_api_requests_payment_id
 
 CREATE INDEX idx_api_requests_created_at
     ON api_requests(created_at DESC);
+
+
+-- =========================
+-- Payment Logs
+-- =========================
+
+CREATE TABLE payment_logs (
+    id BIGSERIAL PRIMARY KEY,
+
+    payment_id BIGINT NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+
+    -- tinyint equivalents
+    event_type SMALLINT NOT NULL,
+    status SMALLINT NOT NULL,
+
+    message VARCHAR(500),
+    payload VARCHAR(500),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Indexes for fast timeline & debugging
+CREATE INDEX ix_payment_logs_payment_id
+    ON payment_logs(payment_id);
+
+CREATE INDEX ix_payment_logs_event_type
+    ON payment_logs(event_type);
+
+CREATE INDEX ix_payment_logs_status
+    ON payment_logs(status);
+
+CREATE INDEX ix_payment_logs_created_at
+    ON payment_logs(created_at);

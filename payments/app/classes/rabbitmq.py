@@ -34,7 +34,9 @@ async def connect():
     global _connection, _channel, _exchange
 
     _connection = await aio_pika.connect_robust(RABBITMQ_URL)
-    _channel = await _connection.channel()
+
+    # ENABLE PUBLISHER CONFIRMS
+    _channel = await _connection.channel(publisher_confirms=True)
 
     _exchange = await _channel.declare_exchange(
         EXCHANGE_NAME,
@@ -56,7 +58,7 @@ async def close():
 
 async def publish_payment_event(payment: PaymentDTO):
     """
-    Publishes a payment event to RabbitMQ.
+    Publishes a payment event to RabbitMQ WITH confirmation.
     Requires `connect()` to have been called.
     """
     if not _exchange:
@@ -70,7 +72,33 @@ async def publish_payment_event(payment: PaymentDTO):
 
     routing_key = f"payment.{payment.status}"
 
-    await _exchange.publish(
-        message,
-        routing_key=routing_key,
-    )
+    try:
+        confirmed = await _exchange.publish(
+            message,
+            routing_key=routing_key,
+            mandatory=True,  # detect unroutable messages
+        )
+
+        print(
+            f"[PUBLISH] CONFIRMED={confirmed} "
+            f"id={payment.payment_id} "
+            f"status={payment.status} "
+            f"rk={routing_key}"
+        )
+
+    except aio_pika.exceptions.UnroutableError:
+        print(
+            f"[PUBLISH] UNROUTABLE "
+            f"id={payment.payment_id} "
+            f"rk={routing_key}"
+        )
+        raise
+
+    except Exception as exc:
+        print(
+            f"[PUBLISH] FAILED "
+            f"id={payment.payment_id} "
+            f"rk={routing_key} "
+            f"error={exc}"
+        )
+        raise

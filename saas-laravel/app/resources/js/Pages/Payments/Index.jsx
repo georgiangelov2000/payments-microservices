@@ -1,50 +1,45 @@
+import { useState } from 'react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { Head, Link, useForm, usePage } from '@inertiajs/react'
 
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
-  const page = usePage()
+  const { csrf_token } = usePage().props
 
-  /* Filters (sync with backend) */
+  /* logs state */
+  const [openLogs, setOpenLogs] = useState(null)
+  const [logs, setLogs] = useState({})
+  const [logsLoading, setLogsLoading] = useState(false)
+
+  /* filters */
   const { data, setData, get, processing } = useForm({
     order_id: filters.order_id || '',
     status: filters.status || '',
     from: filters.from || '',
     to: filters.to || '',
   })
-  const { csrf_token } = usePage().props
 
   const submitFilters = (e) => {
     e.preventDefault()
-    get(route('payments.index'), {
-      preserveScroll: true,
-      preserveState: true,
-    })
+    get(route('payments.index'), { preserveScroll: true })
   }
 
   const resetFilters = () => {
-    setData({
-      order_id: '',
-      status: '',
-      from: '',
-      to: '',
-    })
-
+    setData({ order_id: '', status: '', from: '', to: '' })
     get(route('payments.index'), {
       preserveScroll: true,
       preserveState: false,
     })
   }
 
-  /* EXPORT */
+  /* export */
   const exportPayments = async (format) => {
-    const response = await fetch(route('payments.export'), {
+    await fetch(route('payments.export'), {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': csrf_token,
-        'X-Requested-With': 'XMLHttpRequest',
       },
       body: JSON.stringify({
         from: data.from,
@@ -52,47 +47,55 @@ export default function Payments({ payments, filters = {} }) {
         format,
       }),
     })
-
-    const result = await response.json()
-    console.log(result);
   }
 
+  /* load logs lazily */
+  const toggleLogs = async (paymentId) => {
+    if (openLogs === paymentId) {
+      setOpenLogs(null)
+      return
+    }
 
+    setOpenLogs(paymentId)
+
+    if (logs[paymentId]) return
+
+    setLogsLoading(true)
+
+    try {
+      const response = await fetch(`/api/v1/payments/${paymentId}/logs`, {
+        headers: { Accept: 'application/json' },
+      })
+
+      const result = await response.json()
+
+      setLogs(prev => ({
+        ...prev,
+        [paymentId]: result,
+      }))
+    } finally {
+      setLogsLoading(false)
+    }
+  }
 
   return (
     <AuthenticatedLayout>
       <Head title="Payments" />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold">
-          Payments
-        </h1>
+        <h1 className="text-2xl font-semibold">Payments</h1>
 
-        {/* SUMMARY + EXPORT */}
+        {/* EXPORT */}
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => exportPayments('csv')}
-            className="rounded bg-indigo-600 text-white px-4 py-2 text-sm hover:bg-indigo-700"
-          >
-            Export CSV
-          </button>
-
-          <button
-            type="button"
-            onClick={() => exportPayments('xlsx')}
-            className="rounded bg-indigo-600 text-white px-4 py-2 text-sm hover:bg-indigo-700"
-          >
-            Export XLSX
-          </button>
-
-          <button
-            type="button"
-            onClick={() => exportPayments('json')}
-            className="rounded bg-indigo-600 text-white px-4 py-2 text-sm hover:bg-indigo-700"
-          >
-            Export JSON
-          </button>
+          {['csv', 'xlsx', 'json'].map(f => (
+            <button
+              key={f}
+              onClick={() => exportPayments(f)}
+              className="rounded bg-indigo-600 text-white px-4 py-2 text-sm hover:bg-indigo-700"
+            >
+              Export {f.toUpperCase()}
+            </button>
+          ))}
         </div>
 
         {/* FILTERS */}
@@ -176,49 +179,101 @@ export default function Payments({ payments, filters = {} }) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left">#</th>
-                <th className="px-4 py-3 text-left">Order ID</th>
-                <th className="px-4 py-3 text-left">Amount</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Date</th>
-                <th className="px-4 py-3 text-left">Provider</th>
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">Order</th>
+                <th className="px-4 py-3">Amount</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Provider</th>
+                <th className="px-4 py-3">Logs</th>
               </tr>
             </thead>
 
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="px-4 py-6 text-center text-gray-500">
+                  <td colSpan="7" className="text-center py-6 text-gray-500">
                     No payments found
                   </td>
                 </tr>
               )}
 
               {rows.map(payment => (
-                <tr key={payment.id} className="border-b last:border-0">
-                  <td className="px-4 py-3">{payment.id}</td>
-                  <td className="px-4 py-3 font-medium">{payment.order_id}</td>
-                  <td className="px-4 py-3 font-medium">${payment.price}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-1 rounded text-xs font-medium
-                      ${
-                        payment.status === 'finished'
-                          ? 'bg-green-100 text-green-700'
-                          : payment.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {payment.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {new Date(payment.created_at).toLocaleString('sv-SE')}
-                  </td>
-                  <td className="px-4 py-3 font-medium">
-                    {payment.provider}
-                  </td>
-                </tr>
+                <>
+                  <tr key={payment.id} className="border-b">
+                    <td className="px-4 py-3">{payment.id}</td>
+                    <td className="px-4 py-3 font-medium">{payment.order_id}</td>
+                    <td className="px-4 py-3">${payment.price}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium
+                          ${
+                            payment.status === 'finished'
+                              ? 'bg-green-100 text-green-700'
+                              : payment.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}
+                      >
+                        {payment.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {new Date(payment.created_at).toLocaleString('sv-SE')}
+                    </td>
+                    <td className="px-4 py-3">{payment.provider}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => toggleLogs(payment.id)}
+                        className="text-indigo-600 text-xs hover:underline"
+                      >
+                        {openLogs === payment.id ? 'Hide logs' : 'View logs'}
+                      </button>
+                    </td>
+                  </tr>
+
+                  {openLogs === payment.id && (
+                    <tr className="bg-gray-50">
+                      <td colSpan="7" className="px-6 py-4">
+                        {logsLoading ? (
+                          <p className="text-sm text-gray-500">Loading logs…</p>
+                        ) : logs[payment.id]?.length ? (
+                          <div className="space-y-3">
+                            {logs[payment.id].map(log => (
+                              <div
+                                key={log.id}
+                                className={`border-l-4 pl-3 flex justify-between
+                                  ${
+                                    log.status === 'success'
+                                      ? 'border-green-500'
+                                      : 'border-red-500'
+                                  }`}
+                              >
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {log.event_type_label}
+                                  </p>
+                                  {log.message && (
+                                    <p className="text-xs text-gray-600">
+                                      {log.message}
+                                    </p>
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(log.created_at).toLocaleString('sv-SE')}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No logs for this payment
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </>
               ))}
             </tbody>
           </table>
@@ -226,30 +281,24 @@ export default function Payments({ payments, filters = {} }) {
 
         {/* PAGINATION */}
         {payments.links?.length > 1 && (
-          <>
-            <div className="mt-6 flex justify-center gap-1 flex-wrap">
-              {payments.links.map((link, index) => (
-                <Link
-                  key={index}
-                  href={link.url ?? '#'}
-                  preserveScroll
-                  className={`px-3 py-1 text-sm rounded border
-                    ${
-                      link.active
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                    }
-                    ${!link.url && 'opacity-50 cursor-not-allowed'}
-                  `}
-                  dangerouslySetInnerHTML={{ __html: link.label }}
-                />
-              ))}
-            </div>
-
-            <p className="mt-3 text-sm text-gray-600 text-center">
-              Page {payments.current_page} of {payments.last_page}
-            </p>
-          </>
+          <div className="flex justify-center gap-1 flex-wrap mt-4">
+            {payments.links.map((link, i) => (
+              <Link
+                key={i}
+                href={link.url ?? '#'}
+                preserveScroll
+                className={`px-3 py-1 text-sm rounded border
+                  ${
+                    link.active
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-white hover:bg-gray-100'
+                  }
+                  ${!link.url && 'opacity-50 cursor-not-allowed'}
+                `}
+                dangerouslySetInnerHTML={{ __html: link.label }}
+              />
+            ))}
+          </div>
         )}
       </div>
     </AuthenticatedLayout>

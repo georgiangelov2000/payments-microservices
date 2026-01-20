@@ -1,8 +1,11 @@
 import httpx
 import hashlib
+import hmac
 import os
+import json
+
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
@@ -59,33 +62,72 @@ class ProviderService:
             db.close()
 
     async def accept_payment(self, token: str) -> dict:
-        db = SessionLocal()
+        db: Session = SessionLocal()
 
-        webhook_url = os.getenv("PAYMENT_URL_BASE_WEBHOOK",)
+        webhook_url = os.getenv("PAYMENT_URL_BASE_WEBHOOK")
+        secret = os.getenv("INTERNAL_WEBHOOK_SECRET")
+
+        if not secret:
+            raise RuntimeError("INTERNAL_WEBHOOK_SECRET is not set")
 
         try:
-            payment = db.execute(
-                select(ProviderPayment)
-                .where(ProviderPayment.token == token)
-            ).scalar_one_or_none()
+            # Atomic state transition (race-safe)
+            result = db.execute(
+                update(ProviderPayment)
+                .where(
+                    ProviderPayment.token == token,
+                    ProviderPayment.status == "pending",
+                )
+                .values(status="finished")
+                .returning(
+                    ProviderPayment.payment_id,
+                    ProviderPayment.status,
+                )
+            )
 
-            if not payment:
-                raise HTTPException(status_code=404, detail="Payment not found")
+            row = result.fetchone()
 
-            payment.status = "finished"
+            if not row:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Payment already processed or invalid state",
+                )
+
             db.commit()
 
             payload = {
-                "payment_id": payment.payment_id,
-                "status": payment.status,
+                "payment_id": row.payment_id,
+                "status": row.status,
             }
 
-            #Send webhook
+            # --------------------------------------------------
+            # Sign webhook payload (HMAC-SHA256)
+            # --------------------------------------------------
+            payload_json = json.dumps(
+                payload,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+
+            signature = hmac.new(
+                secret.encode(),
+                payload_json.encode(),
+                hashlib.sha256,
+            ).hexdigest()
+
+            headers = {
+                "Content-Type": "application/json",
+                "X-Internal-Signature": signature,
+            }
+
+            print(webhook_url)
+
+            # Send webhook
             async with httpx.AsyncClient(timeout=5.0) as client:
                 await client.post(
                     webhook_url,
-                    json=payload,
-                    headers={"Content-Type": "application/json"},
+                    content=payload_json,  # IMPORTANT: raw JSON string
+                    headers=headers,
                 )
 
             return payload

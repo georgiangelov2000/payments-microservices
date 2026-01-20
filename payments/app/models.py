@@ -330,3 +330,39 @@ class ApiRequest(Base):
             "subscription_id",
         ),
     )
+
+# =========================
+# Payment Logs
+# =========================
+
+class PaymentLog(Base):
+    __tablename__ = "payment_logs"
+
+    id = Column(BigInteger, primary_key=True)
+
+    payment_id = Column(BigInteger, nullable=False)
+
+    event_type = Column(SmallInteger, nullable=False)
+    # mapped in code (source of event)
+
+    status = Column(SmallInteger, nullable=False)
+    # 0 = success, 1 = failed, etc.
+
+    message = Column(String(500), nullable=True)
+    # short human-readable message
+
+    payload = Column(String(500), nullable=True)
+    # serialized context / error data (JSON string if needed)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_payment_logs_payment_id", "payment_id"),
+        Index("ix_payment_logs_event_type", "event_type"),
+        Index("ix_payment_logs_status", "status"),
+        Index("ix_payment_logs_created_at", "created_at"),
+    )

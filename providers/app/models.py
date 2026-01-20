@@ -25,6 +25,12 @@ class ProviderPayment(Base):
     token = Column(String(64), nullable=False, unique=True)
     payment_url = Column(Text, nullable=False)
 
+    status = Column(
+        String(20),
+        nullable=False,
+        server_default="pending",
+    )
+
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -38,9 +44,10 @@ class ProviderPayment(Base):
             "provider",
             name="uq_payment_provider",
         ),
-        # Hot-path indexes
+
         Index("ix_provider_payments_token", "token"),
         Index("ix_provider_payments_payment_id", "payment_id"),
         Index("ix_provider_payments_merchant_id", "merchant_id"),
         Index("ix_provider_payments_provider", "provider"),
+        Index("ix_provider_payments_token", "token")
     )

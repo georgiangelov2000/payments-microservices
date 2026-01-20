@@ -7,13 +7,22 @@ import httpProxy from "http-proxy";
 
 dotenv.config();
 
+
 /* ───────────────── APP ───────────────── */
 const app = express();
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
+
 
 /* ───────────────── CONFIG ───────────────── */
 const PORT = process.env.PORT || 3000;
 const PAYMENTS_URL = process.env.PAYMENTS_URL;
+const INTERNAL_WEBHOOK_SECRET = process.env.INTERNAL_WEBHOOK_SECRET;
 
 /* ───────────────── PROXY ───────────────── */
 const proxy = httpProxy.createProxyServer();
@@ -48,6 +57,26 @@ async function recordFailure() {
 async function recordSuccess() {
   await redis.del(CB_KEY);
   await redis.del(`${CB_KEY}:failures`);
+}
+
+/* ───────────────── HMAC VERIFICATION ───────────────── */
+function verifyInternalSignature(req) {
+  const signature = req.header("x-internal-signature");
+  if (!signature || !req.rawBody) return false;
+
+  const expected = crypto
+    .createHmac("sha256", INTERNAL_WEBHOOK_SECRET)
+    .update(req.rawBody)
+    .digest("hex");
+    
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(signature, "hex"), // provider HMAC
+      Buffer.from(expected, "hex") // gateway HMAC 
+    );
+  } catch {
+    return false;
+  }
 }
 
 /* ───────────────── AUTH + QUOTA MIDDLEWARE ───────────────── */
@@ -137,7 +166,7 @@ async function authMiddleware(req, res, next) {
 }
 
 /* ───────────────── PAYMENTS ROUTE (CIRCUIT BREAKER) ───────────────── */
-app.all("/api/v1/payments*", authMiddleware, async (req, res) => {
+app.all("/api/v1/payments", authMiddleware, async (req, res) => {
   if (await isCircuitOpen()) {
     return res.status(503).json({
       error: "payments_service_unavailable",
@@ -178,6 +207,28 @@ app.all("/api/v1/payments*", authMiddleware, async (req, res) => {
       });
     }
   }
+});
+
+app.post("/api/v1/payments/webhook", async (req, res) => {
+
+  if (!verifyInternalSignature(req)) {
+    return res.status(403).json({ error: "invalid_signature" });
+  }
+
+  proxy.web(
+    req,
+    res,
+    {
+      target: PAYMENTS_URL,
+      changeOrigin: true,
+      timeout: 3000,
+    },
+    (err) => {
+      if (err && !res.headersSent) {
+        res.status(502).json({ error: "webhook_forward_failed" });
+      }
+    }
+  );
 });
 
 /* ───────────────── PROXY BODY FIX ───────────────── */
