@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Builders\PaymentsBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Enums\PaymentStatus;
 
 class PaymentRepository
 {
@@ -12,6 +13,10 @@ class PaymentRepository
         int $perPage = 15,
         array $filters = []
     ): LengthAwarePaginator {
+
+        if (!empty($filters['status'])) {
+            $filters['status'] = PaymentStatus::fromString($filters['status'])->value;
+        }
         return (new PaymentsBuilder())
             ->forMerchant($merchantId)
             ->whereId($filters['order_id'] ?? null)

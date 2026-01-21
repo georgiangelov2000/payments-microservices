@@ -16,10 +16,8 @@ class PaymentController extends Controller
 
     public function index(Request $request): Response
     {
-        $user = Auth::user();
-
-        abort_if(!$user, 403);
         
+        $user = Auth::user();        
         $merchantId = $user->id;
         $perPage = $request->integer('per_page', 15);
 

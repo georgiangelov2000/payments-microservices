@@ -23,7 +23,7 @@ final class UserSubscriptionsDTO
             tokens: $userSubscription->subscription->tokens,
             price: (float) $userSubscription->subscription->price,
             usedTokens: $userSubscription->used_tokens,
-            status: $userSubscription->status->value,
+            status: $userSubscription->status->label(),
         );
     }
 

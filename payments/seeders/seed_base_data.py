@@ -8,12 +8,13 @@ from app.models import (
     User,
     MerchantAPIKey,
     Provider,
-    Role,
     Subscription,
     UserSubscription,
 )
 from app.helpers.passwords import hash_password
-
+from app.constants import (
+    SUBSCRIPTION_ACTIVE
+)
 
 DEFAULT_PASSWORD = "ChangeMe123!"
 
@@ -68,8 +69,8 @@ def seed_merchants(db):
             merchant = User(
                 name=m["name"],
                 email=m["email"],
-                role=Role.merchant,
-                status="active",
+                role=2,
+                status=1,
                 password=hash_password(DEFAULT_PASSWORD),
             )
             db.add(merchant)
@@ -87,7 +88,7 @@ def seed_merchants(db):
                 MerchantAPIKey(
                     hash=key_hash,
                     merchant_id=merchant.id,
-                    status="active",
+                    status=1,
                 )
             )
 
@@ -112,14 +113,14 @@ def seed_user_subscriptions(db):
         raise Exception("Basic Plan subscription not found")
 
     merchants = db.execute(
-        select(User).where(User.role == Role.merchant)
+        select(User).where(User.role == 2)
     ).scalars().all()
 
     for merchant in merchants:
         exists = db.execute(
             select(UserSubscription).where(
                 UserSubscription.user_id == merchant.id,
-                UserSubscription.status == "active",
+                UserSubscription.status == SUBSCRIPTION_ACTIVE,
             )
         ).scalar_one_or_none()
 
@@ -128,7 +129,7 @@ def seed_user_subscriptions(db):
                 UserSubscription(
                     user_id=merchant.id,
                     subscription_id=base_subscription.id,
-                    status="active",
+                    status=SUBSCRIPTION_ACTIVE,
                 )
             )
 

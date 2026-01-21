@@ -9,7 +9,7 @@ use App\Enums\MerchantAPIKeyStatus;
 class MerchantApiKey extends Model
 {
     protected $table = 'merchant_api_keys';
-
+    
     protected $fillable = [
         'hash',
         'merchant_id',
@@ -18,6 +18,8 @@ class MerchantApiKey extends Model
 
     protected $casts = [
         'status' => MerchantAPIKeyStatus::class,
+        'created_at' => "datetime",
+        "updated_at" => "datetime"
     ];
 
     public function merchant(): BelongsTo

@@ -122,8 +122,8 @@ async function authMiddleware(req, res, next) {
         JOIN user_subscriptions us ON us.user_id = mak.merchant_id
         JOIN subscriptions s ON s.id = us.subscription_id
         WHERE mak.hash = $1
-          AND mak.status = 'active'
-          AND us.status = 'active'
+          AND mak.status = 1
+          AND us.status = 1
         LIMIT 1
       `, [hash]);
 

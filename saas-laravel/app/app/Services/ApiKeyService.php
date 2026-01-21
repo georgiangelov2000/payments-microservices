@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTO\ApiKeysDTO;
 use App\Repositories\ApiKeyRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -15,9 +16,14 @@ class ApiKeyService
         int $merchantId,
         int $perPage = 15
     ): LengthAwarePaginator {
-        return $this->apiKeys->paginateByMerchant(
+
+        $paginator = $this->apiKeys->paginateByMerchant(
             merchantId: $merchantId,
             perPage: $perPage
+        );
+
+        return $paginator->through(
+            fn ($apiKey) => ApiKeysDTO::fromModel($apiKey)->toArray()
         );
     }
 }

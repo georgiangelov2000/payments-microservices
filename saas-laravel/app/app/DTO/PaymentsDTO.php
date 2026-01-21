@@ -4,6 +4,7 @@ namespace App\DTO;
 
 use App\Models\Payment;
 use Carbon\CarbonInterface;
+use App\Enums\PaymentStatus;
 
 final class PaymentsDTO
 {
@@ -24,7 +25,7 @@ final class PaymentsDTO
             price: (float) $payment->price,
             merchant_id: $payment->merchant_id,
             order_id: $payment->order_id,
-            status: $payment->status->value,
+            status: $payment->status->label(),
             provider: $payment->provider->name,
             created_at: $payment->created_at,
         );

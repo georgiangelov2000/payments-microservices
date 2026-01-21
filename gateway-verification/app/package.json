@@ -18,7 +18,8 @@
     "pg": "^8.11.5",
     "redis": "^4.6.13",
     "amqplib": "^0.10.3",
-    "http-proxy": "^1.18.1"
+    "http-proxy": "^1.18.1",
+    "helmet": "^7.1.0"    
   },
   "devDependencies": {
     "nodemon": "^3.0.3"

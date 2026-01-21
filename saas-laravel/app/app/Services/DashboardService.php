@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Repositories\DashboardRepository;
+use App\Enums\PaymentStatus;
 
 class DashboardService
 {
@@ -16,9 +17,9 @@ class DashboardService
             'total_payments' => $this->dashboard->getTotalPayments($merchantId),
             'payments_this_month' => $this->dashboard->getPaymentsThisMonth($merchantId),
 
-            'payments_finished' => $this->dashboard->countByStatus($merchantId, 'finished'),
-            'payments_pending'  => $this->dashboard->countByStatus($merchantId, 'pending'),
-            'payments_failed'   => $this->dashboard->countByStatus($merchantId, 'failed'),
+            'payments_finished' => $this->dashboard->countByStatus($merchantId, PaymentStatus::FINISHED->value),
+            'payments_pending'  => $this->dashboard->countByStatus($merchantId, PaymentStatus::PENDING->value),
+            'payments_failed'   => $this->dashboard->countByStatus($merchantId, PaymentStatus::FAILED->value),
         ];
     }
 }

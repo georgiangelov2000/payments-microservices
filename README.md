@@ -218,3 +218,15 @@ docker compose \
   -f docker-compose.dev.yml \
   -f docker-compose.yml \
   up -d --build payments
+
+
+for i in {1..100}; do
+  curl -s -X POST http://localhost:8001/api/v1/orders \
+    -H "Content-Type: application/json" \
+    -H "X-API-KEY: 1:1769015904" \
+    -d '{
+      "product_id": 1,
+      "amount": 1,
+      "alias": "paypal"
+    }' > /dev/null
+done
