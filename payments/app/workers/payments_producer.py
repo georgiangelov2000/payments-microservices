@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.models import PaymentLog
-from app.enums import (
-    EVENT_MESSAGE_BROKER,
+from app.constants import (
+    MESSAGE_BROKER_MESSAGES,
     LOG_PENDING,
     LOG_SUCCESS,
     LOG_FAILED,
@@ -60,7 +60,7 @@ async def start_producer():
             events = (
                 db.execute(
                     select(PaymentLog)
-                    .where(PaymentLog.event_type == EVENT_MESSAGE_BROKER)
+                    .where(PaymentLog.event_type == MESSAGE_BROKER_MESSAGES)
                     .where(
                         PaymentLog.status.in_([LOG_PENDING, LOG_RETRYING])
                     )
