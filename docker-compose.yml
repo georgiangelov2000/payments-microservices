@@ -127,7 +127,23 @@ services:
         condition: service_started
       payments-db:
         condition: service_healthy
-    command: python -m app.workers.payment_events
+    command: python -m app.workers.payments_consumer
+    restart: unless-stopped
+
+  payments-producer:
+    build: ./payments
+    container_name: payments-producer
+    env_file: payments/.env.payments
+    volumes:
+      - ./payments:/app
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      payments-db:
+        condition: service_healthy
+    command: python -m app.workers.payments_producer
+    restart: unless-stopped
+
     
   provider:
     build: ./providers

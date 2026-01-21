@@ -29,7 +29,9 @@ from app.dto.payments import PaymentDTO
 EVENT_PAYMENT_CREATED = 1
 EVENT_PROVIDER_REQUEST_SENT = 2
 EVENT_PROVIDER_PAYMENT_ACCEPTED = 3
+MESSAGE_BROKER_MESSAGES = 4
 
+STATUS_PENDING = 0
 STATUS_SUCCESS = 1
 STATUS_FAILED = 2
 
@@ -220,42 +222,26 @@ class Payment:
 
         try:
             payment = db.get(PaymentModel, request.payment_id)
-
             if not payment:
                 return {"message": "payment not found"}
 
-            if payment.status in (
-                PaymentStatus.finished,
-                PaymentStatus.failed,
-            ):
-                return {
-                    "message": "already processed",
-                    "status": payment.status.value,
-                }
+            if payment.status in (PaymentStatus.finished, PaymentStatus.failed):
+                return {"message": "already processed"}
 
-            if request.status == "finished":
-                payment.status = PaymentStatus.finished
-            elif request.status == "failed":
-                payment.status = PaymentStatus.failed
-            else:
-                return {"message": "unsupported status"}
+            payment.status = (
+                PaymentStatus.finished
+                if request.status == "finished"
+                else PaymentStatus.failed
+            )
 
-            # ---------------------------
-            # LOG: provider_payment_accepted
-            # ---------------------------
             db.add(
                 PaymentLog(
                     payment_id=payment.id,
                     event_type=EVENT_PROVIDER_PAYMENT_ACCEPTED,
                     status=STATUS_SUCCESS if request.status == "finished" else STATUS_FAILED,
-                    message="Provider payment accepted"
-                    if request.status == "finished"
-                    else "Provider payment failed",
-                    payload=f'{{"provider_status":"{request.status}"}}',
+                    message="Provider webhook processed",
                 )
             )
-
-            db.commit()
 
             payment_dto = PaymentDTO(
                 payment_id=payment.id,
@@ -266,16 +252,22 @@ class Payment:
                 price=str(payment.price),
             )
 
+            # OUTBOX RECORD
+            db.add(
+                PaymentLog(
+                    payment_id=payment.id,
+                    event_type=MESSAGE_BROKER_MESSAGES,
+                    status=STATUS_PENDING,
+                    payload=payment_dto.model_dump_json(),
+                )
+            )
+
+            db.commit()
+            return {"message": "payment updated"}
+
         finally:
             db.close()
 
-        await rabbitmq.publish_payment_event(payment_dto)
-
-        return {
-            "message": "payment updated",
-            "payment_id": payment_dto.payment_id,
-            "status": payment_dto.status,
-        }
 
         # --------------------------------------------------
         # Safe failure transition
