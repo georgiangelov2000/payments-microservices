@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 from datetime import datetime, timedelta
 
@@ -9,7 +8,13 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.models import PaymentLog
-
+from app.enums import (
+    EVENT_MESSAGE_BROKER,
+    LOG_PENDING,
+    LOG_SUCCESS,
+    LOG_FAILED,
+    LOG_RETRYING,
+)
 
 # ==================================================
 # Config
@@ -21,19 +26,6 @@ EXCHANGE_NAME = os.getenv("EXCHANGE_NAME", "payments")
 POLL_INTERVAL = 1
 BATCH_SIZE = 50
 MAX_RETRIES = 5
-
-
-# ==================================================
-# Event + Status constants
-# ==================================================
-
-MESSAGE_BROKER_MESSAGES = 4
-
-STATUS_PENDING = 0
-STATUS_SUCCESS = 1
-STATUS_FAILED = 2
-STATUS_RETRYING = 3
-
 
 # ==================================================
 # RabbitMQ publish
@@ -48,9 +40,8 @@ async def publish(exchange, payload: str):
         routing_key="payment.updated",
     )
 
-
 # ==================================================
-# Producer loop
+# Producer loop (OUTBOX pattern)
 # ==================================================
 
 async def start_producer():
@@ -69,11 +60,9 @@ async def start_producer():
             events = (
                 db.execute(
                     select(PaymentLog)
-                    .where(PaymentLog.event_type == MESSAGE_BROKER_MESSAGES)
+                    .where(PaymentLog.event_type == EVENT_MESSAGE_BROKER)
                     .where(
-                        PaymentLog.status.in_(
-                            [STATUS_PENDING, STATUS_RETRYING]
-                        )
+                        PaymentLog.status.in_([LOG_PENDING, LOG_RETRYING])
                     )
                     .where(
                         or_(
@@ -92,17 +81,17 @@ async def start_producer():
                 try:
                     await publish(exchange, event.payload)
 
-                    event.status = STATUS_SUCCESS
+                    event.status = LOG_SUCCESS
                     event.message = "Published to RabbitMQ"
 
                 except Exception:
                     event.retry_count += 1
 
                     if event.retry_count >= MAX_RETRIES:
-                        event.status = STATUS_FAILED
+                        event.status = LOG_FAILED
                         event.message = "Publishing failed permanently"
                     else:
-                        event.status = STATUS_RETRYING
+                        event.status = LOG_RETRYING
                         event.next_retry_at = datetime.utcnow() + timedelta(
                             seconds=2 ** event.retry_count
                         )
@@ -114,7 +103,6 @@ async def start_producer():
             db.close()
 
         await asyncio.sleep(POLL_INTERVAL)
-
 
 # ==================================================
 # Entrypoint

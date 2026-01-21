@@ -12,7 +12,13 @@ from sqlalchemy.orm import Session
 from app.dto.payments import PaymentDTO
 from app.db import SessionLocal
 from app.models import PaymentLog
-
+from app.constants import (
+    EVENT_MERCHANT_NOTIFICATION_SENT,
+    LOG_SUCCESS,
+    LOG_FAILED,
+    LOG_RETRYING,
+    LOG_BLOCKED,
+)
 
 # --------------------------------------------------
 # Config
@@ -30,26 +36,12 @@ FAIL_LIMIT = 5
 BLOCK_SECONDS = 1800
 RATE_LIMIT = 10
 
-
-# --------------------------------------------------
-# Event + Status constants
-# --------------------------------------------------
-
-EVENT_MERCHANT_NOTIFICATION_SENT = 4
-
-STATUS_SUCCESS = 1
-STATUS_FAILED = 2
-STATUS_RETRYING = 3
-STATUS_BLOCKED = 4
-
-
 # --------------------------------------------------
 # State
 # --------------------------------------------------
 
 redis_client = redis.from_url(REDIS_URL)
 shutdown = False
-
 
 # --------------------------------------------------
 # DB logger
@@ -77,7 +69,6 @@ def log_payment_event(
     finally:
         db.close()
 
-
 # --------------------------------------------------
 # Signal handling
 # --------------------------------------------------
@@ -86,10 +77,8 @@ def handle_shutdown(*_):
     global shutdown
     shutdown = True
 
-
 signal.signal(signal.SIGTERM, handle_shutdown)
 signal.signal(signal.SIGINT, handle_shutdown)
-
 
 # --------------------------------------------------
 # Merchant notification
@@ -109,7 +98,7 @@ async def notify_merchant(payment: PaymentDTO):
     if await redis_client.exists(block_key):
         log_payment_event(
             payment_id=payment_id,
-            status=STATUS_BLOCKED,
+            status=LOG_BLOCKED,
             message="Merchant blocked (circuit open)",
         )
         raise RuntimeError("Merchant blocked")
@@ -124,7 +113,7 @@ async def notify_merchant(payment: PaymentDTO):
     if current > RATE_LIMIT:
         log_payment_event(
             payment_id=payment_id,
-            status=STATUS_FAILED,
+            status=LOG_FAILED,
             message="Merchant rate limit exceeded",
         )
         raise RuntimeError("Rate limited")
@@ -136,35 +125,26 @@ async def notify_merchant(payment: PaymentDTO):
                 json=payment.model_dump(),
             )
 
-        # ---------------------------
-        # SUCCESS
-        # ---------------------------
         if response.status_code < 400:
             await redis_client.delete(fail_key)
 
             log_payment_event(
                 payment_id=payment_id,
-                status=STATUS_SUCCESS,
+                status=LOG_SUCCESS,
                 message="Merchant notified successfully",
                 payload={"status_code": response.status_code},
             )
             return
 
-        # ---------------------------
-        # PERMANENT FAILURE
-        # ---------------------------
         if response.status_code < 500:
             log_payment_event(
                 payment_id=payment_id,
-                status=STATUS_FAILED,
+                status=LOG_FAILED,
                 message="Permanent merchant error",
                 payload={"status_code": response.status_code},
             )
             raise ValueError("Permanent merchant error")
 
-        # ---------------------------
-        # TEMPORARY FAILURE
-        # ---------------------------
         raise RuntimeError("Temporary merchant failure")
 
     except Exception:
@@ -176,20 +156,19 @@ async def notify_merchant(payment: PaymentDTO):
 
             log_payment_event(
                 payment_id=payment_id,
-                status=STATUS_BLOCKED,
+                status=LOG_BLOCKED,
                 message="Merchant circuit opened",
                 payload={"fails": fails},
             )
         else:
             log_payment_event(
                 payment_id=payment_id,
-                status=STATUS_RETRYING,
+                status=LOG_RETRYING,
                 message="Retry scheduled",
                 payload={"retry": fails},
             )
 
         raise
-
 
 # --------------------------------------------------
 # Worker
@@ -228,26 +207,9 @@ async def start_worker():
 
     async with queue.iterator() as messages:
         async for message in messages:
-            retry_count = int(message.headers.get("x-retry", 0))
-
-            try:
-                async with message.process(requeue=False):
-                    payment = PaymentDTO(**json.loads(message.body))
-                    await notify_merchant(payment)
-
-            except ValueError:
-                pass  # permanent failure → DLQ
-
-            except Exception:
-                if retry_count < MAX_RETRIES:
-                    message.headers["x-retry"] = retry_count + 1
-                    await asyncio.sleep(2 ** retry_count)
-                    raise
-                else:
-                    pass  # retries exhausted → DLQ
-
-    await connection.close()
-
+            async with message.process(requeue=False):
+                payment = PaymentDTO(**json.loads(message.body))
+                await notify_merchant(payment)
 
 # --------------------------------------------------
 # Entrypoint
