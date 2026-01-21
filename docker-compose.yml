@@ -22,7 +22,7 @@ services:
     image: postgres:15
     container_name: payments-db
     env_file:
-      - payments/.env.payments-db
+      - payments-db/.env
     volumes:
       - ./payments-db/init-db:/docker-entrypoint-initdb.d
     healthcheck:
@@ -100,7 +100,7 @@ services:
   payments:
     build: ./payments
     container_name: payments
-    env_file: payments/.env.payments
+    env_file: payments/.env
     volumes:
       - ./payments:/app
     depends_on:
@@ -144,7 +144,6 @@ services:
     command: python -m app.workers.payments_producer
     restart: unless-stopped
 
-    
   provider:
     build: ./providers
     container_name: provider
