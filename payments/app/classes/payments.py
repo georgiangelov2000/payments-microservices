@@ -10,30 +10,28 @@ from app.schemas.payments import (
 from app.models import (
     Provider,
     Payment as PaymentModel,
-    PaymentStatus,
     ApiRequest,
     UserSubscription,
     Subscription,
-    SubscriptionStatus,
     PaymentLog,
 )
 from app.db import SessionLocal
-from app.classes import rabbitmq
 from app.dto.payments import PaymentDTO
+from app.constants import (
+    PAYMENT_PENDING,
+    PAYMENT_FINISHED,
+    PAYMENT_FAILED,
+    SUBSCRIPTION_ACTIVE,
+    SUBSCRIPTION_INACTIVE,
+    LOG_PENDING,
+    LOG_SUCCESS,
+    LOG_FAILED,
+    EVENT_PAYMENT_CREATED,
+    EVENT_PROVIDER_REQUEST_SENT,
+    EVENT_PROVIDER_PAYMENT_ACCEPTED,
+    MESSAGE_BROKER_MESSAGES
+)
 
-
-# =========================
-# Payment log constants
-# =========================
-
-EVENT_PAYMENT_CREATED = 1
-EVENT_PROVIDER_REQUEST_SENT = 2
-EVENT_PROVIDER_PAYMENT_ACCEPTED = 3
-MESSAGE_BROKER_MESSAGES = 4
-
-STATUS_PENDING = 0
-STATUS_SUCCESS = 1
-STATUS_FAILED = 2
 
 
 class Payment:
@@ -41,7 +39,7 @@ class Payment:
     Handles payment lifecycle:
     - create payment
     - provider interaction
-    - webhook updates§
+    - webhook updates
     """
 
     # --------------------------------------------------
@@ -73,7 +71,7 @@ class Payment:
                 return {
                     "message": "payment already exists",
                     "payment_id": existing.id,
-                    "status": existing.status.value,
+                    "status": existing.status,
                 }
 
             # ---------------------------
@@ -88,7 +86,7 @@ class Payment:
                 .where(
                     UserSubscription.user_id == merchant_id,
                     UserSubscription.subscription_id == request.subscription_id,
-                    UserSubscription.status == SubscriptionStatus.active,
+                    UserSubscription.status == SUBSCRIPTION_ACTIVE,
                 )
             ).first()
 
@@ -109,11 +107,11 @@ class Payment:
                 price=request.price,
                 provider_id=provider.id,
                 merchant_id=merchant_id,
-                status=PaymentStatus.pending,
+                status=PAYMENT_PENDING,
             )
 
             db.add(payment)
-            db.flush()  # get payment.id without commit
+            db.flush()
 
             # ---------------------------
             # LOG: payment_created
@@ -122,9 +120,8 @@ class Payment:
                 PaymentLog(
                     payment_id=payment.id,
                     event_type=EVENT_PAYMENT_CREATED,
-                    status=STATUS_SUCCESS,
+                    status=LOG_SUCCESS,
                     message="Payment created",
-                    payload=None,
                 )
             )
 
@@ -134,25 +131,22 @@ class Payment:
             user_subscription.used_tokens += 1
 
             if user_subscription.used_tokens >= subscription.tokens:
-                user_subscription.status = SubscriptionStatus.inactive
+                user_subscription.status = SUBSCRIPTION_INACTIVE
 
             # ---------------------------
             # Log API request
             # ---------------------------
-            api_request = ApiRequest(
-                event_id=request.event_id,
-                user_id=merchant_id,
-                subscription_id=request.subscription_id,
-                payment_id=payment.id,
-                amount=request.amount,
-                source="payments:create",
+            db.add(
+                ApiRequest(
+                    event_id=request.event_id,
+                    user_id=merchant_id,
+                    subscription_id=request.subscription_id,
+                    payment_id=payment.id,
+                    amount=request.amount,
+                    source="payments:create",
+                )
             )
 
-            db.add(api_request)
-
-            # ---------------------------
-            # Commit atomically
-            # ---------------------------
             db.commit()
             db.refresh(payment)
 
@@ -166,7 +160,7 @@ class Payment:
             db.close()
 
         # ---------------------------
-        # LOG: provider_request_sent (after commit)
+        # LOG: provider_request_sent
         # ---------------------------
         db2: Session = SessionLocal()
         try:
@@ -174,7 +168,7 @@ class Payment:
                 PaymentLog(
                     payment_id=payment_id,
                     event_type=EVENT_PROVIDER_REQUEST_SENT,
-                    status=STATUS_SUCCESS,
+                    status=LOG_SUCCESS,
                     message="Provider URL request sent",
                     payload=f'{{"provider":"{provider_alias}"}}',
                 )
@@ -209,13 +203,12 @@ class Payment:
 
         return {
             "payment_id": payment_id,
-            "status": PaymentStatus.pending.value,
+            "status": PAYMENT_PENDING,
             "payment_url": resp.json().get("payment_url"),
         }
 
-
     # --------------------------------------------------
-    # Webhook handler (idempotent)
+    # Webhook handler
     # --------------------------------------------------
     async def webhook(self, request: PaymentWebhookRequest):
         db: Session = SessionLocal()
@@ -225,20 +218,23 @@ class Payment:
             if not payment:
                 return {"message": "payment not found"}
 
-            if payment.status in (PaymentStatus.finished, PaymentStatus.failed):
+            if payment.status in (PAYMENT_FINISHED, PAYMENT_FAILED):
                 return {"message": "already processed"}
 
             payment.status = (
-                PaymentStatus.finished
+                PAYMENT_FINISHED
                 if request.status == "finished"
-                else PaymentStatus.failed
+                else PAYMENT_FAILED
             )
 
+            # ---------------------------
+            # LOG: provider webhook
+            # ---------------------------
             db.add(
                 PaymentLog(
                     payment_id=payment.id,
                     event_type=EVENT_PROVIDER_PAYMENT_ACCEPTED,
-                    status=STATUS_SUCCESS if request.status == "finished" else STATUS_FAILED,
+                    status=LOG_SUCCESS if payment.status == PAYMENT_FINISHED else LOG_FAILED,
                     message="Provider webhook processed",
                 )
             )
@@ -247,17 +243,19 @@ class Payment:
                 payment_id=payment.id,
                 order_id=payment.order_id,
                 merchant_id=payment.merchant_id,
-                status=payment.status.value,
+                status=payment.status,
                 amount=str(payment.amount),
                 price=str(payment.price),
             )
 
+            # ---------------------------
             # OUTBOX RECORD
+            # ---------------------------
             db.add(
                 PaymentLog(
                     payment_id=payment.id,
                     event_type=MESSAGE_BROKER_MESSAGES,
-                    status=STATUS_PENDING,
+                    status=LOG_PENDING,
                     payload=payment_dto.model_dump_json(),
                 )
             )
@@ -268,16 +266,15 @@ class Payment:
         finally:
             db.close()
 
-
-        # --------------------------------------------------
-        # Safe failure transition
-        # --------------------------------------------------
+    # --------------------------------------------------
+    # Safe failure transition
+    # --------------------------------------------------
     async def _mark_failed_if_pending(self, payment_id: int):
-            db: Session = SessionLocal()
-            try:
-                payment = db.get(PaymentModel, payment_id)
-                if payment and payment.status == PaymentStatus.pending:
-                    payment.status = PaymentStatus.failed
-                    db.commit()
-            finally:
-                db.close()
+        db: Session = SessionLocal()
+        try:
+            payment = db.get(PaymentModel, payment_id)
+            if payment and payment.status == PAYMENT_PENDING:
+                payment.status = PAYMENT_FAILED
+                db.commit()
+        finally:
+            db.close()
