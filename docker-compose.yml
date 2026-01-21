@@ -133,7 +133,7 @@ services:
   payments-producer:
     build: ./payments
     container_name: payments-producer
-    env_file: payments/.env.payments
+    env_file: payments/.env
     volumes:
       - ./payments:/app
     depends_on:
