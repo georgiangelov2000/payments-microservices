@@ -119,7 +119,7 @@ services:
   payments-worker:
     build: ./payments
     container_name: payments-worker
-    env_file: payments/.env.payments
+    env_file: payments/.env
     depends_on:
       rabbitmq:
         condition: service_healthy
