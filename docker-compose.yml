@@ -1,5 +1,7 @@
 # Docker Compose configuration for development environment
 services:
+
+# Third party tools
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -18,6 +20,7 @@ services:
 
     restart: unless-stopped
 
+# Databases
   payments-db:
     image: postgres:15
     container_name: payments-db
@@ -53,6 +56,15 @@ services:
       timeout: 5s
       retries: 5
 
+# Gateways
+  gateway:
+      build: ./gateway
+      container_name: gateway
+      ports:
+        - "8080:80"
+      depends_on:
+        payments:
+          condition: service_started
   saas-gateway:
     image: nginx:alpine
     container_name: saas-gateway
@@ -63,19 +75,6 @@ services:
       - "80:80"
     depends_on:
       - saas-laravel
-
-  saas-laravel:
-    build: ./saas-laravel
-    container_name: saas-laravel
-    volumes:
-      - ./saas-laravel/app:/var/www
-    ports:
-      - "8000:8000"
-      - "5173:5173"
-    depends_on:
-      payments-db:
-        condition: service_healthy
-
   gateway-verification:
     build:
       context: ./gateway-verification
@@ -88,15 +87,20 @@ services:
     depends_on:
       - payments
 
-  gateway:
-      build: ./gateway
-      container_name: auth-gateway
-      ports:
-        - "8080:80"
-      depends_on:
-        payments:
-          condition: service_started
+# SaaS platform
+  saas-laravel:
+    build: ./saas-laravel
+    container_name: saas-laravel
+    volumes:
+      - ./saas-laravel/app:/var/www
+    ports:
+      - "8000:8000"
+      - "5173:5173"
+    depends_on:
+      payments-db:
+        condition: service_healthy
 
+# Service
   payments:
     build: ./payments
     container_name: payments
@@ -115,7 +119,39 @@ services:
       --host 0.0.0.0
       --port 8000
       --reload
+  providers:
+    build: ./providers
+    container_name: providers
+    env_file:
+      - providers/.env.providers
+    volumes:
+      - ./providers:/app
+    ports:
+      - "8002:8000"
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+  merchants:
+    build: ./merchants
+    container_name: merchants
+    env_file:
+      - merchants/.env.merchants
+    volumes:
+      - ./merchants:/app
+    ports:
+      - "8001:8000"
+    depends_on:
+      merchants-db:
+        condition: service_healthy
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
 
+# Workers
   payments-worker:
     build: ./payments
     container_name: payments-worker
@@ -143,39 +179,3 @@ services:
         condition: service_healthy
     command: python -m app.workers.payments_producer
     restart: unless-stopped
-
-  provider:
-    build: ./providers
-    container_name: provider
-    env_file:
-      - providers/.env.providers
-    volumes:
-      - ./providers:/app
-    ports:
-      - "8002:8000"
-    command: >
-      uvicorn app.main:app
-      --host 0.0.0.0
-      --port 8000
-      --reload
-
-  merchants:
-    build: ./merchants
-    container_name: merchants
-    env_file:
-      - merchants/.env.merchants
-    volumes:
-      - ./merchants:/app
-    ports:
-      - "8001:8000"
-    depends_on:
-      merchants-db:
-        condition: service_healthy
-    command: >
-      uvicorn app.main:app
-      --host 0.0.0.0
-      --port 8000
-      --reload
-
-volumes:
-  gateway_worker_node_modules:
