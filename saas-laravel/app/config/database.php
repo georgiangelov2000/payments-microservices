@@ -63,6 +63,20 @@ return [
             ]) : [],
         ],
 
+        'pgsql_logs' => [
+            'driver' => 'pgsql',
+            'host' => env('LOGS_DB_HOST', '127.0.0.1'),
+            'port' => env('LOGS_DB_PORT', '5432'),
+            'database' => env('LOGS_DB_DATABASE', 'logs'),
+            'username' => env('LOGS_DB_USERNAME', 'webhook_api'),
+            'password' => env('LOGS_DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => 'prefer',
+        ],
+        
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

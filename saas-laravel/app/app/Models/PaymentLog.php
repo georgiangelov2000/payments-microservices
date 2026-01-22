@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PaymentLog extends Model
 {
+    protected $connection = 'pgsql_logs';
+
     protected $table = 'payment_logs';
 
     protected $fillable = [

@@ -3,6 +3,7 @@ import json
 import os
 import signal
 import time
+from typing import Optional
 
 import aio_pika
 import httpx
@@ -10,7 +11,7 @@ import redis.asyncio as redis
 from sqlalchemy.orm import Session
 
 from app.dto.payments import PaymentDTO
-from app.db import SessionLocal
+from app.db.sessions import LogsSessionLocal
 from app.models import PaymentLog
 from app.constants import (
     EVENT_MERCHANT_NOTIFICATION_SENT,
@@ -28,7 +29,6 @@ RABBITMQ_URL = os.getenv("RABBITMQ_URL")
 EXCHANGE_NAME = os.getenv("EXCHANGE_NAME")
 QUEUE_NAME = os.getenv("QUEUE_NAME")
 MERCHANT_CALLBACK_URL = os.getenv("MERCHANT_CALLBACK_URL")
-
 REDIS_URL = os.getenv("REDIS_URL")
 
 MAX_RETRIES = 5
@@ -40,23 +40,23 @@ RATE_LIMIT = 10
 # State
 # --------------------------------------------------
 
-redis_client = redis.from_url(REDIS_URL)
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 shutdown = False
 
 # --------------------------------------------------
-# DB logger
+# DB logger (LOGS DB ONLY)
 # --------------------------------------------------
 
 def log_payment_event(
     *,
     payment_id: int,
     status: int,
-    message: str | None = None,
-    payload: dict | None = None,
+    message: Optional[str] = None,
+    payload: Optional[dict] = None,
 ):
-    db: Session = SessionLocal()
+    logs_db: Session = LogsSessionLocal()
     try:
-        db.add(
+        logs_db.add(
             PaymentLog(
                 payment_id=payment_id,
                 event_type=EVENT_MERCHANT_NOTIFICATION_SENT,
@@ -65,9 +65,9 @@ def log_payment_event(
                 payload=json.dumps(payload) if payload else None,
             )
         )
-        db.commit()
+        logs_db.commit()
     finally:
-        db.close()
+        logs_db.close()
 
 # --------------------------------------------------
 # Signal handling
@@ -81,7 +81,7 @@ signal.signal(signal.SIGTERM, handle_shutdown)
 signal.signal(signal.SIGINT, handle_shutdown)
 
 # --------------------------------------------------
-# Merchant notification
+# Merchant notification logic
 # --------------------------------------------------
 
 async def notify_merchant(payment: PaymentDTO):
@@ -104,7 +104,7 @@ async def notify_merchant(payment: PaymentDTO):
         raise RuntimeError("Merchant blocked")
 
     # ---------------------------
-    # Rate limiting
+    # Rate limiting (per minute)
     # ---------------------------
     current = await redis_client.incr(rate_key)
     if current == 1:
@@ -125,6 +125,9 @@ async def notify_merchant(payment: PaymentDTO):
                 json=payment.model_dump(),
             )
 
+        # ---------------------------
+        # Success
+        # ---------------------------
         if response.status_code < 400:
             await redis_client.delete(fail_key)
 
@@ -136,6 +139,9 @@ async def notify_merchant(payment: PaymentDTO):
             )
             return
 
+        # ---------------------------
+        # Permanent failure (4xx)
+        # ---------------------------
         if response.status_code < 500:
             log_payment_event(
                 payment_id=payment_id,
@@ -145,6 +151,9 @@ async def notify_merchant(payment: PaymentDTO):
             )
             raise ValueError("Permanent merchant error")
 
+        # ---------------------------
+        # Temporary failure (5xx)
+        # ---------------------------
         raise RuntimeError("Temporary merchant failure")
 
     except Exception:
@@ -207,9 +216,18 @@ async def start_worker():
 
     async with queue.iterator() as messages:
         async for message in messages:
-            async with message.process(requeue=False):
-                payment = PaymentDTO(**json.loads(message.body))
-                await notify_merchant(payment)
+            if shutdown:
+                break
+
+            try:
+                async with message.process(requeue=False):
+                    payload = json.loads(message.body)
+                    payment = PaymentDTO(**payload)
+                    await notify_merchant(payment)
+
+            except Exception:
+                # exception = NACK → DLQ handled by RabbitMQ
+                raise
 
 # --------------------------------------------------
 # Entrypoint

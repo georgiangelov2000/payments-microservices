@@ -32,7 +32,7 @@ run_if_exists () {
 # PAYMENTS
 # =================================================
 echo "================ PAYMENTS ================"
-run_if_exists payments python -m seeders.seed_base_data
+run_if_exists payments python -m seeders.seeders
 
 # =================================================
 # MERCHANTS
@@ -42,7 +42,7 @@ echo "================ MERCHANTS ================"
 run_if_exists merchants alembic stamp head
 run_if_exists merchants alembic revision --autogenerate -m "initial merchants schema"
 run_if_exists merchants alembic upgrade head
-run_if_exists merchants python -m seeders.seed_products
+run_if_exists merchants python -m seeders.seeders
 
 # =================================================
 # PROVIDERS

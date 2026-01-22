@@ -6,7 +6,7 @@ import aio_pika
 from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 
-from app.db import SessionLocal
+from app.db.sessions import LogsSessionLocal
 from app.models import PaymentLog
 from app.constants import (
     MESSAGE_BROKER_MESSAGES,
@@ -31,7 +31,7 @@ MAX_RETRIES = 5
 # RabbitMQ publish
 # ==================================================
 
-async def publish(exchange, payload: str):
+async def publish(exchange: aio_pika.Exchange, payload: str) -> None:
     await exchange.publish(
         aio_pika.Message(
             body=payload.encode(),
@@ -55,18 +55,17 @@ async def start_producer():
     )
 
     while True:
-        db: Session = SessionLocal()
+        logs_db: Session = LogsSessionLocal()
+
         try:
             events = (
-                db.execute(
+                logs_db.execute(
                     select(PaymentLog)
                     .where(PaymentLog.event_type == MESSAGE_BROKER_MESSAGES)
-                    .where(
-                        PaymentLog.status.in_([LOG_PENDING, LOG_RETRYING])
-                    )
+                    .where(PaymentLog.status.in_([LOG_PENDING, LOG_RETRYING]))
                     .where(
                         or_(
-                            PaymentLog.next_retry_at == None,
+                            PaymentLog.next_retry_at.is_(None),
                             PaymentLog.next_retry_at <= datetime.utcnow(),
                         )
                     )
@@ -97,10 +96,14 @@ async def start_producer():
                         )
                         event.message = "Retry scheduled"
 
-            db.commit()
+            logs_db.commit()
+
+        except Exception:
+            logs_db.rollback()
+            raise
 
         finally:
-            db.close()
+            logs_db.close()
 
         await asyncio.sleep(POLL_INTERVAL)
 
