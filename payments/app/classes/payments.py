@@ -1,58 +1,53 @@
 import httpx
+import os
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.schemas.payments import (
-    CreatePaymentRequest,
-    PaymentWebhookRequest,
-)
+from app.schemas.payments import CreatePaymentRequest
 from app.models import (
     Provider,
     Payment as PaymentModel,
     ApiRequest,
     UserSubscription,
     Subscription,
-    PaymentLog,
 )
-from app.db import SessionLocal
-from app.dto.payments import PaymentDTO
+from app.models import PaymentLog
+from app.db.sessions import PaymentsSessionLocal, LogsSessionLocal
 from app.constants import (
     PAYMENT_PENDING,
-    PAYMENT_FINISHED,
     PAYMENT_FAILED,
     SUBSCRIPTION_ACTIVE,
     SUBSCRIPTION_INACTIVE,
-    LOG_PENDING,
     LOG_SUCCESS,
-    LOG_FAILED,
     EVENT_PAYMENT_CREATED,
     EVENT_PROVIDER_REQUEST_SENT,
-    EVENT_PROVIDER_PAYMENT_ACCEPTED,
-    MESSAGE_BROKER_MESSAGES
 )
-
-
+PROVIDER_URL = os.getenv("PROVIDER_URL")
 
 class Payment:
     """
-    Handles payment lifecycle:
-    - create payment
-    - provider interaction
-    - webhook updates
+    Handles payment creation lifecycle only
+
+    Responsibilities:
+    - Create payment
+    - Update subscription usage
+    - Call provider
+    - Write logs to logs DB
     """
 
     # --------------------------------------------------
     # Create payment
     # --------------------------------------------------
     async def create_payment(self, request: CreatePaymentRequest, merchant_id: str):
-        db: Session = SessionLocal()
+        payments_db: Session = PaymentsSessionLocal()
+        logs_db: Session = LogsSessionLocal()
 
         try:
             # ---------------------------
             # Provider lookup
             # ---------------------------
-            provider = db.execute(
+            provider = payments_db.execute(
                 select(Provider).where(Provider.alias == request.alias)
             ).scalar_one_or_none()
 
@@ -62,7 +57,7 @@ class Payment:
             # ---------------------------
             # Idempotency (order_id)
             # ---------------------------
-            existing = db.execute(
+            existing = payments_db.execute(
                 select(PaymentModel)
                 .where(PaymentModel.order_id == request.order_id)
             ).scalar_one_or_none()
@@ -75,9 +70,9 @@ class Payment:
                 }
 
             # ---------------------------
-            # Load user subscription
+            # Load active subscription
             # ---------------------------
-            user_sub = db.execute(
+            user_sub = payments_db.execute(
                 select(UserSubscription, Subscription)
                 .join(
                     Subscription,
@@ -91,10 +86,7 @@ class Payment:
             ).first()
 
             if not user_sub:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Active subscription not found",
-                )
+                raise HTTPException(400, "Active subscription not found")
 
             user_subscription, subscription = user_sub
 
@@ -110,13 +102,13 @@ class Payment:
                 status=PAYMENT_PENDING,
             )
 
-            db.add(payment)
-            db.flush()
+            payments_db.add(payment)
+            payments_db.flush()
 
             # ---------------------------
-            # LOG: payment_created
+            # LOG: payment created (logs DB)
             # ---------------------------
-            db.add(
+            logs_db.add(
                 PaymentLog(
                     payment_id=payment.id,
                     event_type=EVENT_PAYMENT_CREATED,
@@ -129,14 +121,13 @@ class Payment:
             # Update subscription usage
             # ---------------------------
             user_subscription.used_tokens += 1
-
             if user_subscription.used_tokens >= subscription.tokens:
                 user_subscription.status = SUBSCRIPTION_INACTIVE
 
             # ---------------------------
-            # Log API request
+            # API request audit (payments DB)
             # ---------------------------
-            db.add(
+            payments_db.add(
                 ApiRequest(
                     event_id=request.event_id,
                     user_id=merchant_id,
@@ -147,24 +138,27 @@ class Payment:
                 )
             )
 
-            db.commit()
-            db.refresh(payment)
+            payments_db.commit()
+            logs_db.commit()
 
             payment_id = payment.id
             provider_alias = provider.alias
 
         except Exception:
-            db.rollback()
+            payments_db.rollback()
+            logs_db.rollback()
             raise
+
         finally:
-            db.close()
+            payments_db.close()
+            logs_db.close()
 
         # ---------------------------
-        # LOG: provider_request_sent
+        # LOG: provider request sent
         # ---------------------------
-        db2: Session = SessionLocal()
+        logs_db = LogsSessionLocal()
         try:
-            db2.add(
+            logs_db.add(
                 PaymentLog(
                     payment_id=payment_id,
                     event_type=EVENT_PROVIDER_REQUEST_SENT,
@@ -173,9 +167,9 @@ class Payment:
                     payload=f'{{"provider":"{provider_alias}"}}',
                 )
             )
-            db2.commit()
+            logs_db.commit()
         finally:
-            db2.close()
+            logs_db.close()
 
         # ---------------------------
         # Call provider AFTER commit
@@ -183,7 +177,7 @@ class Payment:
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.post(
-                    "http://provider:8000/payment-links",
+                    f"{PROVIDER_URL}/payment-links",
                     json={
                         "payment_id": payment_id,
                         "merchant_id": merchant_id,
@@ -208,73 +202,14 @@ class Payment:
         }
 
     # --------------------------------------------------
-    # Webhook handler
-    # --------------------------------------------------
-    async def webhook(self, request: PaymentWebhookRequest):
-        db: Session = SessionLocal()
-
-        try:
-            payment = db.get(PaymentModel, request.payment_id)
-            if not payment:
-                return {"message": "payment not found"}
-
-            if payment.status in (PAYMENT_FINISHED, PAYMENT_FAILED):
-                return {"message": "already processed"}
-
-            payment.status = (
-                PAYMENT_FINISHED
-                if request.status == "finished"
-                else PAYMENT_FAILED
-            )
-
-            # ---------------------------
-            # LOG: provider webhook
-            # ---------------------------
-            db.add(
-                PaymentLog(
-                    payment_id=payment.id,
-                    event_type=EVENT_PROVIDER_PAYMENT_ACCEPTED,
-                    status=LOG_SUCCESS if payment.status == PAYMENT_FINISHED else LOG_FAILED,
-                    message="Provider webhook processed",
-                )
-            )
-
-            payment_dto = PaymentDTO(
-                payment_id=payment.id,
-                order_id=payment.order_id,
-                merchant_id=payment.merchant_id,
-                status=payment.status,
-                amount=str(payment.amount),
-                price=str(payment.price),
-            )
-
-            # ---------------------------
-            # OUTBOX RECORD
-            # ---------------------------
-            db.add(
-                PaymentLog(
-                    payment_id=payment.id,
-                    event_type=MESSAGE_BROKER_MESSAGES,
-                    status=LOG_PENDING,
-                    payload=payment_dto.model_dump_json(),
-                )
-            )
-
-            db.commit()
-            return {"message": "payment updated"}
-
-        finally:
-            db.close()
-
-    # --------------------------------------------------
-    # Safe failure transition
+    # Safe failure transition (payments DB only)
     # --------------------------------------------------
     async def _mark_failed_if_pending(self, payment_id: int):
-        db: Session = SessionLocal()
+        payments_db: Session = PaymentsSessionLocal()
         try:
-            payment = db.get(PaymentModel, payment_id)
+            payment = payments_db.get(PaymentModel, payment_id)
             if payment and payment.status == PAYMENT_PENDING:
                 payment.status = PAYMENT_FAILED
-                db.commit()
+                payments_db.commit()
         finally:
-            db.close()
+            payments_db.close()
