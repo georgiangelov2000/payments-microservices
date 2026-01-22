@@ -49,9 +49,9 @@ run_if_exists merchants python -m seeders.seeders
 # =================================================
 echo "================ PROVIDERS ================"
 
-run_if_exists provider alembic stamp head
-run_if_exists provider alembic revision --autogenerate -m "initial providers schema"
-run_if_exists provider alembic upgrade head
+run_if_exists providers alembic stamp head
+run_if_exists providers alembic revision --autogenerate -m "initial providers schema"
+run_if_exists providers alembic upgrade head
 
 # =================================================
 # LARAVEL

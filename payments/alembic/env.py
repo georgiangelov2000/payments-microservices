@@ -20,7 +20,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 
 from app.db.bases import PaymentsBase
-from app import models  # IMPORTANT: import models so metadata is populated
+from app.models import payments  # IMPORTANT: import models so metadata is populated
 
 target_metadata = PaymentsBase.metadata
 
