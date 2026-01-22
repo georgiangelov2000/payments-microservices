@@ -54,17 +54,6 @@ docker compose exec -it payments alembic upgrade head
 
 ---
 
-### Providers Service
-
-Generate and apply migrations:
-
-```bash
-docker compose exec -it provider alembic revision --autogenerate -m "create core tables"
-docker compose exec -it provider alembic upgrade head
-```
-
----
-
 ## Seed Base Data
 
 ### Payments Service Seeders
@@ -75,7 +64,7 @@ Seeds:
 - API keys
 
 ```bash
-docker compose exec -it payments python -m seeders.seed_base_data
+docker compose exec -it payments python -m seeders.seeders
 ```
 
 ---
@@ -86,21 +75,9 @@ Seeds:
 - Products
 
 ```bash
-docker compose exec -it merchants python -m seeders.seed_products
+docker compose exec -it merchants python -m seeders.seeders
 ```
 
----
-
-### Providers Service Seeders
-
-Seeds:
-- Provider Payments
-
-```bash
-docker compose exec -it provider python -m seeders.seed_products
-```
-
----
 
 ## Verify Seeded Data
 

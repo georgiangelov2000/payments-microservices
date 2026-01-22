@@ -3,7 +3,7 @@ import time
 
 from sqlalchemy import select
 
-from app.db import SessionLocal
+from app.db.sessions import PaymentsSessionLocal
 from app.models import (
     User,
     MerchantAPIKey,
@@ -13,12 +13,18 @@ from app.models import (
 )
 from app.helpers.passwords import hash_password
 from app.constants import (
-    SUBSCRIPTION_ACTIVE
+    SUBSCRIPTION_ACTIVE,
 )
 
 DEFAULT_PASSWORD = "ChangeMe123!"
 
+ROLE_MERCHANT = 2
+STATUS_ACTIVE = 1
 
+
+# =========================
+# Providers
+# =========================
 def seed_providers(db):
     providers = [
         {"name": "Stripe", "alias": "stripe", "url": "https://stripe.com"},
@@ -28,29 +34,35 @@ def seed_providers(db):
 
     for p in providers:
         exists = db.execute(
-            select(Provider).where(Provider.alias == p["alias"])
+            select(Provider.id).where(Provider.alias == p["alias"])
         ).scalar_one_or_none()
 
         if not exists:
             db.add(Provider(**p))
 
 
+# =========================
+# Subscriptions
+# =========================
 def seed_subscriptions(db):
     subscriptions = [
-        {"name": "Basic Plan", "price": 9.99, "tokens": 1000000},
-        {"name": "Premium Plan", "price": 19.99, "tokens": 10000000},
-        {"name": "Enterprise Plan", "price": 49.99, "tokens": 100000000},
+        {"name": "Basic Plan", "price": 9.99, "tokens": 1_000_000},
+        {"name": "Premium Plan", "price": 19.99, "tokens": 10_000_000},
+        {"name": "Enterprise Plan", "price": 49.99, "tokens": 100_000_000},
     ]
 
     for s in subscriptions:
         exists = db.execute(
-            select(Subscription).where(Subscription.name == s["name"])
+            select(Subscription.id).where(Subscription.name == s["name"])
         ).scalar_one_or_none()
 
         if not exists:
             db.add(Subscription(**s))
 
 
+# =========================
+# Merchants + API keys
+# =========================
 def seed_merchants(db):
     merchants = [
         {"name": "Demo Merchant", "email": "demo@example.com"},
@@ -69,26 +81,28 @@ def seed_merchants(db):
             merchant = User(
                 name=m["name"],
                 email=m["email"],
-                role=2,
-                status=1,
+                role=ROLE_MERCHANT,
+                status=STATUS_ACTIVE,
                 password=hash_password(DEFAULT_PASSWORD),
             )
             db.add(merchant)
-            db.flush()
+            db.flush()  # needed to get merchant.id
 
-        raw_key = f"{merchant.id}:{int(time.time())}"
-        key_hash = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
-
+        # one API key per merchant
         api_key_exists = db.execute(
-            select(MerchantAPIKey).where(MerchantAPIKey.hash == key_hash)
+            select(MerchantAPIKey.id)
+            .where(MerchantAPIKey.merchant_id == merchant.id)
         ).scalar_one_or_none()
 
         if not api_key_exists:
+            raw_key = f"{merchant.id}:{int(time.time())}"
+            key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+
             db.add(
                 MerchantAPIKey(
                     hash=key_hash,
                     merchant_id=merchant.id,
-                    status=1,
+                    status=STATUS_ACTIVE,
                 )
             )
 
@@ -104,23 +118,27 @@ def seed_merchants(db):
     return generated_keys
 
 
+# =========================
+# User subscriptions
+# =========================
 def seed_user_subscriptions(db):
     base_subscription = db.execute(
         select(Subscription).where(Subscription.name == "Basic Plan")
     ).scalar_one_or_none()
 
     if not base_subscription:
-        raise Exception("Basic Plan subscription not found")
+        raise RuntimeError("Basic Plan subscription not found")
 
     merchants = db.execute(
-        select(User).where(User.role == 2)
+        select(User).where(User.role == ROLE_MERCHANT)
     ).scalars().all()
 
     for merchant in merchants:
         exists = db.execute(
-            select(UserSubscription).where(
+            select(UserSubscription.id)
+            .where(
                 UserSubscription.user_id == merchant.id,
-                UserSubscription.status == SUBSCRIPTION_ACTIVE,
+                UserSubscription.subscription_id == base_subscription.id,
             )
         ).scalar_one_or_none()
 
@@ -134,8 +152,11 @@ def seed_user_subscriptions(db):
             )
 
 
+# =========================
+# Entrypoint
+# =========================
 def run():
-    db = SessionLocal()
+    db = PaymentsSessionLocal()
     try:
         seed_subscriptions(db)
         api_keys = seed_merchants(db)
@@ -144,7 +165,7 @@ def run():
 
         db.commit()
 
-        print("Seed completed\n")
+        print("\nSeed completed successfully\n")
         for k in api_keys:
             print(
                 f"Merchant: {k['merchant']} | "
