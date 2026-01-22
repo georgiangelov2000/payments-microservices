@@ -10,13 +10,13 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import relationship
-from app.db import Base
+from app.db.bases import PaymentsBase
 
 
 # =========================
 # Users
 # =========================
-class User(Base):
+class User(PaymentsBase):
     __tablename__ = "users"
 
     id = Column(BigInteger, primary_key=True)
@@ -47,7 +47,7 @@ class User(Base):
 # =========================
 # Subscriptions
 # =========================
-class Subscription(Base):
+class Subscription(PaymentsBase):
     __tablename__ = "subscriptions"
 
     id = Column(BigInteger, primary_key=True)
@@ -61,7 +61,7 @@ class Subscription(Base):
 # =========================
 # Merchant API Keys
 # =========================
-class MerchantAPIKey(Base):
+class MerchantAPIKey(PaymentsBase):
     __tablename__ = "merchant_api_keys"
 
     id = Column(BigInteger, primary_key=True)
@@ -84,7 +84,7 @@ class MerchantAPIKey(Base):
 # =========================
 # Providers
 # =========================
-class Provider(Base):
+class Provider(PaymentsBase):
     __tablename__ = "providers"
 
     id = Column(BigInteger, primary_key=True)
@@ -104,7 +104,7 @@ class Provider(Base):
 # =========================
 # Payments
 # =========================
-class Payment(Base):
+class Payment(PaymentsBase):
     __tablename__ = "payments"
 
     id = Column(BigInteger, primary_key=True)
@@ -136,7 +136,7 @@ class Payment(Base):
 # =========================
 # User Subscriptions
 # =========================
-class UserSubscription(Base):
+class UserSubscription(PaymentsBase):
     __tablename__ = "user_subscriptions"
 
     id = Column(BigInteger, primary_key=True)
@@ -159,7 +159,7 @@ class UserSubscription(Base):
 # =========================
 # API Requests
 # =========================
-class ApiRequest(Base):
+class ApiRequest(PaymentsBase):
     __tablename__ = "api_requests"
 
     id = Column(BigInteger, primary_key=True)
@@ -184,37 +184,3 @@ class ApiRequest(Base):
     )
 
 
-# =========================
-# Payment Logs
-# =========================
-class PaymentLog(Base):
-    __tablename__ = "payment_logs"
-
-    id = Column(BigInteger, primary_key=True)
-    payment_id = Column(BigInteger, nullable=False)
-
-    event_type = Column(SmallInteger, nullable=False)
-    status = Column(SmallInteger, nullable=False)
-
-    message = Column(String(500))
-    payload = Column(String(500))
-
-    retry_count = Column(
-        SmallInteger,
-        nullable=False,
-        default=0,
-        server_default="0"
-    )
-
-    next_retry_at = Column(DateTime(timezone=True), nullable=True)
-
-
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
-    __table_args__ = (
-        Index("ix_payment_logs_payment_id", "payment_id"),
-        Index("ix_payment_logs_event_type", "event_type"),
-        Index("ix_payment_logs_status", "status"),
-        Index("ix_payment_logs_created_at", "created_at"),
-        Index("ix_payment_logs_next_retry_at", "next_retry_at"),
-    )

@@ -5,13 +5,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.schemas.payments import CreatePaymentRequest
-from app.models import (
+from app.models.payments import (
     Provider,
     Payment as PaymentModel,
     ApiRequest,
     UserSubscription,
     Subscription,
-    PaymentLog,
+)
+from app.models.logs import (
+    PaymentLog
 )
 from app.db.sessions import PaymentsSessionLocal, LogsSessionLocal
 from app.constants import (

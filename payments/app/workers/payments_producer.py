@@ -7,7 +7,7 @@ from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 
 from app.db.sessions import LogsSessionLocal
-from app.models import PaymentLog
+from app.models.logs import PaymentLog
 from app.constants import (
     MESSAGE_BROKER_MESSAGES,
     LOG_PENDING,

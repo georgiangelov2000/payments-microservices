@@ -1,4 +1,4 @@
-from app.models import Payment as PaymentModel
+from app.models.payments import Payment as PaymentModel
 
 
 def payment_to_dict(payment: PaymentModel) -> dict:

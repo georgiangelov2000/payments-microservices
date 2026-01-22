@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.dto.payments import PaymentDTO
 from app.db.sessions import LogsSessionLocal
-from app.models import PaymentLog
+from app.models.logs import PaymentLog
 from app.constants import (
     EVENT_MERCHANT_NOTIFICATION_SENT,
     LOG_SUCCESS,

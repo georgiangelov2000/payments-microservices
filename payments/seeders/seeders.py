@@ -4,7 +4,7 @@ import time
 from sqlalchemy import select
 
 from app.db.sessions import PaymentsSessionLocal
-from app.models import (
+from app.models.payments import (
     User,
     MerchantAPIKey,
     Provider,

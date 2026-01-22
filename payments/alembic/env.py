@@ -19,10 +19,10 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 
-from app.db import Base
+from app.db.bases import PaymentsBase
 from app import models  # IMPORTANT: import models so metadata is populated
 
-target_metadata = Base.metadata
+target_metadata = PaymentsBase.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
