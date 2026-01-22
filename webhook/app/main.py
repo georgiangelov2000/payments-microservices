@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header
 
 from app.schemas.webhook import PaymentWebhookRequest
 from app.classes.webhook import Webhook

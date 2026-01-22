@@ -11,8 +11,8 @@ from app.models import (
     ApiRequest,
     UserSubscription,
     Subscription,
+    PaymentLog,
 )
-from app.models import PaymentLog
 from app.db.sessions import PaymentsSessionLocal, LogsSessionLocal
 from app.constants import (
     PAYMENT_PENDING,
@@ -23,7 +23,9 @@ from app.constants import (
     EVENT_PAYMENT_CREATED,
     EVENT_PROVIDER_REQUEST_SENT,
 )
+
 PROVIDER_URL = os.getenv("PROVIDER_URL")
+
 
 class Payment:
     """
@@ -44,36 +46,44 @@ class Payment:
         logs_db: Session = LogsSessionLocal()
 
         try:
-            # ---------------------------
-            # Provider lookup
-            # ---------------------------
-            provider = payments_db.execute(
-                select(Provider).where(Provider.alias == request.alias)
-            ).scalar_one_or_none()
+            # --------------------------------------------------
+            # Provider lookup (ONLY id + alias)
+            # --------------------------------------------------
+            provider_row = payments_db.execute(
+                select(Provider.id, Provider.alias)
+                .where(Provider.alias == request.alias)
+            ).first()
 
-            if not provider:
+            if not provider_row:
                 raise HTTPException(status_code=400, detail="Provider not found")
 
-            # ---------------------------
-            # Idempotency (order_id)
-            # ---------------------------
+            provider_id, provider_alias = provider_row
+
+            # --------------------------------------------------
+            # Idempotency check (ONLY id + status)
+            # --------------------------------------------------
             existing = payments_db.execute(
-                select(PaymentModel)
+                select(PaymentModel.id, PaymentModel.status)
                 .where(PaymentModel.order_id == request.order_id)
-            ).scalar_one_or_none()
+            ).first()
 
             if existing:
+                payment_id, status = existing
                 return {
                     "message": "payment already exists",
-                    "payment_id": existing.id,
-                    "status": existing.status,
+                    "payment_id": payment_id,
+                    "status": status,
                 }
 
-            # ---------------------------
-            # Load active subscription
-            # ---------------------------
-            user_sub = payments_db.execute(
-                select(UserSubscription, Subscription)
+            # --------------------------------------------------
+            # Load active subscription (ONLY needed columns)
+            # --------------------------------------------------
+            sub_row = payments_db.execute(
+                select(
+                    UserSubscription.id,
+                    UserSubscription.used_tokens,
+                    Subscription.tokens,
+                )
                 .join(
                     Subscription,
                     Subscription.id == UserSubscription.subscription_id,
@@ -85,64 +95,77 @@ class Payment:
                 )
             ).first()
 
-            if not user_sub:
+            if not sub_row:
                 raise HTTPException(400, "Active subscription not found")
 
-            user_subscription, subscription = user_sub
+            subscription_id, used_tokens, max_tokens = sub_row
 
-            # ---------------------------
-            # Create payment
-            # ---------------------------
+            # --------------------------------------------------
+            # Create payment (ORM needed for ID)
+            # --------------------------------------------------
             payment = PaymentModel(
                 order_id=request.order_id,
                 amount=request.amount,
                 price=request.price,
-                provider_id=provider.id,
+                provider_id=provider_id,
                 merchant_id=merchant_id,
                 status=PAYMENT_PENDING,
             )
 
             payments_db.add(payment)
-            payments_db.flush()
+            payments_db.flush()  # get payment.id
+            payment_id = payment.id
 
-            # ---------------------------
+            # --------------------------------------------------
             # LOG: payment created (logs DB)
-            # ---------------------------
+            # --------------------------------------------------
             logs_db.add(
                 PaymentLog(
-                    payment_id=payment.id,
+                    payment_id=payment_id,
                     event_type=EVENT_PAYMENT_CREATED,
                     status=LOG_SUCCESS,
                     message="Payment created",
                 )
             )
 
-            # ---------------------------
-            # Update subscription usage
-            # ---------------------------
-            user_subscription.used_tokens += 1
-            if user_subscription.used_tokens >= subscription.tokens:
-                user_subscription.status = SUBSCRIPTION_INACTIVE
+            # --------------------------------------------------
+            # Update subscription usage (DIRECT UPDATE)
+            # --------------------------------------------------
+            new_used = used_tokens + 1
+            new_status = (
+                SUBSCRIPTION_INACTIVE
+                if new_used >= max_tokens
+                else SUBSCRIPTION_ACTIVE
+            )
 
-            # ---------------------------
+            payments_db.execute(
+                UserSubscription.__table__.update()
+                .where(UserSubscription.id == subscription_id)
+                .values(
+                    used_tokens=new_used,
+                    status=new_status,
+                )
+            )
+
+            # --------------------------------------------------
             # API request audit (payments DB)
-            # ---------------------------
+            # --------------------------------------------------
             payments_db.add(
                 ApiRequest(
                     event_id=request.event_id,
                     user_id=merchant_id,
                     subscription_id=request.subscription_id,
-                    payment_id=payment.id,
+                    payment_id=payment_id,
                     amount=request.amount,
                     source="payments:create",
                 )
             )
 
+            # --------------------------------------------------
+            # Commit atomically
+            # --------------------------------------------------
             payments_db.commit()
             logs_db.commit()
-
-            payment_id = payment.id
-            provider_alias = provider.alias
 
         except Exception:
             payments_db.rollback()
@@ -153,9 +176,9 @@ class Payment:
             payments_db.close()
             logs_db.close()
 
-        # ---------------------------
-        # LOG: provider request sent
-        # ---------------------------
+        # --------------------------------------------------
+        # LOG: provider request sent (logs DB)
+        # --------------------------------------------------
         logs_db = LogsSessionLocal()
         try:
             logs_db.add(
@@ -171,9 +194,9 @@ class Payment:
         finally:
             logs_db.close()
 
-        # ---------------------------
+        # --------------------------------------------------
         # Call provider AFTER commit
-        # ---------------------------
+        # --------------------------------------------------
         try:
             async with httpx.AsyncClient(timeout=3.0) as client:
                 resp = await client.post(
@@ -207,9 +230,17 @@ class Payment:
     async def _mark_failed_if_pending(self, payment_id: int):
         payments_db: Session = PaymentsSessionLocal()
         try:
-            payment = payments_db.get(PaymentModel, payment_id)
-            if payment and payment.status == PAYMENT_PENDING:
-                payment.status = PAYMENT_FAILED
+            row = payments_db.execute(
+                select(PaymentModel.status)
+                .where(PaymentModel.id == payment_id)
+            ).first()
+
+            if row and row[0] == PAYMENT_PENDING:
+                payments_db.execute(
+                    PaymentModel.__table__.update()
+                    .where(PaymentModel.id == payment_id)
+                    .values(status=PAYMENT_FAILED)
+                )
                 payments_db.commit()
         finally:
             payments_db.close()

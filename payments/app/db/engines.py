@@ -1,5 +1,4 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import os
 
 PAYMENTS_DB_URL = os.getenv("PAYMENTS_DB_URL")
@@ -17,16 +16,4 @@ logs_engine = create_engine(
     pool_size=5,
     max_overflow=10,
     pool_pre_ping=True,
-)
-
-PaymentsSessionLocal = sessionmaker(
-    bind=payments_engine,
-    autoflush=False,
-    autocommit=False,
-)
-
-LogsSessionLocal = sessionmaker(
-    bind=logs_engine,
-    autoflush=False,
-    autocommit=False,
 )

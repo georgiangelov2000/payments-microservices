@@ -16,8 +16,3 @@ class CreatePaymentRequest(BaseModel):
         if v <= 0:
             raise ValueError("value must be greater than 0")
         return v
-
-
-class PaymentWebhookRequest(BaseModel):
-    payment_id: int = Field(..., gt=0, description="payment_id must be a positive integer")
-    status: str = Field(..., min_length=1, description="status is required")
