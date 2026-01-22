@@ -12,7 +12,6 @@ services:
       retries: 5
     ports:
       - "15672:15672"
-
   redis:
     image: redis:latest
     container_name: redis
@@ -33,7 +32,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
   providers-db:
     image: postgres:15
     container_name: providers-db
@@ -44,7 +42,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
   merchants-db:
     image: postgres:15
     container_name: merchants-db
@@ -52,6 +49,18 @@ services:
       - merchants/.env.merchants-db
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U merchants"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  payments-logs-db:
+    image: postgres:15
+    container_name: payments-logs-db
+    env_file:
+      - payments-logs-db/.env
+    volumes:
+      - ./payments-logs-db/init-db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logs"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -150,6 +159,20 @@ services:
       --host 0.0.0.0
       --port 8000
       --reload
+  webhook:
+    build: ./webhook
+    container_name: webhook
+    env_file: webhook/.env
+    volumes:
+      - ./webhook:/app
+    depends_on:
+      payments-logs-db:
+        condition: service_healthy
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
 
 # Workers
   payments-worker:
@@ -165,7 +188,6 @@ services:
         condition: service_healthy
     command: python -m app.workers.payments_consumer
     restart: unless-stopped
-
   payments-producer:
     build: ./payments
     container_name: payments-producer

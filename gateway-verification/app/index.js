@@ -32,6 +32,7 @@ app.use((req, res, next) => {
 /* ───────────────── CONFIG ───────────────── */
 const PORT = process.env.PORT || 3000;
 const PAYMENTS_URL = process.env.PAYMENTS_URL;
+const WEBHOOK_URL = process.env.WEBHOOK_URL;
 const INTERNAL_WEBHOOK_SECRET = process.env.INTERNAL_WEBHOOK_SECRET;
 
 /* ───────────────── PROXY ───────────────── */
@@ -194,7 +195,7 @@ app.post("/api/v1/payments/webhook", (req, res) => {
     return res.status(403).json({ error: "invalid_signature" });
   }
 
-  proxy.web(req, res, { target: PAYMENTS_URL }, (err) => {
+  proxy.web(req, res, { target: WEBHOOK_URL }, (err) => {
     if (err && !res.headersSent) {
       res.status(502).json({ error: "webhook_forward_failed" });
     }
