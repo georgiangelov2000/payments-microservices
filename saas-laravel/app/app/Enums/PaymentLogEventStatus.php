@@ -8,6 +8,7 @@ enum PaymentLogEventStatus: int
     case PROVIDER_PAYMENT_ACCEPTED     = 2;
     case MERCHANT_NOTIFICATION_SENT    = 3;
     case MERCHANT_NOTIFICATION_FAILED  = 4;
+    case MESSAGE_BROKER_MESSAGES       = 5;
 
     public function label(): string
     {
@@ -23,6 +24,9 @@ enum PaymentLogEventStatus: int
 
             self::MERCHANT_NOTIFICATION_FAILED =>
                 'Merchant notification failed',
+
+            self::MESSAGE_BROKER_MESSAGES =>
+                'Message queued for async processing',                
         };
     }
 }

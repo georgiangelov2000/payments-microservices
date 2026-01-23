@@ -26,7 +26,7 @@ EXCHANGE_NAME = os.getenv("EXCHANGE_NAME", "payments")
 POLL_INTERVAL = 1
 BATCH_SIZE = 50
 MAX_RETRIES = 5
-
+print("hello")
 # ==================================================
 # RabbitMQ publish
 # ==================================================
@@ -45,6 +45,7 @@ async def publish(exchange: aio_pika.Exchange, payload: str) -> None:
 # ==================================================
 
 async def start_producer():
+    print(1)
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     channel = await connection.channel()
 
@@ -75,6 +76,8 @@ async def start_producer():
                 .scalars()
                 .all()
             )
+
+            print(events)
 
             for event in events:
                 try:

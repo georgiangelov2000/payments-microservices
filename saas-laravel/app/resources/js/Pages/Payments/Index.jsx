@@ -1,17 +1,16 @@
 import { useState } from 'react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { Head, Link, useForm, usePage } from '@inertiajs/react'
+import React from 'react'
 
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
   const { csrf_token } = usePage().props
 
-  /* logs state */
   const [openLogs, setOpenLogs] = useState(null)
   const [logs, setLogs] = useState({})
   const [logsLoading, setLogsLoading] = useState(false)
 
-  /* filters */
   const { data, setData, get, processing } = useForm({
     order_id: filters.order_id || '',
     status: filters.status || '',
@@ -32,7 +31,6 @@ export default function Payments({ payments, filters = {} }) {
     })
   }
 
-  /* export */
   const exportPayments = async (format) => {
     await fetch(route('payments.export'), {
       method: 'POST',
@@ -49,7 +47,6 @@ export default function Payments({ payments, filters = {} }) {
     })
   }
 
-  /* load logs lazily */
   const toggleLogs = async (paymentId) => {
     if (openLogs === paymentId) {
       setOpenLogs(null)
@@ -63,15 +60,22 @@ export default function Payments({ payments, filters = {} }) {
     setLogsLoading(true)
 
     try {
-      const response = await fetch(`/api/v1/payments/${paymentId}/logs`, {
-        headers: { Accept: 'application/json' },
-      })
+      const response = await fetch(
+        `/api/v1/payment-logs/payments/${paymentId}/logs`,
+        {
+          headers: {
+            Accept: 'application/json',
+          },
+          credentials: 'same-origin',
+        }
+      )
+
 
       const result = await response.json()
 
-      setLogs(prev => ({
+      setLogs((prev) => ({
         ...prev,
-        [paymentId]: result,
+        [paymentId]: result.results ?? [],
       }))
     } finally {
       setLogsLoading(false)
@@ -87,7 +91,7 @@ export default function Payments({ payments, filters = {} }) {
 
         {/* EXPORT */}
         <div className="flex gap-2">
-          {['csv', 'xlsx', 'json'].map(f => (
+          {['csv', 'xlsx', 'json'].map((f) => (
             <button
               key={f}
               onClick={() => exportPayments(f)}
@@ -103,58 +107,38 @@ export default function Payments({ payments, filters = {} }) {
           onSubmit={submitFilters}
           className="bg-white rounded-lg border p-4 grid gap-4 md:grid-cols-5 items-end"
         >
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Order ID
-            </label>
-            <input
-              type="text"
-              value={data.order_id}
-              onChange={(e) => setData('order_id', e.target.value)}
-              className="mt-1 w-full rounded border-gray-300 text-sm"
-              placeholder="ORD-12345"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Order ID"
+            value={data.order_id}
+            onChange={(e) => setData('order_id', e.target.value)}
+            className="rounded border-gray-300 text-sm"
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Status
-            </label>
-            <select
-              value={data.status}
-              onChange={(e) => setData('status', e.target.value)}
-              className="mt-1 w-full rounded border-gray-300 text-sm"
-            >
-              <option value="">All</option>
-              <option value="finished">Finished</option>
-              <option value="pending">Pending</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
+          <select
+            value={data.status}
+            onChange={(e) => setData('status', e.target.value)}
+            className="rounded border-gray-300 text-sm"
+          >
+            <option value="">All</option>
+            <option value="finished">Finished</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+          </select>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              From
-            </label>
-            <input
-              type="date"
-              value={data.from}
-              onChange={(e) => setData('from', e.target.value)}
-              className="mt-1 w-full rounded border-gray-300 text-sm"
-            />
-          </div>
+          <input
+            type="date"
+            value={data.from}
+            onChange={(e) => setData('from', e.target.value)}
+            className="rounded border-gray-300 text-sm"
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              To
-            </label>
-            <input
-              type="date"
-              value={data.to}
-              onChange={(e) => setData('to', e.target.value)}
-              className="mt-1 w-full rounded border-gray-300 text-sm"
-            />
-          </div>
+          <input
+            type="date"
+            value={data.to}
+            onChange={(e) => setData('to', e.target.value)}
+            className="rounded border-gray-300 text-sm"
+          />
 
           <div className="flex gap-2">
             <button
@@ -190,17 +174,9 @@ export default function Payments({ payments, filters = {} }) {
             </thead>
 
             <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="text-center py-6 text-gray-500">
-                    No payments found
-                  </td>
-                </tr>
-              )}
-
-              {rows.map(payment => (
-                <>
-                  <tr key={payment.id} className="border-b">
+              {rows.map((payment) => (
+                <React.Fragment key={payment.id}>
+                  <tr className="border-b">
                     <td className="px-4 py-3">{payment.id}</td>
                     <td className="px-4 py-3 font-medium">{payment.order_id}</td>
                     <td className="px-4 py-3">${payment.price}</td>
@@ -216,7 +192,7 @@ export default function Payments({ payments, filters = {} }) {
                           }`}
                       >
                         {payment.status}
-                      </span>
+                      </span>                      
                     </td>
                     <td className="px-4 py-3">
                       {new Date(payment.created_at).toLocaleString('sv-SE')}
@@ -231,49 +207,100 @@ export default function Payments({ payments, filters = {} }) {
                       </button>
                     </td>
                   </tr>
+                {openLogs === payment.id && (
+                  <tr className="bg-gray-50">
+                    <td colSpan="7" className="px-6 py-4">
+                      {logsLoading ? (
+                        <p className="text-sm text-gray-500">Loading logs…</p>
+                      ) : logs[payment.id]?.length ? (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs border border-gray-200 rounded">
+                            <thead className="bg-gray-100 text-gray-700">
+                              <tr>
+                                <th className="px-3 py-2 text-left">Event</th>
+                                <th className="px-3 py-2 text-left">Status</th>
+                                <th className="px-3 py-2 text-left">Message</th>
+                                <th className="px-3 py-2 text-left">Payload</th>
+                                <th className="px-3 py-2 text-right">Date</th>
+                              </tr>
+                            </thead>
 
-                  {openLogs === payment.id && (
-                    <tr className="bg-gray-50">
-                      <td colSpan="7" className="px-6 py-4">
-                        {logsLoading ? (
-                          <p className="text-sm text-gray-500">Loading logs…</p>
-                        ) : logs[payment.id]?.length ? (
-                          <div className="space-y-3">
-                            {logs[payment.id].map(log => (
-                              <div
-                                key={log.id}
-                                className={`border-l-4 pl-3 flex justify-between
-                                  ${
-                                    log.status === 'success'
-                                      ? 'border-green-500'
-                                      : 'border-red-500'
-                                  }`}
-                              >
-                                <div>
-                                  <p className="text-sm font-medium">
-                                    {log.event_type_label}
-                                  </p>
-                                  {log.message && (
-                                    <p className="text-xs text-gray-600">
-                                      {log.message}
-                                    </p>
-                                  )}
-                                </div>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(log.created_at).toLocaleString('sv-SE')}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            No logs for this payment
-                          </p>
-                        )}
-                      </td>
-                    </tr>
-                  )}
-                </>
+                            <tbody>
+                              {logs[payment.id].map((log) => {
+                                const isSuccess = log.status_label === 'Success'
+
+                                let payloadPretty = null
+                                try {
+                                  payloadPretty = log.payload
+                                    ? JSON.stringify(JSON.parse(log.payload), null, 2)
+                                    : null
+                                } catch {
+                                  payloadPretty = log.payload
+                                }
+
+                                return (
+                                  <tr
+                                    key={log.id}
+                                    className="border-t hover:bg-gray-50"
+                                  >
+                                    {/* Event */}
+                                    <td className="px-3 py-2 font-medium">
+                                      {log.event_type_label}
+                                    </td>
+
+                                    {/* Status */}
+                                    <td className="px-3 py-2">
+                                      <span
+                                        className={`inline-block rounded px-2 py-0.5 font-medium
+                                          ${
+                                            isSuccess
+                                              ? 'bg-green-100 text-green-700'
+                                              : 'bg-red-100 text-red-700'
+                                          }`}
+                                      >
+                                        {log.status_label}
+                                      </span>
+                                    </td>
+
+                                    {/* Message */}
+                                    <td className="px-3 py-2 text-gray-700">
+                                      {log.message ?? '—'}
+                                    </td>
+
+                                    {/* Payload */}
+                                    <td className="px-3 py-2">
+                                      {payloadPretty ? (
+                                        <details>
+                                          <summary className="cursor-pointer text-blue-600">
+                                            View
+                                          </summary>
+                                          <pre className="mt-2 max-h-48 overflow-auto rounded bg-gray-100 p-2 text-xs">
+                                            {payloadPretty}
+                                          </pre>
+                                        </details>
+                                      ) : (
+                                        <span className="text-gray-400">—</span>
+                                      )}
+                                    </td>
+
+                                    {/* Date */}
+                                    <td className="px-3 py-2 text-right text-gray-500 whitespace-nowrap">
+                                      {new Date(log.created_at).toLocaleString('sv-SE')}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">No logs for this payment</p>
+                      )}
+                    </td>
+                  </tr>
+                )}
+
+                </React.Fragment>
               ))}
             </tbody>
           </table>
@@ -282,19 +309,16 @@ export default function Payments({ payments, filters = {} }) {
         {/* PAGINATION */}
         {payments.links?.length > 1 && (
           <div className="flex justify-center gap-1 flex-wrap mt-4">
-            {payments.links.map((link, i) => (
+            {payments.links.map((link) => (
               <Link
-                key={i}
+                key={link.label}
                 href={link.url ?? '#'}
                 preserveScroll
-                className={`px-3 py-1 text-sm rounded border
-                  ${
-                    link.active
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white hover:bg-gray-100'
-                  }
-                  ${!link.url && 'opacity-50 cursor-not-allowed'}
-                `}
+                className={`px-3 py-1 text-sm rounded border ${
+                  link.active
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white hover:bg-gray-100'
+                } ${!link.url && 'opacity-50 cursor-not-allowed'}`}
                 dangerouslySetInnerHTML={{ __html: link.label }}
               />
             ))}

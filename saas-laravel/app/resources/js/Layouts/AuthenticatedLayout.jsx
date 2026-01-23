@@ -19,7 +19,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         <div className="flex">
                             <div className="flex shrink-0 items-center">
                                 <Link href="/">
-                                    <div class="text-xl font-bold">PayFlow<span class="text-indigo-600">.io</span></div>
+                                    <div className="text-xl font-bold">PayFlow<span className="text-indigo-600">.io</span></div>
                                 </Link>
                             </div>
 

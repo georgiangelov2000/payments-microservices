@@ -186,7 +186,11 @@ services:
         condition: service_started
       payments-db:
         condition: service_healthy
-    command: python -m app.workers.payments_consumer
+    command: >
+      watchfiles --filter python
+      "python -u -m app.workers.payments_producer"
+      /app
+    
     restart: unless-stopped
   payments-producer:
     build: ./payments
@@ -199,5 +203,9 @@ services:
         condition: service_healthy
       payments-db:
         condition: service_healthy
-    command: python -m app.workers.payments_producer
+    command: >
+      watchfiles --filter python
+      "python -m app.workers.payments_consumer"
+      /app
     restart: unless-stopped
+    

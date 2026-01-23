@@ -45,8 +45,8 @@ STATUS_BLOCKED = 4     # Event blocked by circuit breaker / safety rule
 # ==================================================
 # Used specifically for outbox / message publishing flow
 
-LOG_PENDING = 0        # Event created, not yet processed
-LOG_SUCCESS = 1        # Successfully published / handled
-LOG_FAILED = 2         # Failed permanently
-LOG_RETRYING = 3       # Retry scheduled
-LOG_BLOCKED = 4        # Blocked after too many failures
+LOG_PENDING = 2        # Event created, not yet processed
+LOG_SUCCESS = 2        # Successfully published / handled
+LOG_FAILED = 3        # Failed permanently
+LOG_RETRYING = 4       # Retry scheduled
+LOG_BLOCKED = 5       # Blocked after too many failures

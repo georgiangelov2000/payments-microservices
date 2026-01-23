@@ -5,7 +5,7 @@ from typing import Optional
 from app.schemas.webhook import PaymentWebhookRequest
 from app.models import Payment as PaymentModel, PaymentLog
 from app.db.sessions import PaymentsSessionLocal, LogsSessionLocal
-from app.dto.webhook import webhookDTO
+from app.dto.webhook import WebhookDTO
 from app.constants import (
     PAYMENT_FINISHED,
     PAYMENT_FAILED,
@@ -80,7 +80,7 @@ class Webhook:
             # ---------------------------
             # Build DTO for async consumers
             # ---------------------------
-            payment_dto = webhookDTO(
+            payment_dto = WebhookDTO(
                 payment_id=payment.id,
                 order_id=payment.order_id,
                 merchant_id=payment.merchant_id,
@@ -101,6 +101,7 @@ class Webhook:
                 )
             )
 
+            print(1)
             logs_db.commit()
 
             return {

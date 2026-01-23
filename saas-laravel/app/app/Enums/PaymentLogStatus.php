@@ -4,15 +4,17 @@ namespace App\Enums;
 
 enum PaymentLogStatus: int
 {
-    case SUCCESS  = 1;
-    case FAILED   = 2;
-    case RETRYING = 3;
-    case BLOCKED  = 4;
+    case PENDING   = 1;
+    case SUCCESS   = 2;
+    case FAILED    = 3;
+    case RETRYING  = 4;
+    case BLOCKED   = 5;
 
     public function label(): string
     {
         return match ($this) {
-            self::SUCCESS  => 'Success',
+            self::PENDING  => 'Pending',
+            self::SUCCESS  => 'Successful',
             self::FAILED   => 'Failed',
             self::RETRYING => 'Retrying',
             self::BLOCKED  => 'Blocked',
