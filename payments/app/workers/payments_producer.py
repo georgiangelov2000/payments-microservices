@@ -3,14 +3,15 @@ import os
 from datetime import datetime, timedelta
 
 import aio_pika
-from sqlalchemy import select, or_
+from sqlalchemy import update, or_
 from sqlalchemy.orm import Session
 
 from app.db.sessions import LogsSessionLocal
 from app.models.logs import PaymentLog
 from app.constants import (
-    MESSAGE_BROKER_MESSAGES,
+    EVENT_MERCHANT_NOTIFICATION_SENT,
     LOG_PENDING,
+    LOG_PROCESSING,
     LOG_FAILED,
     LOG_RETRYING,
 )
@@ -25,10 +26,7 @@ EXCHANGE_NAME = os.getenv("EXCHANGE_NAME", "payments")
 POLL_INTERVAL = 1
 BATCH_SIZE = 50
 MAX_RETRIES = 5
-print("hello")
-# ==================================================
-# RabbitMQ publish
-# ==================================================
+
 
 async def publish(exchange: aio_pika.Exchange, payload: str) -> None:
     await exchange.publish(
@@ -39,12 +37,14 @@ async def publish(exchange: aio_pika.Exchange, payload: str) -> None:
         routing_key="payment.updated",
     )
 
-# ==================================================
-# Producer loop (OUTBOX pattern)
-# ==================================================
+
+def append_message(log: PaymentLog, text: str) -> None:
+    ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    entry = f"[{ts}] {text}"
+    log.message = f"{log.message}\n{entry}" if log.message else entry
+
 
 async def start_producer():
-    print(1)
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     channel = await connection.channel()
 
@@ -58,57 +58,64 @@ async def start_producer():
         logs_db: Session = LogsSessionLocal()
 
         try:
-            events = (
-                logs_db.execute(
-                    select(PaymentLog)
-                    .where(PaymentLog.event_type == MESSAGE_BROKER_MESSAGES)
-                    .where(PaymentLog.status.in_([LOG_PENDING, LOG_RETRYING]))
-                    .where(
-                        or_(
-                            PaymentLog.next_retry_at.is_(None),
-                            PaymentLog.next_retry_at <= datetime.utcnow(),
-                        )
+            # --------------------------------------------------
+            # ATOMIC CLAIM (no double workers)
+            # --------------------------------------------------
+            stmt = (
+                update(PaymentLog)
+                .where(PaymentLog.event_type == EVENT_MERCHANT_NOTIFICATION_SENT)
+                .where(PaymentLog.status.in_([LOG_PENDING, LOG_RETRYING]))
+                .where(
+                    or_(
+                        PaymentLog.next_retry_at.is_(None),
+                        PaymentLog.next_retry_at <= datetime.utcnow(),
                     )
-                    .with_for_update(skip_locked=True)
-                    .limit(BATCH_SIZE)
                 )
-                .scalars()
-                .all()
+                .values(status=LOG_PROCESSING)
+                .returning(PaymentLog)
+                .execution_options(synchronize_session=False)
             )
 
+            events = logs_db.execute(stmt).scalars().all()
+            logs_db.commit()
+
+            # --------------------------------------------------
+            # Publish events
+            # --------------------------------------------------
             for event in events:
                 try:
+                    print(event.status)
+                    
                     await publish(exchange, event.payload)
 
-                    event.message = "Published to RabbitMQ"
+                    append_message(event, "Published to RabbitMQ")
 
                 except Exception:
                     event.retry_count += 1
 
                     if event.retry_count >= MAX_RETRIES:
                         event.status = LOG_FAILED
-                        event.message = "Publishing failed permanently"
+                        append_message(
+                            event,
+                            f"Publishing failed permanently (retries={event.retry_count})",
+                        )
                     else:
                         event.status = LOG_RETRYING
                         event.next_retry_at = datetime.utcnow() + timedelta(
                             seconds=2 ** event.retry_count
                         )
-                        event.message = "Retry scheduled"
+                        append_message(
+                            event,
+                            f"Publish failed – retry scheduled (retry={event.retry_count})",
+                        )
 
             logs_db.commit()
-
-        except Exception:
-            logs_db.rollback()
-            raise
 
         finally:
             logs_db.close()
 
         await asyncio.sleep(POLL_INTERVAL)
 
-# ==================================================
-# Entrypoint
-# ==================================================
 
 if __name__ == "__main__":
     asyncio.run(start_producer())

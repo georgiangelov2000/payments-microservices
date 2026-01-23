@@ -1,8 +1,11 @@
+# app/workers/payments_consumer.py
+
 import asyncio
 import json
 import os
 import signal
 import time
+from datetime import datetime
 from typing import Optional
 
 import aio_pika
@@ -15,10 +18,11 @@ from app.db.sessions import LogsSessionLocal
 from app.models.logs import PaymentLog
 from app.constants import (
     EVENT_MERCHANT_NOTIFICATION_SENT,
+    LOG_PROCESSING,
+    LOG_RETRYING,
     LOG_SUCCESS,
     LOG_FAILED,
-    LOG_RETRYING,
-    LOG_BLOCKED,
+    LOG_BLOCKED
 )
 
 # --------------------------------------------------
@@ -32,39 +36,39 @@ MERCHANT_CALLBACK_URL = os.getenv("MERCHANT_CALLBACK_URL")
 REDIS_URL = os.getenv("REDIS_URL")
 
 MAX_RETRIES = 5
-FAIL_LIMIT = 5
 BLOCK_SECONDS = 1800
-RATE_LIMIT = 10
-
-# --------------------------------------------------
-# State
-# --------------------------------------------------
+RATE_LIMIT = 5
 
 redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 shutdown = False
 
 # --------------------------------------------------
-# DB logger (LOGS DB ONLY)
+# Helpers
 # --------------------------------------------------
 
-def log_payment_event(
+def append_merchant_log(
     *,
     payment_id: int,
     status: int,
-    message: Optional[str] = None,
-    payload: Optional[dict] = None,
-):
+    message: str,
+) -> None:
     logs_db: Session = LogsSessionLocal()
     try:
-        logs_db.add(
-            PaymentLog(
-                payment_id=payment_id,
-                event_type=EVENT_MERCHANT_NOTIFICATION_SENT,
-                status=status,
-                message=message,
-                payload=json.dumps(payload) if payload else None,
+        log = (
+            logs_db.query(PaymentLog)
+            .filter(
+                PaymentLog.payment_id == payment_id,
+                PaymentLog.event_type == EVENT_MERCHANT_NOTIFICATION_SENT,
             )
+            .one()
         )
+
+        ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        entry = f"[{ts}] {message}"
+
+        log.message = f"{log.message}\n{entry}" if log.message else entry
+        log.status = status
+
         logs_db.commit()
     finally:
         logs_db.close()
@@ -84,7 +88,7 @@ signal.signal(signal.SIGINT, handle_shutdown)
 # Merchant notification logic
 # --------------------------------------------------
 
-async def notify_merchant(payment: PaymentDTO):
+async def notify_merchant(payment: PaymentDTO) -> None:
     merchant_id = payment.merchant_id
     payment_id = payment.payment_id
 
@@ -92,92 +96,70 @@ async def notify_merchant(payment: PaymentDTO):
     block_key = f"merchant:block:{merchant_id}"
     rate_key = f"merchant:rate:{merchant_id}:{int(time.time() // 60)}"
 
-    # ---------------------------
     # Circuit breaker
-    # ---------------------------
     if await redis_client.exists(block_key):
-        log_payment_event(
+        append_merchant_log(
             payment_id=payment_id,
             status=LOG_BLOCKED,
             message="Merchant blocked (circuit open)",
         )
-        raise RuntimeError("Merchant blocked")
+        return
 
-    # ---------------------------
-    # Rate limiting (per minute)
-    # ---------------------------
+    # Rate limiting
     current = await redis_client.incr(rate_key)
     if current == 1:
         await redis_client.expire(rate_key, 60)
 
     if current > RATE_LIMIT:
-        log_payment_event(
+        append_merchant_log(
             payment_id=payment_id,
-            status=LOG_FAILED,
+            status=LOG_RETRYING,
             message="Merchant rate limit exceeded",
         )
-        raise RuntimeError("Rate limited")
+        return
 
     try:
+        append_merchant_log(
+            payment_id=payment_id,
+            status=LOG_PROCESSING,
+            message="Sending request to merchant API",
+        )
+
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.post(
                 MERCHANT_CALLBACK_URL,
                 json=payment.model_dump(),
             )
 
-        # ---------------------------
-        # Success
-        # ---------------------------
+        # SUCCESS
         if response.status_code < 400:
             await redis_client.delete(fail_key)
 
-            log_payment_event(
+            append_merchant_log(
                 payment_id=payment_id,
                 status=LOG_SUCCESS,
-                message="Merchant notified successfully",
-                payload={"status_code": response.status_code},
+                message=f"Merchant API responded successfully ({response.status_code})",
             )
             return
-
-        # ---------------------------
-        # Permanent failure (4xx)
-        # ---------------------------
-        if response.status_code < 500:
-            log_payment_event(
-                payment_id=payment_id,
-                status=LOG_FAILED,
-                message="Permanent merchant error",
-                payload={"status_code": response.status_code},
-            )
-            raise ValueError("Permanent merchant error")
-
-        # ---------------------------
-        # Temporary failure (5xx)
-        # ---------------------------
-        raise RuntimeError("Temporary merchant failure")
 
     except Exception:
         fails = await redis_client.incr(fail_key)
         await redis_client.expire(fail_key, BLOCK_SECONDS)
 
-        if fails >= FAIL_LIMIT:
+        if fails >= MAX_RETRIES:
             await redis_client.setex(block_key, BLOCK_SECONDS, "1")
 
-            log_payment_event(
+            append_merchant_log(
                 payment_id=payment_id,
-                status=LOG_BLOCKED,
-                message="Merchant circuit opened",
-                payload={"fails": fails},
+                status=LOG_FAILED,
+                message=f"Merchant notification failed permanently after {fails} attempts",
             )
         else:
-            log_payment_event(
+            append_merchant_log(
                 payment_id=payment_id,
                 status=LOG_RETRYING,
-                message="Retry scheduled",
-                payload={"retry": fails},
+                message=f"Merchant API not available – retry scheduled ({fails}/{MAX_RETRIES})",
             )
-
-        raise
 
 # --------------------------------------------------
 # Worker
@@ -194,40 +176,21 @@ async def start_worker():
         durable=True,
     )
 
-    dlx = await channel.declare_exchange(
-        f"{EXCHANGE_NAME}.dlx",
-        aio_pika.ExchangeType.FANOUT,
-        durable=True,
-    )
-
-    queue = await channel.declare_queue(
-        QUEUE_NAME,
-        durable=True,
-        arguments={"x-dead-letter-exchange": f"{EXCHANGE_NAME}.dlx"},
-    )
-
+    queue = await channel.declare_queue(QUEUE_NAME, durable=True)
     await queue.bind(exchange, routing_key="payment.*")
-
-    dlq = await channel.declare_queue(
-        f"{QUEUE_NAME}.dlq",
-        durable=True,
-    )
-    await dlq.bind(dlx)
 
     async with queue.iterator() as messages:
         async for message in messages:
             if shutdown:
                 break
 
-            try:
-                async with message.process(requeue=False):
+            async with message.process(requeue=False):
+                try:
                     payload = json.loads(message.body)
                     payment = PaymentDTO(**payload)
                     await notify_merchant(payment)
-
-            except Exception:
-                # exception = NACK → DLQ handled by RabbitMQ
-                raise
+                except Exception as e:
+                    print(f"[ERROR] Consumer error: {e}")
 
 # --------------------------------------------------
 # Entrypoint
