@@ -28,18 +28,6 @@ EVENT_PROVIDER_PAYMENT_ACCEPTED = 3     # Provider webhook received
 EVENT_MERCHANT_NOTIFICATION_SENT = 4    # Merchant callback attempted
 MESSAGE_BROKER_MESSAGES = 5             # Outbox → message broker event
 
-
-# ==================================================
-# PAYMENT LOG STATUS (payment_logs.status)
-# ==================================================
-# Result or state of an event execution
-
-STATUS_SUCCESS  = 1     # Event processed successfully
-STATUS_FAILED   = 2      # Event failed permanently
-STATUS_RETRYING = 3    # Event failed but will be retried
-STATUS_BLOCKED  = 4     # Event blocked by circuit breaker / safety rule
-
-
 # ==================================================
 # OUTBOX / BROKER STATUS (payment_logs.status)
 # ==================================================

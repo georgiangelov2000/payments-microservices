@@ -11,7 +11,6 @@ from app.models.logs import PaymentLog
 from app.constants import (
     MESSAGE_BROKER_MESSAGES,
     LOG_PENDING,
-    LOG_SUCCESS,
     LOG_FAILED,
     LOG_RETRYING,
 )
@@ -77,13 +76,10 @@ async def start_producer():
                 .all()
             )
 
-            print(events)
-
             for event in events:
                 try:
                     await publish(exchange, event.payload)
 
-                    event.status = LOG_SUCCESS
                     event.message = "Published to RabbitMQ"
 
                 except Exception:
