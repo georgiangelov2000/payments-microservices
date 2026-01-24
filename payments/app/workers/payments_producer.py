@@ -83,9 +83,7 @@ async def start_producer():
             # Publish events
             # --------------------------------------------------
             for event in events:
-                try:
-                    print(event.status)
-                    
+                try:                    
                     await publish(exchange, event.payload)
 
                     append_message(event, "Published to RabbitMQ")

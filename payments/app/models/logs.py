@@ -2,7 +2,7 @@ from sqlalchemy import (
     Column,
     BigInteger,
     SmallInteger,
-    String,
+    Text,
     DateTime,
     Index,
     func,
@@ -21,8 +21,8 @@ class PaymentLog(LogsBase):
     event_type = Column(SmallInteger, nullable=False)
     status = Column(SmallInteger, nullable=False)
 
-    message = Column(String(500))
-    payload = Column(String(500))
+    message = Column(Text, nullable=True)
+    payload = Column(Text, nullable=True)
 
     retry_count = Column(
         SmallInteger,

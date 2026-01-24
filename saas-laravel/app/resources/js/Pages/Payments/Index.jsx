@@ -264,7 +264,9 @@ export default function Payments({ payments, filters = {} }) {
 
                                     {/* Message */}
                                     <td className="px-3 py-2 text-gray-700">
-                                      {log.message ?? '—'}
+                                      <pre className="whitespace-pre-wrap text-xs bg-gray-100 p-2 rounded">
+                                        {log.message ?? '-'}
+                                      </pre>
                                     </td>
 
                                     {/* Payload */}

@@ -50,17 +50,6 @@ class PaymentLogsBuilder
         return $this;
     }
 
-    public function excludeEventType(int|array $eventType): self
-    {
-        if (is_array($eventType)) {
-            $this->query->whereNotIn('event_type', $eventType);
-        } else {
-            $this->query->where('event_type', '!=', $eventType);
-        }
-
-        return $this;
-    }
-
     public function latest(): self
     {
         $this->query->latest();

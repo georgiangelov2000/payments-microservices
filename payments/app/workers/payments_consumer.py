@@ -1,174 +1,133 @@
-# app/workers/payments_consumer.py
-
 import asyncio
 import json
 import os
-import signal
-import time
-from datetime import datetime
-from typing import Optional
-
 import aio_pika
 import httpx
-import redis.asyncio as redis
-from sqlalchemy.orm import Session
-
+from datetime import datetime, timedelta
 from app.dto.payments import PaymentDTO
 from app.db.sessions import LogsSessionLocal
 from app.models.logs import PaymentLog
+from sqlalchemy.orm import Session
 from app.constants import (
     EVENT_MERCHANT_NOTIFICATION_SENT,
-    LOG_PROCESSING,
     LOG_RETRYING,
-    LOG_SUCCESS,
     LOG_FAILED,
-    LOG_BLOCKED
+    LOG_SUCCESS
 )
 
-# --------------------------------------------------
-# Config
-# --------------------------------------------------
+# ---------------- Config ----------------
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL")
 EXCHANGE_NAME = os.getenv("EXCHANGE_NAME")
 QUEUE_NAME = os.getenv("QUEUE_NAME")
 MERCHANT_CALLBACK_URL = os.getenv("MERCHANT_CALLBACK_URL")
 REDIS_URL = os.getenv("REDIS_URL")
-
+PREFETCH_COUNT = 20
+HTTP_TIMEOUT = 5.0
+RETRY_DELAY_MINUTES = 30
 MAX_RETRIES = 5
-BLOCK_SECONDS = 1800
-RATE_LIMIT = 5
-
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
-shutdown = False
-
-# --------------------------------------------------
-# Helpers
-# --------------------------------------------------
-
-def append_merchant_log(
-    *,
-    payment_id: int,
-    status: int,
-    message: str,
-) -> None:
-    logs_db: Session = LogsSessionLocal()
-    try:
-        log = (
-            logs_db.query(PaymentLog)
-            .filter(
-                PaymentLog.payment_id == payment_id,
-                PaymentLog.event_type == EVENT_MERCHANT_NOTIFICATION_SENT,
-            )
-            .one()
-        )
-
-        ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        entry = f"[{ts}] {message}"
-
-        log.message = f"{log.message}\n{entry}" if log.message else entry
-        log.status = status
-
-        logs_db.commit()
-    finally:
-        logs_db.close()
-
-# --------------------------------------------------
-# Signal handling
-# --------------------------------------------------
-
-def handle_shutdown(*_):
-    global shutdown
-    shutdown = True
-
-signal.signal(signal.SIGTERM, handle_shutdown)
-signal.signal(signal.SIGINT, handle_shutdown)
-
-# --------------------------------------------------
-# Merchant notification logic
-# --------------------------------------------------
+FAIL_THRESHOLD = 5
 
 async def notify_merchant(payment: PaymentDTO) -> None:
-    merchant_id = payment.merchant_id
-    payment_id = payment.payment_id
+    ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
-    fail_key = f"merchant:fail:{merchant_id}"
-    block_key = f"merchant:block:{merchant_id}"
-    rate_key = f"merchant:rate:{merchant_id}:{int(time.time() // 60)}"
-
-    # Circuit breaker
-    if await redis_client.exists(block_key):
-        append_merchant_log(
-            payment_id=payment_id,
-            status=LOG_BLOCKED,
-            message="Merchant blocked (circuit open)",
-        )
-        return
-
-    # Rate limiting
-    current = await redis_client.incr(rate_key)
-    if current == 1:
-        await redis_client.expire(rate_key, 60)
-
-    if current > RATE_LIMIT:
-        append_merchant_log(
-            payment_id=payment_id,
-            status=LOG_RETRYING,
-            message="Merchant rate limit exceeded",
-        )
-        return
-
+    db: Session = LogsSessionLocal()
     try:
-        append_merchant_log(
-            payment_id=payment_id,
-            status=LOG_PROCESSING,
-            message="Sending request to merchant API",
+        log = (
+            db.query(PaymentLog)
+            .filter(
+                PaymentLog.payment_id == payment.payment_id,
+                PaymentLog.event_type == EVENT_MERCHANT_NOTIFICATION_SENT,
+            )
+            .first()
         )
 
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.post(
-                MERCHANT_CALLBACK_URL,
-                json=payment.model_dump(),
-            )
-
-        # SUCCESS
-        if response.status_code < 400:
-            await redis_client.delete(fail_key)
-
-            append_merchant_log(
-                payment_id=payment_id,
-                status=LOG_SUCCESS,
-                message=f"Merchant API responded successfully ({response.status_code})",
-            )
+        # Idempotency guard
+        if log.status == LOG_SUCCESS:
             return
 
-    except Exception:
-        fails = await redis_client.incr(fail_key)
-        await redis_client.expire(fail_key, BLOCK_SECONDS)
+        base_message = log.message or ""
 
-        if fails >= MAX_RETRIES:
-            await redis_client.setex(block_key, BLOCK_SECONDS, "1")
+        def append(msg: str) -> str:
+            return f"{base_message}\n{msg}".strip()
 
-            append_merchant_log(
-                payment_id=payment_id,
-                status=LOG_FAILED,
-                message=f"Merchant notification failed permanently after {fails} attempts",
-            )
-        else:
-            append_merchant_log(
-                payment_id=payment_id,
-                status=LOG_RETRYING,
-                message=f"Merchant API not available – retry scheduled ({fails}/{MAX_RETRIES})",
-            )
+        # ---------------- HTTP CALL ----------------
+        try:
+            async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
+                response = await client.post(
+                    MERCHANT_CALLBACK_URL,
+                    json=payment.model_dump(),
+                )
+        except httpx.RequestError as exc:
+            retry_count = (log.retry_count or 0) + 1
+            next_retry = datetime.utcnow() + timedelta(minutes=RETRY_DELAY_MINUTES)
+            human_next_retry = next_retry.strftime("%Y-%m-%d %H:%M:%S")
 
-# --------------------------------------------------
-# Worker
-# --------------------------------------------------
+            should_fail = retry_count % FAIL_THRESHOLD == 0
 
-async def start_worker():
+            if should_fail:
+                log.status = LOG_FAILED
+                log.retry_count = retry_count
+                log.next_retry_at = None
+                log.message = append(
+                    f"[{ts}] ❌ FAILED (network error) | retries={retry_count} | error={exc}"
+                )
+            else:
+                log.status = LOG_RETRYING
+                log.retry_count = retry_count
+                log.next_retry_at = next_retry
+                log.message = append(
+                    f"[{ts}] 🔁 RETRY (network error) | retries={retry_count} | next_retry_at={human_next_retry}"
+                )
+
+            db.commit()
+            return
+
+        # ---------------- HTTP RESPONSE ----------------
+        if response.status_code not in (200, 201):
+            retry_count = (log.retry_count or 0) + 1
+            next_retry = datetime.utcnow() + timedelta(minutes=RETRY_DELAY_MINUTES)
+            human_next_retry = next_retry.strftime("%Y-%m-%d %H:%M:%S")
+
+            should_fail = retry_count % FAIL_THRESHOLD == 0
+            
+            # Fail immediately on 4xx OR every N-th retry
+            if 400 <= response.status_code < 500 and should_fail:
+                log.status = LOG_FAILED
+                log.retry_count = retry_count
+                log.next_retry_at = None
+                log.message = append(
+                    f"[{ts}] ❌ FAILED | status={response.status_code} | retries={retry_count}"
+                )
+            else:
+                log.status = LOG_RETRYING
+                log.retry_count = retry_count
+                log.next_retry_at = next_retry
+                log.message = append(
+                    f"[{ts}] 🔁 RETRY | status={response.status_code} | retries={retry_count} | next_retry_at={human_next_retry}"
+                )
+
+            db.commit()
+            return
+
+        # ---------------- SUCCESS ----------------
+        log.status = LOG_SUCCESS
+        log.retry_count = 0
+        log.next_retry_at = None
+        log.message = append(
+            f"[{ts}] ✅ SUCCESS | status={response.status_code}"
+        )
+
+        db.commit()
+
+    finally:
+        db.close()
+
+
+async def main() -> None:
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     channel = await connection.channel()
-    await channel.set_qos(prefetch_count=20)
+    await channel.set_qos(prefetch_count=PREFETCH_COUNT)
 
     exchange = await channel.declare_exchange(
         EXCHANGE_NAME,
@@ -179,22 +138,22 @@ async def start_worker():
     queue = await channel.declare_queue(QUEUE_NAME, durable=True)
     await queue.bind(exchange, routing_key="payment.*")
 
-    async with queue.iterator() as messages:
-        async for message in messages:
-            if shutdown:
-                break
+    while True:
+        try:
+            async with queue.iterator() as messages:
+                async for message in messages:
+                    async with message.process(requeue=False):
+                        payment = PaymentDTO(**json.loads(message.body))
+                        await notify_merchant(payment)
 
-            async with message.process(requeue=False):
-                try:
-                    payload = json.loads(message.body)
-                    payment = PaymentDTO(**payload)
-                    await notify_merchant(payment)
-                except Exception as e:
-                    print(f"[ERROR] Consumer error: {e}")
-
-# --------------------------------------------------
-# Entrypoint
-# --------------------------------------------------
+        except asyncio.CancelledError:
+            # Happens on code reload / SIGTERM
+            # In DEV → restart consumer
+            await asyncio.sleep(1)
+            continue
 
 if __name__ == "__main__":
-    asyncio.run(start_worker())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass

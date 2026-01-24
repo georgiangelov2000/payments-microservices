@@ -8,7 +8,6 @@ enum PaymentLogEventType: int
     case EVENT_PROVIDER_REQUEST_SENT      = 2;
     case EVENT_PROVIDER_PAYMENT_ACCEPTED  = 3;
     case EVENT_MERCHANT_NOTIFICATION_SENT = 4;
-    case MESSAGE_BROKER_MESSAGES          = 5;
 
     public function label(): string
     {
@@ -24,9 +23,6 @@ enum PaymentLogEventType: int
 
             self::EVENT_MERCHANT_NOTIFICATION_SENT =>
                 'Merchant notified',
-
-            self::MESSAGE_BROKER_MESSAGES =>
-                'Message queued for async processing',
         };
     }
 }

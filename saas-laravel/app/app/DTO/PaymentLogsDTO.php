@@ -3,8 +3,6 @@
 namespace App\DTO;
 
 use App\Models\PaymentLog;
-use App\Enums\PaymentLogEventType;
-use App\Enums\PaymentLogStatus;
 
 class PaymentLogsDTO
 {

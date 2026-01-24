@@ -25,8 +25,7 @@ SUBSCRIPTION_INACTIVE = 2   # Subscription expired or exhausted
 EVENT_PAYMENT_CREATED = 1               # Payment row created
 EVENT_PROVIDER_REQUEST_SENT = 2         # Request sent to payment provider
 EVENT_PROVIDER_PAYMENT_ACCEPTED = 3     # Provider webhook received
-EVENT_MERCHANT_NOTIFICATION_SENT = 4    # Merchant callback attempted
-MESSAGE_BROKER_MESSAGES = 5             # Outbox → message broker event
+EVENT_MERCHANT_NOTIFICATION_SENT = 4    # Merchant callback attempted, Outbox → message broker event
 
 # ==================================================
 # OUTBOX / BROKER STATUS (payment_logs.status)

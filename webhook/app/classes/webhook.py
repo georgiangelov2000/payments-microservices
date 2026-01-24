@@ -9,22 +9,17 @@ from app.dto.webhook import WebhookDTO
 from app.constants import (
     PAYMENT_FINISHED,
     PAYMENT_FAILED,
-    LOG_PENDING,
     LOG_SUCCESS,
     LOG_FAILED,
+    LOG_PENDING,
     EVENT_PROVIDER_PAYMENT_ACCEPTED,
-    MESSAGE_BROKER_MESSAGES,
+    EVENT_MERCHANT_NOTIFICATION_SENT,
 )
 
 
 class Webhook:
     """
-    Handles provider → payments webhooks
-
-    Responsibilities:
-    - Idempotent payment status update (payments DB)
-    - Provider event logging (logs DB)
-    - Outbox record for async processing (logs DB)
+    Provider → Payments webhook handler
     """
 
     async def handle(
@@ -36,25 +31,18 @@ class Webhook:
         logs_db: Session = LogsSessionLocal()
 
         try:
-            # ---------------------------
-            # Load payment (PAYMENTS DB)
-            # ---------------------------
             payment = payments_db.get(PaymentModel, payload.payment_id)
             if not payment:
                 return {"message": "payment not found"}
 
-            # ---------------------------
             # Idempotency
-            # ---------------------------
             if payment.status in (PAYMENT_FINISHED, PAYMENT_FAILED):
                 return {
                     "message": "already processed",
                     "status": payment.status,
                 }
 
-            # ---------------------------
             # Update payment status
-            # ---------------------------
             if payload.status == "finished":
                 payment.status = PAYMENT_FINISHED
                 log_status = LOG_SUCCESS
@@ -64,9 +52,7 @@ class Webhook:
 
             payments_db.commit()
 
-            # ---------------------------
-            # LOG: provider webhook accepted (LOGS DB)
-            # ---------------------------
+            # Provider webhook log
             logs_db.add(
                 PaymentLog(
                     payment_id=payment.id,
@@ -89,19 +75,16 @@ class Webhook:
                 price=str(payment.price),
             )
 
-            # ---------------------------
-            # OUTBOX RECORD (LOGS DB)
-            # ---------------------------
+            # Create ONE merchant notification log (timeline-based)
             logs_db.add(
                 PaymentLog(
                     payment_id=payment.id,
-                    event_type=MESSAGE_BROKER_MESSAGES,
+                    event_type=EVENT_MERCHANT_NOTIFICATION_SENT,
                     status=LOG_PENDING,
                     payload=payment_dto.model_dump_json(),
                 )
             )
 
-            print(1)
             logs_db.commit()
 
             return {

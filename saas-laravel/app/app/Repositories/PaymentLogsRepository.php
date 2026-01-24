@@ -12,7 +12,6 @@ class PaymentLogsRepository
 
         return (new PaymentLogsBuilder())
             ->latest()
-            ->excludeEventType(5) // MESSAGE_BROKER_MESSAGES
             ->forPayment($filters['payment_id'] ?? null)
             ->whereStatus($filters['status'] ?? null)
             ->whereEventType($filters['event_type'] ?? null)
@@ -23,13 +22,11 @@ class PaymentLogsRepository
     {
         return (new PaymentLogsBuilder())
         ->whereId($id ?? null)
-        ->excludeEventType(5) // MESSAGE_BROKER_MESSAGES
         ->first();
     }
 
     public function byPayment (int $paymentId, $filters = [], $perPage = 15) {
         return (new PaymentLogsBuilder())
-        ->excludeEventType(5) // MESSAGE_BROKER_MESSAGES
         ->forPayment($paymentId)
         ->paginate($perPage);
     }

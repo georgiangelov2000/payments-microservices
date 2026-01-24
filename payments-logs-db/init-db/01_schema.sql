@@ -9,8 +9,8 @@ CREATE TABLE payment_logs (
     event_type SMALLINT NOT NULL,
     status     SMALLINT NOT NULL, -- 0=success,1=failed,2=retrying,3=blocked
 
-    message VARCHAR(500),
-    payload VARCHAR(500),
+    message TEXT,
+    payload TEXT,
 
     retry_count SMALLINT NOT NULL DEFAULT 0,
     next_retry_at TIMESTAMPTZ,

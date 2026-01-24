@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\PaymentLogEventStatus;
+use App\Enums\PaymentLogEventType;
 use App\Enums\PaymentLogStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,7 +24,7 @@ class PaymentLog extends Model
     public $timestamps = false; // created_at only, handled by DB
 
     protected $casts = [
-        'event_type' => PaymentLogEventStatus::class,
+        'event_type' => PaymentLogEventType::class,
         'status'     => PaymentLogStatus::class,
     ];
 

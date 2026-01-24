@@ -33,7 +33,7 @@ class PaymentLogsService
         $paginator = $paginator->through(
             fn ($log) => PaymentLogsDTO::fromModel($log)->toArray()
         );
-        
+
         return $paginator;
     }
 }
