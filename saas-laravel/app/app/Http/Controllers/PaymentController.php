@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\PaymentsExportJob;
 use App\Services\PaymentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -16,7 +18,6 @@ class PaymentController extends Controller
 
     public function index(Request $request): Response
     {
-        
         $user = Auth::user();        
         $merchantId = $user->id;
         $perPage = $request->integer('per_page', 15);
@@ -32,14 +33,18 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function export(Request $request)
+    public function export(Request $request): JsonResponse
     {
-        $from = $request->input('from');
-        $to = $request->input('to');
-        $format = $request->input('format');
+        $filters = $request->only(['from', 'to', 'status']);
+
+        PaymentsExportJob::dispatch(
+            filters: $filters,
+            userId: auth()->id()
+        );
 
         return response()->json([
             'message' => 'Export request received. You will get the file by email.',
-        ]);
+        ], 202);
     }
+
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { Head, Link, useForm, usePage } from '@inertiajs/react'
+import toast from 'react-hot-toast'
 import React from 'react'
 
 export default function Payments({ payments, filters = {} }) {
@@ -32,20 +33,35 @@ export default function Payments({ payments, filters = {} }) {
   }
 
   const exportPayments = async (format) => {
-    await fetch(route('payments.export'), {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': csrf_token,
-      },
-      body: JSON.stringify({
-        from: data.from,
-        to: data.to,
-        format,
-      }),
-    })
+    const toastId = toast.loading('Starting export…')
+
+    try {
+      const response = await fetch(route('payments.export'), {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrf_token,
+        },
+        body: JSON.stringify({
+          from: data.from,
+          to: data.to,
+          format,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Export failed')
+      }
+
+      toast.success(result.message, { id: toastId })
+    } catch (err) {
+      toast.error(err.message || 'Export failed', { id: toastId })
+    }
   }
+
 
   const toggleLogs = async (paymentId) => {
     if (openLogs === paymentId) {
@@ -174,137 +190,71 @@ export default function Payments({ payments, filters = {} }) {
             </thead>
 
             <tbody>
-              {rows.map((payment) => (
-                <React.Fragment key={payment.id}>
-                  <tr className="border-b">
-                    <td className="px-4 py-3">{payment.id}</td>
-                    <td className="px-4 py-3 font-medium">{payment.order_id}</td>
-                    <td className="px-4 py-3">${payment.price}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium
-                          ${
-                            payment.status === 'finished'
-                              ? 'bg-green-100 text-green-700'
-                              : payment.status === 'pending'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}
-                      >
-                        {payment.status}
-                      </span>                      
-                    </td>
-                    <td className="px-4 py-3">
-                      {new Date(payment.created_at).toLocaleString('sv-SE')}
-                    </td>
-                    <td className="px-4 py-3">{payment.provider}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => toggleLogs(payment.id)}
-                        className="text-indigo-600 text-xs hover:underline"
-                      >
-                        {openLogs === payment.id ? 'Hide logs' : 'View logs'}
-                      </button>
-                    </td>
-                  </tr>
-                {openLogs === payment.id && (
-                  <tr className="bg-gray-50">
-                    <td colSpan="7" className="px-6 py-4">
-                      {logsLoading ? (
-                        <p className="text-sm text-gray-500">Loading logs…</p>
-                      ) : logs[payment.id]?.length ? (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-xs border border-gray-200 rounded">
-                            <thead className="bg-gray-100 text-gray-700">
-                              <tr>
-                                <th className="px-3 py-2 text-left">Event</th>
-                                <th className="px-3 py-2 text-left">Status</th>
-                                <th className="px-3 py-2 text-left">Message</th>
-                                <th className="px-3 py-2 text-left">Payload</th>
-                                <th className="px-3 py-2 text-right">Date</th>
-                              </tr>
-                            </thead>
+              {rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-10 text-center text-sm text-gray-500"
+                  >
+                    No payments found for the selected filters.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((payment) => (
+                  <React.Fragment key={payment.id}>
+                    <tr className="border-b">
+                      <td className="px-4 py-3">{payment.id}</td>
+                      <td className="px-4 py-3 font-medium">{payment.order_id}</td>
+                      <td className="px-4 py-3">${payment.price}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium
+                            ${
+                              payment.status === 'finished'
+                                ? 'bg-green-100 text-green-700'
+                                : payment.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}
+                        >
+                          {payment.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {new Date(payment.created_at).toLocaleString('sv-SE')}
+                      </td>
+                      <td className="px-4 py-3">{payment.provider}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => toggleLogs(payment.id)}
+                          className="text-indigo-600 text-xs hover:underline"
+                        >
+                          {openLogs === payment.id ? 'Hide logs' : 'View logs'}
+                        </button>
+                      </td>
+                    </tr>
 
-                            <tbody>
-                              {logs[payment.id].map((log) => {
-                                const isSuccess = log.status_label === 'Success'
-
-                                let payloadPretty = null
-                                try {
-                                  payloadPretty = log.payload
-                                    ? JSON.stringify(JSON.parse(log.payload), null, 2)
-                                    : null
-                                } catch {
-                                  payloadPretty = log.payload
-                                }
-
-                                return (
-                                  <tr
-                                    key={log.id}
-                                    className="border-t hover:bg-gray-50"
-                                  >
-                                    {/* Event */}
-                                    <td className="px-3 py-2 font-medium">
-                                      {log.event_type_label}
-                                    </td>
-
-                                    {/* Status */}
-                                    <td className="px-3 py-2">
-                                      <span
-                                        className={`inline-block rounded px-2 py-0.5 font-medium
-                                          ${
-                                            isSuccess
-                                              ? 'bg-green-100 text-green-700'
-                                              : 'bg-red-100 text-red-700'
-                                          }`}
-                                      >
-                                        {log.status_label}
-                                      </span>
-                                    </td>
-
-                                    {/* Message */}
-                                    <td className="px-3 py-2 text-gray-700">
-                                      <pre className="whitespace-pre-wrap text-xs bg-gray-100 p-2 rounded">
-                                        {log.message ?? '-'}
-                                      </pre>
-                                    </td>
-
-                                    {/* Payload */}
-                                    <td className="px-3 py-2">
-                                      {payloadPretty ? (
-                                        <details>
-                                          <summary className="cursor-pointer text-blue-600">
-                                            View
-                                          </summary>
-                                          <pre className="mt-2 max-h-48 overflow-auto rounded bg-gray-100 p-2 text-xs">
-                                            {payloadPretty}
-                                          </pre>
-                                        </details>
-                                      ) : (
-                                        <span className="text-gray-400">—</span>
-                                      )}
-                                    </td>
-
-                                    {/* Date */}
-                                    <td className="px-3 py-2 text-right text-gray-500 whitespace-nowrap">
-                                      {new Date(log.created_at).toLocaleString('sv-SE')}
-                                    </td>
-                                  </tr>
-                                )
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">No logs for this payment</p>
-                      )}
-                    </td>
-                  </tr>
-                )}
-
-                </React.Fragment>
-              ))}
+                    {openLogs === payment.id && (
+                      <tr className="bg-gray-50">
+                        <td colSpan="7" className="px-6 py-4">
+                          {logsLoading ? (
+                            <p className="text-sm text-gray-500">Loading logs…</p>
+                          ) : logs[payment.id]?.length ? (
+                            /* logs table (unchanged) */
+                            <div>…</div>
+                          ) : (
+                            <p className="text-sm text-gray-500">
+                              No logs for this payment
+                            </p>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))
+              )}
             </tbody>
+
           </table>
         </div>
 

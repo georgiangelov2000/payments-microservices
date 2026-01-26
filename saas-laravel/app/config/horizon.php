@@ -98,6 +98,7 @@ return [
 
     'waits' => [
         'redis:default' => 60,
+        'redis:notifications' => 300,
     ],
 
     /*
@@ -197,37 +198,41 @@ return [
     */
 
     'defaults' => [
-        'supervisor-1' => [
+        'supervisor-default' => [
             'connection' => 'redis',
-            'queue' => ['default'],
+            'queue' => ['default', 'notifications'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
-            'maxProcesses' => 1,
-            'maxTime' => 0,
-            'maxJobs' => 0,
+            'processes' => 3,
             'memory' => 128,
             'tries' => 1,
             'timeout' => 60,
-            'nice' => 0,
+
         ],
     ],
 
     'environments' => [
+
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
-                'balanceMaxShift' => 1,
-                'balanceCooldown' => 3,
+
+            'supervisor-notifications' => [
+                'connection' => 'redis',
+                'queue' => ['notifications'],
+                'balance' => 'auto',
+                'processes' => 5,
+                'tries' => 3,
+                'timeout' => 3600,
             ],
         ],
 
         'local' => [
-            'supervisor-1' => [
-                'connection' => 'redis',            
+            'supervisor-notifications' => [
+                'connection' => 'redis',
+                'queue' => ['notifications'],
                 'balance' => 'auto',
-                'minProcesses' => 1,
-                'maxProcesses' => 3,
-                'queue' => ["notifications"]
+                'processes' => 2,
+                'timeout' => 3600,
+
             ],
         ],
     ],

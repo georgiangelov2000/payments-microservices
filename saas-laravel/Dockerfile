@@ -28,6 +28,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         gd \
         pcntl
 
+RUN pecl install redis \
+    && docker-php-ext-enable redis        
+
 # -------------------------
 # Install Node.js 20 (LTS)
 # -------------------------
