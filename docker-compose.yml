@@ -175,10 +175,12 @@ services:
       --reload
 
 # Workers
-  payments-worker:
+  payments-consumer:
     build: ./payments
-    container_name: payments-worker
+    container_name: payments-consumer
     env_file: payments/.env
+    volumes:
+      - ./payments:/app
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -186,12 +188,13 @@ services:
         condition: service_started
       payments-db:
         condition: service_healthy
-    command: >
-      watchfiles --filter python
-      "python -u -m app.workers.payments_consumer"
-      /app
+    #command: >
+    #  watchfiles --filter python
+    #  "python -u -m app.workers.payments_consumer"
+    #  /app
     
     restart: unless-stopped
+    
   payments-producer:
     build: ./payments
     container_name: payments-producer
@@ -203,9 +206,9 @@ services:
         condition: service_healthy
       payments-db:
         condition: service_healthy
-    command: >
-      watchfiles --filter python
-      "python -u -m app.workers.payments_producer"
-      /app
+#    command: >
+#      watchfiles --filter python
+#      "python -u -m app.workers.payments_producer"
+#      /app
     restart: unless-stopped
     
