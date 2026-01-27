@@ -29,6 +29,7 @@ class PaymentRequest extends FormRequest
     {
         return [
             'merchant_id' => ['required', 'integer'],
+            'order_id'    => ['nullable', 'integer'],
             'per_page'    => ['integer', 'min:1', 'max:100'],
             'id'          => ['nullable', 'integer'],
             'status'      => ['nullable'],

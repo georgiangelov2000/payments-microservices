@@ -18,12 +18,14 @@ final readonly class PaymentRepository implements PaymentRepositoryInterface
     public function fetchAll(array $params = []): Builder
     {
         $status = $params["status"] ?? null;
-        $merchantId =$params["merchant_id"] ?? null;
+        $merchantId = $params["merchant_id"] ?? null;
+        $orderId = $params["order_id"] ?? null;
         $from = $params["from"] ?? null;
         $to = $params["to"] ?? null;
         
         return (new PaymentsBuilder())
             ->forMerchant($merchantId)
+            ->whereOrder($orderId)
             ->whereStatus($status)
             ->wheredDateRange($from, $to)
             ->getQuery();

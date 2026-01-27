@@ -28,6 +28,7 @@ class ExportRequest extends FormRequest
     {
         return [
             'merchant_id' => ['required', 'integer'],
+            'order_id'    => ['nullable', 'integer'],
             'status'      => ['nullable'],
             'from'        => ['nullable', 'date'],
             'to'          => ['nullable', 'date'],

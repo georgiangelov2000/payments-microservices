@@ -25,6 +25,7 @@ class PaymentsExport implements FromQuery, WithChunkReading, WithHeadings, WithM
         return (new PaymentsBuilder())
             ->forMerchant($this->merchantId)
             ->whereStatus($this->filters['status'])
+            ->whereOrder($this->filters["order_id"])
             ->wheredDateRange($this->filters["from"], $this->filters["to"])
             ->latest();
     }

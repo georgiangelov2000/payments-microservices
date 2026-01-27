@@ -56,6 +56,13 @@ class PaymentsBuilder
         return $this->query;
     }
 
+    public function whereOrder(int|string|null $orderId) {
+        if ($orderId) {
+            $this->query->where('order_id', $orderId);
+        }
+        return $this;        
+    }    
+
     public function latest() {
         return $this->query->latest();
     }
