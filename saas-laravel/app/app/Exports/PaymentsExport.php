@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Builders\PaymentsBuilder;
 use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -21,19 +22,11 @@ class PaymentsExport implements FromQuery, WithChunkReading, WithHeadings, WithM
      */
     public function query(): Builder
     {
-        return Payment::query()
-            ->with('provider:id,name')
-            ->where('merchant_id', $this->merchantId)
-            ->when($this->filters['status'] ?? null, fn ($q, $status) =>
-                $q->where('status', $status)
-            )
-            ->when($this->filters['from'] ?? null, fn ($q, $from) =>
-                $q->whereDate('created_at', '>=', $from)
-            )
-            ->when($this->filters['to'] ?? null, fn ($q, $to) =>
-                $q->whereDate('created_at', '<=', $to)
-            )
-            ->orderBy('id');
+        return (new PaymentsBuilder())
+            ->forMerchant($this->merchantId)
+            ->whereStatus($this->filters['status'])
+            ->wheredDateRange($this->filters["from"], $this->filters["to"])
+            ->latest();
     }
 
     /**
@@ -68,7 +61,7 @@ class PaymentsExport implements FromQuery, WithChunkReading, WithHeadings, WithM
             $payment->id,
             $payment->order_id,
             (float) $payment->price,
-            $payment->status->value,
+            $payment->status->label(),
             $payment->provider?->name,
             $payment->created_at->toDateTimeString(),
         ];

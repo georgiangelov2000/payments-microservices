@@ -21,10 +21,7 @@ class PaymentsExportJob implements ShouldQueue
     public int $tries = 3;
     public array $backoff = [60, 300, 600];
 
-    public function __construct(
-        protected array $filters,
-        protected int $userId
-    ) {
+    public function __construct(protected array $filters) {
         $this->onConnection('redis');
         $this->onQueue('notifications');
     }
@@ -32,18 +29,18 @@ class PaymentsExportJob implements ShouldQueue
     public function handle(): void
     {
         Storage::disk('public')->makeDirectory('exports');
+        $userId = $this->filters["merchant_id"];
 
         $path = sprintf(
             'exports/payments_%d_%s.xlsx',
-            $this->userId,
+            $userId,
             now()->format('Ymd_His')
         );
 
-        Excel::store(new PaymentsExport($this->userId, $this->filters), $path, 'public');
+        Excel::store(new PaymentsExport($userId, $this->filters), $path, 'public');
 
-        $user = User::findOrFail($this->userId);
+        $user = User::findOrFail($userId);
 
-        Mail::to($user->email)
-            ->send(new PaymentsExportReadyMail($path));
+        Mail::to($user->email)->send(new PaymentsExportReadyMail($path));
     }
 }

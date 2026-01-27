@@ -5,7 +5,6 @@ namespace App\Repositories;
 
 use App\Builders\PaymentsBuilder;
 use App\Contracts\Payments\PaymentRepositoryInterface;
-use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Builder;
 
 final readonly class PaymentRepository implements PaymentRepositoryInterface
@@ -23,9 +22,6 @@ final readonly class PaymentRepository implements PaymentRepositoryInterface
         $from = $params["from"] ?? null;
         $to = $params["to"] ?? null;
         
-        if ($status) {
-            $status = PaymentStatus::fromString($status)->value;
-        }
         return (new PaymentsBuilder())
             ->forMerchant($merchantId)
             ->whereStatus($status)

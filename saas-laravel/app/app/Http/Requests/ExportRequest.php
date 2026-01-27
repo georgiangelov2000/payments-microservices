@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use App\Enums\PaymentStatus;
 use Illuminate\Foundation\Http\FormRequest;
 
-class PaymentRequest extends FormRequest
+class ExportRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -18,7 +18,6 @@ class PaymentRequest extends FormRequest
 
         $this->merge([
             'merchant_id' => auth()->id(),
-            'per_page'    => $this->input('per_page', 15),
             'status' => $status
                 ? PaymentStatus::fromString($status)->value
                 : null,
@@ -29,8 +28,6 @@ class PaymentRequest extends FormRequest
     {
         return [
             'merchant_id' => ['required', 'integer'],
-            'per_page'    => ['integer', 'min:1', 'max:100'],
-            'id'          => ['nullable', 'integer'],
             'status'      => ['nullable'],
             'from'        => ['nullable', 'date'],
             'to'          => ['nullable', 'date'],

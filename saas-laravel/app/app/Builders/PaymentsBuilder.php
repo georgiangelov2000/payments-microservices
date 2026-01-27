@@ -54,5 +54,9 @@ class PaymentsBuilder
     public function getQuery(): Builder
     {
         return $this->query;
-    }    
+    }
+
+    public function latest() {
+        return $this->query->latest();
+    }
 }
