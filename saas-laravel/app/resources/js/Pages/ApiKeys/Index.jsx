@@ -1,5 +1,6 @@
 import { useForm, Head, Link } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
+import { router } from '@inertiajs/react'
 
 export default function ApiKeys({ keys, filters = {} }) {
   const rows = keys.data ?? []
@@ -16,7 +17,7 @@ export default function ApiKeys({ keys, filters = {} }) {
 
   const resetFilters = () => {
     setData({ hash: '', status: '' })
-    get(route('api-keys.index'), {
+    router.get(route('api-keys.index'), {}, {
       preserveScroll: true,
       preserveState: false,
     })

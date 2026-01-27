@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { Head, Link, useForm, usePage } from '@inertiajs/react'
 import toast from 'react-hot-toast'
 import React from 'react'
+import { router } from '@inertiajs/react'
 
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
@@ -26,7 +27,7 @@ export default function Payments({ payments, filters = {} }) {
 
   const resetFilters = () => {
     setData({ order_id: '', status: '', from: '', to: '' })
-    get(route('payments.index'), {
+    router.get(route('payments.index'), {}, {
       preserveScroll: true,
       preserveState: false,
     })

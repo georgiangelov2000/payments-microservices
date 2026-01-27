@@ -1,5 +1,6 @@
 import { useForm, Head, Link, usePage } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
+import { router } from '@inertiajs/react'
 
 export default function Subscriptions({ filters = {} }) {
   const { subscriptions } = usePage().props
@@ -17,10 +18,10 @@ export default function Subscriptions({ filters = {} }) {
 
   const resetFilters = () => {
     setData({ plan: '', status: '' })
-    get(route('subscriptions.index'), {
+    router.get(route('subscriptions.index'), {}, {
       preserveScroll: true,
-      preserveState: false,
-    })
+      replace: true,
+    })    
   }
 
   return (

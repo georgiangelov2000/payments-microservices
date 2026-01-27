@@ -1,13 +1,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { Head, Link, useForm, usePage } from '@inertiajs/react'
+import { router } from '@inertiajs/react'
 
 export default function ApiRequests() {
   const { apiRequests, filters = {} } = usePage().props
   const rows = apiRequests.data ?? []
 
-  /* 🔍 Filters (synced with backend) */
+  /* Filters (synced with backend) */
   const { data, setData, get, processing } = useForm({
-    plan: filters.plan || '',
+    source: filters.source || '',
     from: filters.from || '',
     to: filters.to || '',
   })
@@ -22,15 +23,14 @@ export default function ApiRequests() {
 
   const resetFilters = () => {
     setData({
-      plan  : '',
       source: '',
       from: '',
       to: '',
     })
 
-    get(route('api-requests.index'), {
+    router.get(route('api-requests.index'), {}, {
       preserveScroll: true,
-      preserveState: false,
+      replace: true,
     })
   }
 
