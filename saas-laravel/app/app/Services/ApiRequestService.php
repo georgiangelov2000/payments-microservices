@@ -1,31 +1,29 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Contracts\ApiRequests\ApiRequestsRepositoryInterface;
 use App\DTO\ApiRequestsDTO;
-use App\Repositories\ApiRequestRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class ApiRequestService
+final class ApiRequestService
 {
-    protected ApiRequestRepository $apiRequestRepository;
+    public function __construct(
+        private readonly ApiRequestsRepositoryInterface $apiRequestRepositoryInterface
+    ) {}
 
-    public function __construct(ApiRequestRepository $apiRequestRepository)
+    public function fetchAll(array $params = []): LengthAwarePaginator
     {
-        $this->apiRequestRepository = $apiRequestRepository;
-    }
+        $apiRequests = $this->apiRequestRepositoryInterface
+            ->fetchAll($params)
+            ->latest('id')
+            ->paginate($params['per_page']);
 
-    public function getMerchantApiRequests(
-        int $merchantId,
-        int $perPage = 15
-    ): LengthAwarePaginator {
-        return $this->apiRequestRepository
-            ->getByMerchantId(
-                merchantId: $merchantId,
-                perPage: $perPage
-            )
-            ->through(
-                fn ($apiRequest) => ApiRequestsDTO::fromModel($apiRequest)->toArray()
-            );
+        $apiRequests = $apiRequests->through(
+            fn ($apiRequest) => ApiRequestsDTO::fromModel($apiRequest)->toArray()
+        );
+
+        return $apiRequests;
     }
 }
