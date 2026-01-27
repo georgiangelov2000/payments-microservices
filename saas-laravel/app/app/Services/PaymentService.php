@@ -15,7 +15,7 @@ class PaymentService
 
     public function fetchAll(array $params = []): LengthAwarePaginator {
         $payments = $this->paymentRepository->fetchAll($params)
-            ->latest()
+            ->latest('id')
             ->paginate($params["per_page"]);
 
         $payments = $payments->through(

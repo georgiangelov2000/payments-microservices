@@ -38,5 +38,11 @@ class ApiKeysBuilder
     {
         $this->query->latest();
         return $this;
-    }    
+    }
+
+    public function getQuery(): Builder
+    {
+        return $this->query;
+    }
+
 }

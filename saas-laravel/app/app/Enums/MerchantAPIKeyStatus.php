@@ -5,7 +5,7 @@ namespace App\Enums;
 enum MerchantAPIKeyStatus: int
 {
     case ACTIVE   = 1;
-    case INACTIVE = 0;
+    case INACTIVE = 2;
 
     public function label(): string
     {

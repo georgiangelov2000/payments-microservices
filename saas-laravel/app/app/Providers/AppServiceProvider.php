@@ -5,7 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
+use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
 use App\Contracts\Payments\PaymentRepositoryInterface;
+use App\Repositories\ApiKeyRepository;
 use App\Repositories\PaymentRepository;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,6 +20,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             PaymentRepositoryInterface::class,
             PaymentRepository::class
+        );
+
+        $this->app->bind(
+            ApiKeyRepositoryInterface::class,
+            ApiKeyRepository::class
         );
     }
     /**

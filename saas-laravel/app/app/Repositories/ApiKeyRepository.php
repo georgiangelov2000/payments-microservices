@@ -2,32 +2,23 @@
 
 namespace App\Repositories;
 
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use App\Builders\ApiKeysBuilder;
-use App\Enums\MerchantAPIKeyStatus;
+use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
+use Illuminate\Database\Eloquent\Builder;
 
-class ApiKeyRepository
+class ApiKeyRepository implements ApiKeyRepositoryInterface
 {
 
-    public function __construct(
-        protected ApiKeysBuilder $apiKeyBuilder
-    )
-    {}
-
-    public function paginateByMerchant(
-        int $merchantId,
-        int $perPage = 15,
-        array $filters = []
-    ): LengthAwarePaginator {
-
-        if (!empty($filters['status'])) {
-            $filters['status'] = MerchantAPIKeyStatus::fromString($filters['status'])->value;
-        }
-
+   public function __construct() {}
+   
+    public function fetchAll(array $params = []): Builder
+    {
+        $merchantId = $params["merchant_id"] ?? null;
+        $status = $params["status"] ?? null;
+        
         return (new ApiKeysBuilder())
-            ->forMerchant($merchantId)
-            ->whereStatus($filters['status'] ?? null)
-            ->latest()
-            ->paginate($perPage);
+        ->forMerchant($merchantId)
+        ->whereStatus($status)
+        ->getQuery();
     }
 }

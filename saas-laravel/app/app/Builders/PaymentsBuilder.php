@@ -15,7 +15,7 @@ class PaymentsBuilder
             ->with(['provider:id,name']);
     }
 
-    public function forMerchant(int $merchantId): self
+    public function forMerchant(?int $merchantId): self
     {
         $this->query->where('merchant_id', $merchantId);
         return $this;
@@ -29,7 +29,7 @@ class PaymentsBuilder
         return $this;
     }
 
-    public function whereStatus(string|int|null $status): self
+    public function whereStatus(?string $status): self
     {
         if ($status) {
             $this->query->where('status', $status);

@@ -1,29 +1,25 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ApiKeyRequest;
 use App\Services\ApiKeyService;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ApiKeyController extends Controller
+final class ApiKeyController extends Controller
 {
     public function __construct(
-        protected ApiKeyService $apiKeys
+        private readonly ApiKeyService $apiKeyService
     ) {}
 
-    public function index(): Response
+    public function index(ApiKeyRequest $request): Response
     {
-        $merchantId = Auth::id();
-
-        $keys = $this->apiKeys->getMerchantApiKeys(
-            merchantId: $merchantId,
-            perPage: 10
-        );
-
+        $params = $request->safe()->toArray();
+        
         return Inertia::render('ApiKeys/Index', [
-            'keys' => $keys,
+            'keys' => $this->apiKeyService->fetchAll($params),
         ]);
     }
 }
