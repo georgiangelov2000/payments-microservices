@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
-import { Head, Link, useForm, usePage } from '@inertiajs/react'
+import { Head, Link, useForm, usePage, router } from '@inertiajs/react'
 import toast from 'react-hot-toast'
 import React from 'react'
-import { router } from '@inertiajs/react'
 
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
@@ -11,7 +10,7 @@ export default function Payments({ payments, filters = {} }) {
 
   const [openLogs, setOpenLogs] = useState(null)
   const [logs, setLogs] = useState({})
-  const [logsLoading, setLogsLoading] = useState(false)
+  const [logsLoading, setLogsLoading] = useState({})
 
   const { data, setData, get, processing } = useForm({
     order_id: filters.order_id || '',
@@ -27,9 +26,10 @@ export default function Payments({ payments, filters = {} }) {
 
   const resetFilters = () => {
     setData({ order_id: '', status: '', from: '', to: '' })
+
     router.get(route('payments.index'), {}, {
       preserveScroll: true,
-      preserveState: false,
+      replace: true,
     })
   }
 
@@ -63,7 +63,6 @@ export default function Payments({ payments, filters = {} }) {
     }
   }
 
-
   const toggleLogs = async (paymentId) => {
     if (openLogs === paymentId) {
       setOpenLogs(null)
@@ -74,28 +73,25 @@ export default function Payments({ payments, filters = {} }) {
 
     if (logs[paymentId]) return
 
-    setLogsLoading(true)
+    setLogsLoading(prev => ({ ...prev, [paymentId]: true }))
 
     try {
       const response = await fetch(
         `/api/v1/payment-logs/payments/${paymentId}/logs`,
         {
-          headers: {
-            Accept: 'application/json',
-          },
+          headers: { Accept: 'application/json' },
           credentials: 'same-origin',
         }
       )
 
-
       const result = await response.json()
 
-      setLogs((prev) => ({
+      setLogs(prev => ({
         ...prev,
         [paymentId]: result.results ?? [],
       }))
     } finally {
-      setLogsLoading(false)
+      setLogsLoading(prev => ({ ...prev, [paymentId]: false }))
     }
   }
 
@@ -108,7 +104,7 @@ export default function Payments({ payments, filters = {} }) {
 
         {/* EXPORT */}
         <div className="flex gap-2">
-          {['csv', 'xlsx', 'json'].map((f) => (
+          {['csv', 'xlsx', 'json'].map(f => (
             <button
               key={f}
               onClick={() => exportPayments(f)}
@@ -128,13 +124,13 @@ export default function Payments({ payments, filters = {} }) {
             type="text"
             placeholder="Order ID"
             value={data.order_id}
-            onChange={(e) => setData('order_id', e.target.value)}
+            onChange={e => setData('order_id', e.target.value)}
             className="rounded border-gray-300 text-sm"
           />
 
           <select
             value={data.status}
-            onChange={(e) => setData('status', e.target.value)}
+            onChange={e => setData('status', e.target.value)}
             className="rounded border-gray-300 text-sm"
           >
             <option value="">All</option>
@@ -146,14 +142,14 @@ export default function Payments({ payments, filters = {} }) {
           <input
             type="date"
             value={data.from}
-            onChange={(e) => setData('from', e.target.value)}
+            onChange={e => setData('from', e.target.value)}
             className="rounded border-gray-300 text-sm"
           />
 
           <input
             type="date"
             value={data.to}
-            onChange={(e) => setData('to', e.target.value)}
+            onChange={e => setData('to', e.target.value)}
             className="rounded border-gray-300 text-sm"
           />
 
@@ -193,15 +189,12 @@ export default function Payments({ payments, filters = {} }) {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-6 py-10 text-center text-sm text-gray-500"
-                  >
-                    No payments found for the selected filters.
+                  <td colSpan={7} className="px-6 py-10 text-center text-gray-500">
+                    No payments found.
                   </td>
                 </tr>
               ) : (
-                rows.map((payment) => (
+                rows.map(payment => (
                   <React.Fragment key={payment.id}>
                     <tr className="border-b">
                       <td className="px-4 py-3">{payment.id}</td>
@@ -237,17 +230,47 @@ export default function Payments({ payments, filters = {} }) {
 
                     {openLogs === payment.id && (
                       <tr className="bg-gray-50">
-                        <td colSpan="7" className="px-6 py-4">
-                          {logsLoading ? (
-                            <p className="text-sm text-gray-500">Loading logs…</p>
-                          ) : logs[payment.id]?.length ? (
-                            /* logs table (unchanged) */
-                            <div>…</div>
-                          ) : (
-                            <p className="text-sm text-gray-500">
-                              No logs for this payment
-                            </p>
-                          )}
+                        <td colSpan={7} className="px-6 py-4">
+                          <div className="border-l-4 border-indigo-500 pl-4">
+                            {logsLoading[payment.id] ? (
+                              <p className="text-sm text-gray-500">
+                                Loading logs…
+                              </p>
+                            ) : logs[payment.id]?.length ? (
+                              <table className="w-full text-xs border border-gray-200 rounded">
+                                <thead className="bg-gray-100">
+                                  <tr>
+                                    <th className="px-3 py-2 text-left">Event</th>
+                                    <th className="px-3 py-2 text-left">Status</th>
+                                    <th className="px-3 py-2 text-left">Message</th>
+                                    <th className="px-3 py-2 text-right">Date</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {logs[payment.id].map(log => (
+                                    <tr key={log.id} className="border-t">
+                                      <td className="px-3 py-2 font-medium">
+                                        {log.event_type_label}
+                                      </td>
+                                      <td className="px-3 py-2">
+                                        {log.status_label}
+                                      </td>
+                                      <td className="px-3 py-2 text-gray-700">
+                                        {log.message ?? '—'}
+                                      </td>
+                                      <td className="px-3 py-2 text-right text-gray-500">
+                                        {new Date(log.created_at).toLocaleString('sv-SE')}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <p className="text-sm text-gray-500">
+                                No logs for this payment
+                              </p>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -255,14 +278,13 @@ export default function Payments({ payments, filters = {} }) {
                 ))
               )}
             </tbody>
-
           </table>
         </div>
 
         {/* PAGINATION */}
         {payments.links?.length > 1 && (
           <div className="flex justify-center gap-1 flex-wrap mt-4">
-            {payments.links.map((link) => (
+            {payments.links.map(link => (
               <Link
                 key={link.label}
                 href={link.url ?? '#'}
