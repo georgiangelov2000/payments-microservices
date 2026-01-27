@@ -1,31 +1,29 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services;
 
 use App\DTO\UserSubscriptionsDTO;
-use App\Repositories\SubscriptionRepository;
+use App\Contracts\Subscriptions\SubscriptionRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 final class SubscriptionService
 {
-    protected readonly SubscriptionRepository $subscriptions;
+    public function __construct(
+        private readonly SubscriptionRepositoryInterface $subscriptionRepositoryInterface
+    )
+    {}
 
-    public function __construct(SubscriptionRepository $subscriptions)
+    public function fetchAll($params = []): LengthAwarePaginator
     {
-        $this->subscriptions = $subscriptions;
-    }
+        $perPage = $params["per_page"];
 
-    public function getMerchantSubscriptions(int $merchantId, int $perPage = 15): LengthAwarePaginator
-    {
-        $paginator = $this->subscriptions->getByMerchantId(
-            merchantId: $merchantId,
-            perPage: $perPage
-        );
+        $paginator = $this->subscriptionRepositoryInterface->fetchAll($params)
+        ->latest('id')
+        ->paginate($perPage);
 
-        $paginator = $paginator->through(
+        return $paginator->through(
             fn ($subscription) => UserSubscriptionsDTO::fromModel($subscription)->toArray()
         );
-
-        return $paginator;
     }
 }

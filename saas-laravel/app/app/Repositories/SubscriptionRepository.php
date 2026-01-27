@@ -1,18 +1,23 @@
 <?php
 namespace App\Repositories;
 
-use App\Models\UserSubscription;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\Builders\UserSubscriptionsBuilder;
+use App\Contracts\Subscriptions\SubscriptionRepositoryInterface;
+use Illuminate\Database\Eloquent\Builder;
 
-final class SubscriptionRepository
+final class SubscriptionRepository implements SubscriptionRepositoryInterface
 {
-    public function getByMerchantId(
-        int $merchantId,
-        int $perPage = 15
-    ): LengthAwarePaginator {
-        return UserSubscription::where('user_id', $merchantId)
-            ->with('subscription')
-            ->latest()
-            ->paginate($perPage);
+    public function fetchAll(array $params = []): Builder
+    {
+        $status = $params["status"] ?? null;
+        $merchantId = $params["merchant_id"] ?? null;
+        $plan = $params["plan"] ?? null;
+
+        return (new UserSubscriptionsBuilder())
+            ->forMerchant($merchantId)
+            ->whereStatus($status)
+            ->wherePlan($plan)
+            ->getQuery();
     }
+
 }

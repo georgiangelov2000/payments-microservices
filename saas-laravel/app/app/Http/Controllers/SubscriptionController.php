@@ -1,33 +1,25 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\UserSubscriptionRequest;
 use App\Services\SubscriptionService;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Inertia\Response;
 
-class SubscriptionController extends Controller
+final class SubscriptionController extends Controller
 {
     public function __construct(
-        protected SubscriptionService $subscriptions
+        private readonly SubscriptionService $subscriptionService
     ) {}
 
-    public function index(Request $request)
+    public function index(UserSubscriptionRequest $request): Response
     {
-        $user = Auth::user();
-        abort_if(!$user, 403);
-
-        $merchantId = $user->id;
-        $perPage = $request->integer('per_page', 15);
-
-        $subscriptions = $this->subscriptions->getMerchantSubscriptions(
-            merchantId: $merchantId,
-            perPage: $perPage
-        );
+        $params = $request->safe()->toArray();
 
         return Inertia::render('Subscriptions/Index', [
-            'subscriptions' => $subscriptions,
+            'subscriptions' => $this->subscriptionService->fetchAll($params),
         ]);
     }
 }

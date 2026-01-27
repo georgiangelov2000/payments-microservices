@@ -7,7 +7,7 @@ use App\Contracts\Payments\PaymentRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\DTO\PaymentsDTO;
 
-class PaymentService
+final class PaymentService
 {
     public function __construct(
         private readonly PaymentRepositoryInterface $paymentRepository

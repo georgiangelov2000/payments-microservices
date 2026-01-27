@@ -7,8 +7,11 @@ use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
 use App\Contracts\Payments\PaymentRepositoryInterface;
+use App\Contracts\Subscriptions\SubscriptionRepositoryInterface;
 use App\Repositories\ApiKeyRepository;
 use App\Repositories\PaymentRepository;
+use App\Repositories\SubscriptionRepository;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
             ApiKeyRepositoryInterface::class,
             ApiKeyRepository::class
         );
+
+        $this->app->bind(
+            SubscriptionRepositoryInterface::class,
+            SubscriptionRepository::class
+        );        
     }
     /**
      * Bootstrap any application services.
