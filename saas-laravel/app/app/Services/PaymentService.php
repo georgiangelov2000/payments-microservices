@@ -1,33 +1,28 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services;
 
-use App\DTO\PaymentsDTO;
-use App\Repositories\PaymentRepository;
+use App\Contracts\Payments\PaymentRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\DTO\PaymentsDTO;
 
 class PaymentService
 {
     public function __construct(
-        protected PaymentRepository $payments
+        private readonly PaymentRepositoryInterface $paymentRepository
     ) {}
 
-    public function getMerchantPayments(
-        int $merchantId,
-        int $perPage = 15,
-        array $filters = [],
-    ): LengthAwarePaginator {
+    public function fetchAll(array $params = []): LengthAwarePaginator {
+        $payments = $this->paymentRepository->fetchAll($params)
+            ->latest()
+            ->paginate($params["per_page"]);
 
-        $paginator = $this->payments->paginateByMerchant(
-            merchantId: $merchantId,
-            perPage: $perPage,
-            filters: $filters
-        );
-
-        $paginator = $paginator->through(
+        $payments = $payments->through(
             fn ($payment) => PaymentsDTO::fromModel($payment)->toArray()
         );
-
-        return $paginator;
+        
+        return $payments;
     }
+
 }

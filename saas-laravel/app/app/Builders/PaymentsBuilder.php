@@ -29,13 +29,7 @@ class PaymentsBuilder
         return $this;
     }
 
-    public function latest(): self
-    {
-        $this->query->latest();
-        return $this;
-    }
-
-    public function status(?string $status): self
+    public function whereStatus(string|int|null $status): self
     {
         if ($status) {
             $this->query->where('status', $status);
@@ -44,7 +38,7 @@ class PaymentsBuilder
         return $this;
     }
 
-    public function dateRange(?string $from, ?string $to): self
+    public function wheredDateRange(?string $from, ?string $to): self
     {
         if ($from) {
             $this->query->whereDate('created_at', '>=', $from);
@@ -57,8 +51,8 @@ class PaymentsBuilder
         return $this;
     }
 
-    public function paginate(int $perPage = 15)
+    public function getQuery(): Builder
     {
-        return $this->query->paginate($perPage);
-    }
+        return $this->query;
+    }    
 }

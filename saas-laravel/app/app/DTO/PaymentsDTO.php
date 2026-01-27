@@ -4,7 +4,6 @@ namespace App\DTO;
 
 use App\Models\Payment;
 use Carbon\CarbonInterface;
-use App\Enums\PaymentStatus;
 
 final class PaymentsDTO
 {

@@ -1,31 +1,36 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Repositories;
 
 use App\Builders\PaymentsBuilder;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\Contracts\Payments\PaymentRepositoryInterface;
 use App\Enums\PaymentStatus;
+use Illuminate\Database\Eloquent\Builder;
 
-class PaymentRepository
+final readonly class PaymentRepository implements PaymentRepositoryInterface
 {
-    public function paginateByMerchant(
-        int $merchantId,
-        int $perPage = 15,
-        array $filters = []
-    ): LengthAwarePaginator {
 
-        if (!empty($filters['status'])) {
-            $filters['status'] = PaymentStatus::fromString($filters['status'])->value;
+    /**
+     * @param array $params
+     *
+     * @return Builder
+     */
+    public function fetchAll(array $params = []): Builder
+    {
+        $status = $params["status"] ?? null;
+        $merchantId =$params["merchant_id"] ?? null;
+        $from = $params["from"] ?? null;
+        $to = $params["to"] ?? null;
+        
+        if ($status) {
+            $status = PaymentStatus::fromString($status)->value;
         }
         return (new PaymentsBuilder())
             ->forMerchant($merchantId)
-            ->whereId($filters['order_id'] ?? null)
-            ->status($filters['status'] ?? null)
-            ->dateRange(
-                $filters['from'] ?? null,
-                $filters['to'] ?? null
-            )
-            ->latest()
-            ->paginate($perPage);
+            ->whereStatus($status)
+            ->wheredDateRange($from, $to)
+            ->getQuery();
     }
+
 }

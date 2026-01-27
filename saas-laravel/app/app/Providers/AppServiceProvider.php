@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
+use App\Contracts\Payments\PaymentRepositoryInterface;
+use App\Repositories\PaymentRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -13,9 +15,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            PaymentRepositoryInterface::class,
+            PaymentRepository::class
+        );
     }
-
     /**
      * Bootstrap any application services.
      */

@@ -1,44 +1,33 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PaymentRequest;
 use App\Jobs\PaymentsExportJob;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PaymentController extends Controller
 {
     public function __construct(
-        protected PaymentService $payments
+        private readonly PaymentService $paymentService
     ) {}
 
-    public function index(Request $request): Response
+    public function index(PaymentRequest $request): Response
     {
-        $user = Auth::user();        
-        $merchantId = $user->id;
-        $perPage = $request->integer('per_page', 15);
-
-        $payments = $this->payments->getMerchantPayments(
-            merchantId: $merchantId,
-            perPage: $perPage,
-            filters: $request->all()
-        );
-
+        $params = $request->safe()->toArray();
         return Inertia::render('Payments/Index', [
-            'payments' => $payments,
+            'payments' => $this->paymentService->fetchAll($params)
         ]);
     }
 
-    public function export(Request $request): JsonResponse
+    public function export(PaymentRequest $request): JsonResponse
     {
-        $filters = $request->only(['from', 'to', 'status']);
-
         PaymentsExportJob::dispatch(
-            filters: $filters,
+            filters: $request->only(['from', 'to', 'status']),
             userId: auth()->id()
         );
 
@@ -46,5 +35,4 @@ class PaymentController extends Controller
             'message' => 'Export request received. You will get the file by email.',
         ], 202);
     }
-
 }
