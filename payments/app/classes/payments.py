@@ -250,6 +250,9 @@ class Payment:
         }
 
 
+    # --------------------------------------------------
+    # Track payment
+    # --------------------------------------------------
     async def tracking(self, payment_id: str):
         payments_db: Session = PaymentsSessionLocal()
         logs_db: Session = LogsSessionLocal()
@@ -305,6 +308,117 @@ class Payment:
         finally:
             payments_db.close()
             logs_db.close()
+
+    # --------------------------------------------------
+    # Show payment (details)
+    # --------------------------------------------------
+    async def show(self, payment_id: str):
+        payments_db: Session = PaymentsSessionLocal()
+
+        try:
+            row = payments_db.execute(
+                select(
+                    PaymentModel.id,
+                    PaymentModel.order_id,
+                    PaymentModel.amount,
+                    PaymentModel.price,
+                    PaymentModel.status,
+                    PaymentModel.created_at,
+                    Provider.alias,
+                )
+                .join(Provider, Provider.id == PaymentModel.provider_id)
+                .where(PaymentModel.id == payment_id)
+            ).first()
+
+            if not row:
+                raise HTTPException(status_code=404, detail="Payment not found")
+
+            (
+                pid,
+                order_id,
+                amount,
+                price,
+                status,
+                created_at,
+                provider_alias,
+            ) = row
+
+            return {
+                "payment_id": pid,
+                "order_id": order_id,
+                "provider": provider_alias,
+                "amount": amount,
+                "price": price,
+                "status": PaymentStatus(status).name,
+                "created_at": created_at.isoformat()
+                if isinstance(created_at, datetime)
+                else created_at,
+            }
+
+        finally:
+            payments_db.close()
+
+
+    # --------------------------------------------------
+    # Get payments (paginated list)
+    # --------------------------------------------------
+    async def get(self, merchant_id: str, page: int = 1, limit: int = 20):
+        payments_db: Session = PaymentsSessionLocal()
+
+        if page < 1:
+            page = 1
+        if limit > 100:
+            limit = 100
+
+        offset = (page - 1) * limit
+
+        try:
+            total = payments_db.execute(
+                select(PaymentModel.id)
+                .where(PaymentModel.merchant_id == merchant_id)
+            ).rowcount
+
+            rows = payments_db.execute(
+                select(
+                    PaymentModel.id,
+                    PaymentModel.order_id,
+                    PaymentModel.amount,
+                    PaymentModel.status,
+                    PaymentModel.created_at,
+                    Provider.alias,
+                )
+                .join(Provider, Provider.id == PaymentModel.provider_id)
+                .where(PaymentModel.merchant_id == merchant_id)
+                .order_by(PaymentModel.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+            ).all()
+
+            items = [
+                {
+                    "payment_id": row.id,
+                    "order_id": row.order_id,
+                    "provider": row.alias,
+                    "amount": row.amount,
+                    "status": PaymentStatus(row.status).name,
+                    "created_at": row.created_at.isoformat()
+                    if isinstance(row.created_at, datetime)
+                    else row.created_at,
+                }
+                for row in rows
+            ]
+
+            return {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "has_next": offset + limit < total,
+                "items": items,
+            }
+
+        finally:
+            payments_db.close()
+
 
     # --------------------------------------------------
     # Safe failure transition (payments DB only)

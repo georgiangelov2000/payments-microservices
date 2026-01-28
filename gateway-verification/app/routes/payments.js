@@ -14,22 +14,73 @@ import { send } from "../responses/send.js"
 
 const router = Router()
 
+// ---------------------------------
+// CREATE PAYMENT
+// POST /api/v1/payments
+// ---------------------------------
 router.post("/", authPost, async (req, res) => {
   if (await isCircuitOpen()) {
     return send(res, Errors.PAYMENTS_UNAVAILABLE)
   }
-  proxy.web(req, res, { target: `${env.PAYMENTS_URL}/api/v1/payments` }, async err => {
-    if (err) {
-      await recordFailure()
-      if (!res.headersSent) {
-        return send(res, Errors.PAYMENTS_UNREACHABLE)
+
+  proxy.web(
+    req,
+    res,
+    { target: `${env.PAYMENTS_URL}/api/v1/payments` },
+    async err => {
+      if (err) {
+        await recordFailure()
+        if (!res.headersSent) {
+          return send(res, Errors.PAYMENTS_UNREACHABLE)
+        }
+      } else {
+        await recordSuccess()
       }
-    } else {
-      await recordSuccess()
     }
-  })
+  )
 })
 
+
+// ---------------------------------
+// GET PAYMENTS LIST (paginated)
+// GET /api/v1/payments?page=&limit=
+// ---------------------------------
+router.get("/", authGet, (req, res) => {
+  proxy.web(
+    req,
+    res,
+    { target: `${env.PAYMENTS_URL}/api/v1/payments` },
+    err => {
+      if (err && !res.headersSent) {
+        return send(res, Errors.PAYMENTS_UNREACHABLE)
+      }
+    }
+  )
+})
+
+
+// ---------------------------------
+// SHOW PAYMENT
+// GET /api/v1/payments/:id/show
+// ---------------------------------
+router.get("/:id/show", authGet, (req, res) => {
+  proxy.web(
+    req,
+    res,
+    { target: `${env.PAYMENTS_URL}/api/v1/payments` },
+    err => {
+      if (err && !res.headersSent) {
+        return send(res, Errors.PAYMENTS_UNREACHABLE)
+      }
+    }
+  )
+})
+
+
+// ---------------------------------
+// TRACK PAYMENT (timeline)
+// GET /api/v1/payments/:id/tracking
+// ---------------------------------
 router.get("/:id/tracking", authGet, (req, res) => {
   proxy.web(
     req,
@@ -37,13 +88,10 @@ router.get("/:id/tracking", authGet, (req, res) => {
     { target: `${env.PAYMENTS_URL}/api/v1/payments` },
     err => {
       if (err && !res.headersSent) {
-        return res
-          .status(Errors.PAYMENTS_UNREACHABLE.code)
-          .json({ message: Errors.PAYMENTS_UNREACHABLE.message })
+        return send(res, Errors.PAYMENTS_UNREACHABLE)
       }
     }
   )
 })
-
 
 export default router
