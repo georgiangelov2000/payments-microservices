@@ -19,6 +19,11 @@ export const Errors = {
     body: { error: "unauthorized" },
   },
 
+  INVALID_API_KEY: {
+    status: 401,
+    body: { error: "invalid api key" },
+  },  
+
   QUOTA_EXCEEDED: {
     status: 429,
     body: { error: "quota_exceeded" },

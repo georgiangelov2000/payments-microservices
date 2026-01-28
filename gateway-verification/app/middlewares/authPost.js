@@ -1,64 +1,73 @@
 import crypto from "crypto"
 import { redis } from "../config/redis.js"
-import { pool } from "../config/postgres.js"
+import { apiAuth } from "../config/auth.js"
+import { Errors } from "../responses/errors.js"
 
 export async function authPost(req, res, next) {
   if (req.method !== "POST") return next()
 
   const apiKey = req.header("x-api-key")
   if (!apiKey) {
-    return send(res, Errors.UNAUTHORIZED)
+    return res
+      .status(Errors.UNAUTHORIZED.status)
+      .json({ message: Errors.UNAUTHORIZED.message })
   }
 
   try {
     const cacheKey = `api_key:${apiKey}`
-    let data = await redis.get(cacheKey)
-    data = data ? JSON.parse(data) : null
+    let authData = await redis.get(cacheKey)
+    authData = authData ? JSON.parse(authData) : null
+    
+    // ----------------------------------------
+    // Cache miss → validate API key
+    // ----------------------------------------
+    if (!authData) {
+      const result = await apiAuth(apiKey)
 
-    if (!data) {
-      const hash = crypto.createHash("sha256").update(apiKey).digest("hex")
-      const { rows } = await pool.query(`
-        SELECT mak.merchant_id, us.subscription_id, s.tokens, us.used_tokens
-        FROM merchant_api_keys mak
-        JOIN user_subscriptions us ON us.user_id = mak.merchant_id
-        JOIN subscriptions s ON s.id = us.subscription_id
-        WHERE mak.hash = $1 AND mak.status = 1 AND us.status = 1
-        LIMIT 1
-      `, [hash])
-
-      if (!rows.length) {
+      if (!result.ok) {
         await redis.setEx(cacheKey, 60, JSON.stringify({ valid: false }))
-        return send(res, Errors.UNAUTHORIZED)
+        return res
+          .status(result.status)
+          .json({ message: result.message })
       }
 
-      const r = rows[0]
-      data = {
-        valid: true,
-        merchant_id: r.merchant_id,
-        subscription_id: r.subscription_id,
-        remaining: r.tokens - r.used_tokens,
-      }
+      authData = result.data
 
-      await redis.setEx(cacheKey, 300, JSON.stringify(data))
-      await redis.set(`sub:${data.subscription_id}:tokens`, data.remaining)
+      await redis.setEx(cacheKey, 300, JSON.stringify(authData))
+      await redis.set(
+        `sub:${authData.subscriptionId}:tokens`,
+        authData.tokensLeft
+      )
     }
 
-    const tokenKey = `sub:${data.subscription_id}:tokens`
-    if (await redis.decr(tokenKey) < 0) {
+    // ----------------------------------------
+    // Token decrement (atomic)
+    // ----------------------------------------
+    const tokenKey = `sub:${authData.subscriptionId}:tokens`
+    const remaining = await redis.decr(tokenKey)
+
+    if (remaining < 0) {
       await redis.incr(tokenKey)
-      return send(res, Errors.QUOTA_EXCEEDED)
+      return res
+        .status(Errors.QUOTA_EXCEEDED.status)
+        .json({ message: Errors.QUOTA_EXCEEDED.message })
     }
 
-    req.headers["x-merchant-id"] = data.merchant_id
+    // ----------------------------------------
+    // Inject context
+    // ----------------------------------------
+    req.headers["x-merchant-id"] = authData.merchantId
     req.body = {
       ...req.body,
-      subscription_id: data.subscription_id,
+      subscription_id: authData.subscriptionId,
       event_id: crypto.randomUUID(),
     }
-
+    
     next()
   } catch (e) {
-    console.error("AUTH POST ERROR", req.id, e)
-    return send(res, Errors.GATEWAY_ERROR)
+    console.error("AUTH POST ERROR", e)
+    return res
+      .status(Errors.GATEWAY_ERROR.status)
+      .json({ message: Errors.GATEWAY_ERROR.message })
   }
 }

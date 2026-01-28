@@ -15,6 +15,7 @@ def ping():
     return {"ok": True}
 
 
+@router.post("/")
 @router.post("")
 async def create_payment(
     request: CreatePaymentRequest,
@@ -25,6 +26,8 @@ async def create_payment(
         merchant_id=x_merchant_id,
     )
 
+@router.get("/{payment_id}/tracking/")
 @router.get("/{payment_id}/tracking")
 async def tracking(payment_id: str):
+    print(1)
     return await handler.tracking(payment_id)

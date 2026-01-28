@@ -5,8 +5,6 @@ export const proxy = httpProxy.createProxyServer({
 })
 
 proxy.on("proxyReq", (proxyReq, req) => {
-  console.log("PROXY INSTANCE CREATED", proxy)
-
   if (req.method !== "POST") return
   if (req.body && Object.keys(req.body).length) {
     const body = JSON.stringify(req.body)

@@ -18,8 +18,7 @@ router.post("/", authPost, async (req, res) => {
   if (await isCircuitOpen()) {
     return send(res, Errors.PAYMENTS_UNAVAILABLE)
   }
-
-  proxy.web(req, res, { target: env.PAYMENTS_URL }, async err => {
+  proxy.web(req, res, { target: `${env.PAYMENTS_URL}/api/v1/payments` }, async err => {
     if (err) {
       await recordFailure()
       if (!res.headersSent) {
@@ -32,11 +31,19 @@ router.post("/", authPost, async (req, res) => {
 })
 
 router.get("/:id/tracking", authGet, (req, res) => {
-  proxy.web(req, res, { target: env.PAYMENTS_URL }, err => {
-    if (err && !res.headersSent) {
-      return send(res, Errors.PAYMENTS_UNREACHABLE)
+  proxy.web(
+    req,
+    res,
+    { target: `${env.PAYMENTS_URL}/api/v1/payments` },
+    err => {
+      if (err && !res.headersSent) {
+        return res
+          .status(Errors.PAYMENTS_UNREACHABLE.code)
+          .json({ message: Errors.PAYMENTS_UNREACHABLE.message })
+      }
     }
-  })
+  )
 })
+
 
 export default router
