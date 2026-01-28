@@ -13,18 +13,13 @@ from app.models.payments import (
     UserSubscription,
     Subscription,
 )
-from app.models.logs import (
-    PaymentLog
-)
+from app.models.logs import PaymentLog
 from app.db.sessions import PaymentsSessionLocal, LogsSessionLocal
-from app.constants import (
-    PAYMENT_PENDING,
-    PAYMENT_FAILED,
-    SUBSCRIPTION_ACTIVE,
-    SUBSCRIPTION_INACTIVE,
-    LOG_SUCCESS,
-    EVENT_PAYMENT_CREATED,
-    EVENT_PROVIDER_REQUEST_SENT,
+from app.enums import (
+    PaymentStatus,
+    SubscriptionStatus,
+    PaymentLogEvent,
+    LogStatus,
 )
 
 PROVIDER_URL = os.getenv("PROVIDER_URL")
@@ -75,11 +70,11 @@ class Payment:
                 return {
                     "message": "payment already exists",
                     "payment_id": payment_id,
-                    "status": status,
+                    "status": PaymentStatus(status).name,
                 }
 
             # --------------------------------------------------
-            # Load active subscription (ONLY needed columns)
+            # Load active subscription
             # --------------------------------------------------
             sub_row = payments_db.execute(
                 select(
@@ -94,7 +89,7 @@ class Payment:
                 .where(
                     UserSubscription.user_id == merchant_id,
                     UserSubscription.subscription_id == request.subscription_id,
-                    UserSubscription.status == SUBSCRIPTION_ACTIVE,
+                    UserSubscription.status == SubscriptionStatus.SUBSCRIPTION_ACTIVE.value,
                 )
             ).first()
 
@@ -112,11 +107,11 @@ class Payment:
                 price=request.price,
                 provider_id=provider_id,
                 merchant_id=merchant_id,
-                status=PAYMENT_PENDING,
+                status=PaymentStatus.PAYMENT_PENDING.value,
             )
 
             payments_db.add(payment)
-            payments_db.flush()  # get payment.id
+            payments_db.flush()
             payment_id = payment.id
 
             # --------------------------------------------------
@@ -125,9 +120,9 @@ class Payment:
             logs_db.add(
                 PaymentLog(
                     payment_id=payment_id,
-                    event_type=EVENT_PAYMENT_CREATED,
-                    status=LOG_SUCCESS,
-                    message="Payment created",
+                    event_type=PaymentLogEvent.EVENT_PAYMENT_CREATED.value,
+                    status=LogStatus.LOG_SUCCESS.value,
+                    message=f"[{datetime.utcnow().isoformat()}] Payment created",
                 )
             )
 
@@ -136,9 +131,9 @@ class Payment:
             # --------------------------------------------------
             new_used = used_tokens + 1
             new_status = (
-                SUBSCRIPTION_INACTIVE
+                SubscriptionStatus.SUBSCRIPTION_INACTIVE.value
                 if new_used >= max_tokens
-                else SUBSCRIPTION_ACTIVE
+                else SubscriptionStatus.SUBSCRIPTION_ACTIVE.value
             )
 
             payments_db.execute(
@@ -187,9 +182,9 @@ class Payment:
             logs_db.add(
                 PaymentLog(
                     payment_id=payment_id,
-                    event_type=EVENT_PROVIDER_REQUEST_SENT,
-                    status=LOG_SUCCESS,
-                    message="Provider URL request sent",
+                    event_type=PaymentLogEvent.EVENT_PROVIDER_REQUEST_SENT.value,
+                    status=LogStatus.LOG_SUCCESS.value,
+                    message=f"[{datetime.utcnow().isoformat()}] Provider URL request sent",
                     payload=f'{{"provider":"{provider_alias}"}}',
                 )
             )
@@ -216,15 +211,42 @@ class Payment:
 
         if resp.status_code != 200:
             await self._mark_failed_if_pending(payment_id)
-            raise HTTPException(
-                status_code=502,
-                detail="Provider URL generation failed",
+            raise HTTPException(status_code=502, detail="Provider URL generation failed")
+
+        payment_url = resp.json().get("payment_url")
+        now = datetime.utcnow().isoformat()
+
+        # --------------------------------------------------
+        # UPDATE LOG: append awaiting customer message
+        # --------------------------------------------------
+        logs_db = LogsSessionLocal()
+        try:
+            logs_db.execute(
+                PaymentLog.__table__.update()
+                .where(
+                    PaymentLog.payment_id == payment_id,
+                    PaymentLog.event_type == PaymentLogEvent.EVENT_PROVIDER_REQUEST_SENT.value,
+                )
+                .values(
+                    message=(
+                        PaymentLog.message
+                        + "\n"
+                        + f"[{now}] Payment is pending and waiting for customer action."
+                    ),
+                    payload=(
+                        f'{{"provider":"{provider_alias}",'
+                        f'"payment_url":"{payment_url}"}}'
+                    ),
+                )
             )
+            logs_db.commit()
+        finally:
+            logs_db.close()
 
         return {
             "payment_id": payment_id,
-            "status": PAYMENT_PENDING,
-            "payment_url": resp.json().get("payment_url"),
+            "status": PaymentStatus.PAYMENT_PENDING.name,
+            "payment_url": payment_url,
         }
 
 
@@ -264,7 +286,7 @@ class Payment:
 
             events = [
                 {
-                    "event_type": row.event_type,
+                    "event_type": PaymentLogEvent(row.event_type).name,
                     "message": row.message,
                     "payload": row.payload,
                     "timestamp": row.created_at.isoformat()
@@ -276,7 +298,7 @@ class Payment:
 
             return {
                 "payment_id": pid,
-                "payment_status": payment_status,
+                "payment_status": PaymentStatus(payment_status).name,
                 "events": events,
             }
 
@@ -295,11 +317,11 @@ class Payment:
                 .where(PaymentModel.id == payment_id)
             ).first()
 
-            if row and row[0] == PAYMENT_PENDING:
+            if row and row[0] == PaymentStatus.PAYMENT_PENDING.value:
                 payments_db.execute(
                     PaymentModel.__table__.update()
                     .where(PaymentModel.id == payment_id)
-                    .values(status=PAYMENT_FAILED)
+                    .values(status=PaymentStatus.PAYMENT_FAILED.value)
                 )
                 payments_db.commit()
         finally:
