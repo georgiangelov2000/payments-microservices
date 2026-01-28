@@ -3,6 +3,7 @@ import os
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from app.schemas.payments import CreatePaymentRequest
 from app.models.payments import (
@@ -225,6 +226,63 @@ class Payment:
             "status": PAYMENT_PENDING,
             "payment_url": resp.json().get("payment_url"),
         }
+
+
+    async def tracking(self, payment_id: str):
+        payments_db: Session = PaymentsSessionLocal()
+        logs_db: Session = LogsSessionLocal()
+
+        try:
+            # ---------------------------------------------
+            # Load payment status (payments DB)
+            # ---------------------------------------------
+            payment_row = payments_db.execute(
+                select(
+                    PaymentModel.id,
+                    PaymentModel.status,
+                ).where(PaymentModel.id == payment_id)
+            ).first()
+
+            if not payment_row:
+                raise HTTPException(status_code=404, detail="Payment not found")
+
+            pid, payment_status = payment_row
+
+            # ---------------------------------------------
+            # Load logs timeline (logs DB)
+            # ---------------------------------------------
+            logs_rows = logs_db.execute(
+                select(
+                    PaymentLog.event_type,
+                    PaymentLog.message,
+                    PaymentLog.payload,
+                    PaymentLog.created_at,
+                )
+                .where(PaymentLog.payment_id == pid)
+                .order_by(PaymentLog.created_at.asc())
+            ).all()
+
+            events = [
+                {
+                    "event_type": row.event_type,
+                    "message": row.message,
+                    "payload": row.payload,
+                    "timestamp": row.created_at.isoformat()
+                    if isinstance(row.created_at, datetime)
+                    else row.created_at,
+                }
+                for row in logs_rows
+            ]
+
+            return {
+                "payment_id": pid,
+                "payment_status": payment_status,
+                "events": events,
+            }
+
+        finally:
+            payments_db.close()
+            logs_db.close()
 
     # --------------------------------------------------
     # Safe failure transition (payments DB only)
