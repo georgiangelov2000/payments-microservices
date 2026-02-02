@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual env / local tools
+.venv/
+venv/
+
+# Env files
+.env
+
+# Alembic
+alembic/versions/__pycache__/
+alembic/versions/*
+
+# Logs
+*.log
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

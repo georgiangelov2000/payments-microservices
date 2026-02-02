@@ -19,7 +19,7 @@ Make sure you have the following installed:
 Start all services:
 
 ```bash
-docker compose up -d
+./start.sh
 ```
 
 Verify that all containers are running:

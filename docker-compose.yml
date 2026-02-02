@@ -36,7 +36,7 @@ services:
     image: postgres:15
     container_name: providers-db
     env_file:
-      - providers/.env.providers-db
+      - providers-db/.env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U providers"]
       interval: 5s
@@ -46,7 +46,7 @@ services:
     image: postgres:15
     container_name: merchants-db
     env_file:
-      - merchants/.env.merchants-db
+      - merchants-db/.env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U merchants"]
       interval: 5s
@@ -132,7 +132,7 @@ services:
     build: ./providers
     container_name: providers
     env_file:
-      - providers/.env.providers
+      - providers-db/.env
     volumes:
       - ./providers:/app
     ports:
@@ -146,7 +146,7 @@ services:
     build: ./merchants
     container_name: merchants
     env_file:
-      - merchants/.env.merchants
+      - merchants/.env
     volumes:
       - ./merchants:/app
     ports:
