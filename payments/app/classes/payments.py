@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from app.schemas.payments import CreatePaymentRequest
+from app.schemas.payments import CreatePaymentRequest, GetPaymentsRequest
 from app.models.payments import (
     Provider,
     Payment as PaymentModel,
@@ -362,22 +362,26 @@ class Payment:
     # --------------------------------------------------
     # Get payments (paginated list)
     # --------------------------------------------------
-    async def get(self, merchant_id: str, page: int = 1, limit: int = 20):
+    async def get(
+        self,
+        merchant_id: str,
+        request: GetPaymentsRequest,
+    ):
         payments_db: Session = PaymentsSessionLocal()
 
-        if page < 1:
-            page = 1
-        if limit > 100:
-            limit = 100
-
+        page = request.page
+        limit = request.limit
         offset = (page - 1) * limit
 
         try:
-            total = payments_db.execute(
+            # -------- total count --------
+            total = payments_db.scalar(
                 select(PaymentModel.id)
                 .where(PaymentModel.merchant_id == merchant_id)
-            ).rowcount
+                .count()
+            )
 
+            # -------- paginated rows --------
             rows = payments_db.execute(
                 select(
                     PaymentModel.id,
@@ -401,9 +405,11 @@ class Payment:
                     "provider": row.alias,
                     "amount": row.amount,
                     "status": PaymentStatus(row.status).name,
-                    "created_at": row.created_at.isoformat()
-                    if isinstance(row.created_at, datetime)
-                    else row.created_at,
+                    "created_at": (
+                        row.created_at.isoformat()
+                        if isinstance(row.created_at, datetime)
+                        else row.created_at
+                    ),
                 }
                 for row in rows
             ]
@@ -418,7 +424,6 @@ class Payment:
 
         finally:
             payments_db.close()
-
 
     # --------------------------------------------------
     # Safe failure transition (payments DB only)

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Header, Query
-from app.schemas.payments import CreatePaymentRequest
+from app.schemas.payments import CreatePaymentRequest, GetPaymentsRequest
 from app.classes.payments import Payment
 
 router = APIRouter(
@@ -53,12 +53,11 @@ async def show(payment_id: str):
 # -----------------------------
 @router.get("")
 async def get_payments(
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    request: GetPaymentsRequest,
     x_merchant_id: str = Header(..., alias="X-Merchant-Id"),
 ):
     return await handler.get(
         merchant_id=x_merchant_id,
-        page=page,
-        limit=limit,
+        request=request,
     )
+

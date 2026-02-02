@@ -16,3 +16,7 @@ class CreatePaymentRequest(BaseModel):
         if v <= 0:
             raise ValueError("value must be greater than 0")
         return v
+
+class GetPaymentsRequest(BaseModel):
+    page: int = Field(1, ge=1, description="Page number (starts from 1)")
+    limit: int = Field(20, ge=1, le=100, description="Items per page (max 100)")
