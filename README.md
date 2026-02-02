@@ -57,8 +57,7 @@ docker compose exec -it payments python -m seeders.seeders
 Generate and apply migrations:
 
 ```bash
-docker compose exec -it providers alembic revision --autogenerate -m "create core table"
-docker compose exec -it providers alembic upgrade head
+docker compose exec -it providers python -m seeders.seeders
 ```
 
 ---
