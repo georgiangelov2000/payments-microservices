@@ -275,3 +275,134 @@ This Docker Compose setup provides a **complete local microservices ecosystem**,
 * iterate fast with minimal setup
 
 ---
+
+## 🌐 API Endpoints Overview
+
+All external traffic goes through the **Application Gateway**.
+Internal services are **not exposed directly**.
+
+Base URL (local development):
+
+```
+http://localhost:8080
+```
+
+---
+
+### 🚪 Application Gateway – Public API
+
+#### Payments
+
+| Method | Endpoint                        | Description                     |
+| ------ | ------------------------------- | ------------------------------- |
+| POST   | `/api/v1/payments`              | Create a new payment            |
+| GET    | `/api/v1/payments`              | List payments (paginated)       |
+| GET    | `/api/v1/payments/:id/show`     | Get payment details             |
+| GET    | `/api/v1/payments/:id/tracking` | Get payment timeline / tracking |
+
+Notes:
+
+* `POST` requests require **authenticated merchant signature**
+* `GET` requests use **read-only authentication**
+* Circuit breaker is applied on write operations
+
+---
+
+### 🔁 Webhooks (Internal / Providers)
+
+#### Payments Webhook
+
+| Method | Endpoint                   | Description                     |
+| ------ | -------------------------- | ------------------------------- |
+| POST   | `/api/v1/payments/webhook` | Receive provider payment events |
+
+Security:
+
+* Internal signature verification
+* Raw request body validation
+* Requests without valid signature are rejected (`403`)
+
+---
+
+### 🧩 Internal Microservices (Private)
+
+> These endpoints are **not exposed publicly** and are accessed only via the gateway.
+
+#### Payments Service
+
+```
+/api/v1/payments
+```
+
+* Handles payment lifecycle
+* Emits async events to RabbitMQ
+* Persists payment state in Payments DB
+
+#### Merchants Service
+
+```
+/api/v1/merchants
+```
+
+* Manages merchants
+* API keys & permissions
+* Subscription limits
+
+#### Providers Service
+
+```
+/api/v1/providers
+```
+
+* Provider configurations
+* Provider availability
+* Provider-specific metadata
+
+#### Webhook Service
+
+```
+/api/v1/webhooks
+```
+
+* Stores webhook payloads
+* Audit & troubleshooting
+* Writes to payments-logs database
+
+---
+
+### 🩺 Health Checks
+
+All services expose a health endpoint:
+
+```
+GET /health
+```
+
+Used for:
+
+* container healthchecks
+* readiness probes
+* local debugging
+
+---
+
+### 🔐 Authentication Summary
+
+| Type               | Used For                  |
+| ------------------ | ------------------------- |
+| HMAC / API Key     | Merchant write requests   |
+| Internal Signature | Webhooks & internal calls |
+| Request ID         | Tracing & observability   |
+
+---
+
+### 🧠 Routing Rule (Simplified)
+
+```
+Client
+  → SaaS Gateway (NGINX)
+    → Application Gateway
+      → Internal Service
+```
+
+Direct access to microservices is intentionally blocked.
