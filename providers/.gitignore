@@ -12,7 +12,6 @@ alembic/versions/*.py
 
 # Env files
 .env
-.env.*
 
 # Alembic
 alembic/versions/__pycache__/
