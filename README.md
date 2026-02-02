@@ -406,3 +406,461 @@ Client
 ```
 
 Direct access to microservices is intentionally blocked.
+
+
+## 🧠 Key Design Patterns (Used in This System)
+
+This system intentionally applies several **well-known design and architectural patterns**, directly reflected in the codebase.
+
+These patterns improve **security, scalability, resilience, and maintainability**.
+
+---
+
+### 🔐 API Gateway Pattern
+
+**Where:**
+
+* `Application Gateway` (Node.js / Express)
+* NGINX SaaS Gateway
+
+**How it’s used:**
+
+* All external requests pass through a single entry point
+* Authentication, validation, and routing are centralized
+* Internal services are never exposed directly
+
+**Why:**
+
+* Decouples clients from internal services
+* Enables consistent security and observability
+* Allows internal services to evolve independently
+
+---
+
+### 🔁 Reverse Proxy Pattern
+
+**Where:**
+
+* NGINX (`proxy_pass`)
+* Express Gateway (`proxy.web`)
+
+**How it’s used:**
+
+* Gateway forwards HTTP traffic to internal services
+* Preserves request/response semantics
+* No business logic duplication
+
+**Why:**
+
+* Enables transparent routing
+* Simplifies service-to-service communication
+* Supports zero-downtime migrations
+
+---
+
+### 🧯 Circuit Breaker Pattern
+
+**Where:**
+
+* Redis-based circuit breaker (`cb:payments`)
+
+**How it’s used:**
+
+* Failures are counted in Redis
+* After a threshold, the circuit is opened
+* Requests are rejected early (fail-fast)
+* Circuit resets automatically via TTL
+
+**Why:**
+
+* Prevents cascading failures
+* Protects downstream services
+* Keeps latency predictable under failure
+
+---
+
+### 🚦 Rate Limiting Pattern
+
+**Where:**
+
+* NGINX `limit_req_zone`
+
+**How it’s used:**
+
+* Requests are limited per client IP
+* Burst handling allows short traffic spikes
+* Enforced at the edge (before application logic)
+
+**Why:**
+
+* Protects backend services
+* Prevents abuse and brute-force attacks
+* Reduces unnecessary load
+
+---
+
+### 🛡️ Defense-in-Depth Security Pattern
+
+**Where:**
+
+* NGINX headers & method restrictions
+* Express Helmet middleware
+* Internal signature verification
+* API key hashing
+
+**How it’s used:**
+
+* Security is enforced at multiple layers
+* Each layer assumes the previous one may fail
+
+**Why:**
+
+* No single point of failure
+* Strong protection against request smuggling, spoofing, and abuse
+
+---
+
+### 🧾 Token-Based Authentication Pattern
+
+**Where:**
+
+* API key authentication with SHA-256 hashing
+* Subscription & usage context resolution
+
+**How it’s used:**
+
+* API keys are never stored in plaintext
+* Auth context includes:
+
+  * merchant ID
+  * subscription
+  * token limits & usage
+
+**Why:**
+
+* Secure merchant identification
+* Enables quota enforcement
+* Scales well across services
+
+---
+
+### 🔄 Stateless Service Pattern
+
+**Where:**
+
+* Gateway
+* Workers
+* Microservices
+
+**How it’s used:**
+
+* No in-memory user or session state
+* All state stored in Redis, PostgreSQL, or events
+
+**Why:**
+
+* Horizontal scalability
+* Easy restarts & redeployments
+* Cloud-native friendly
+
+---
+
+### 🧵 Middleware Pipeline Pattern
+
+**Where:**
+
+* Express middlewares (`helmet`, `requestId`, `authGet`, `authPost`)
+
+**How it’s used:**
+
+* Each middleware has a single responsibility
+* Composable request processing chain
+
+**Why:**
+
+* Clean separation of concerns
+* Easy to extend or replace
+* Improves testability
+
+---
+
+### 🧩 Database-per-Service Pattern
+
+**Where:**
+
+* Separate PostgreSQL databases per domain
+
+**How it’s used:**
+
+* Each service owns its data
+* No shared database schema
+
+**Why:**
+
+* Strong service isolation
+* Independent migrations
+* Reduced coupling
+
+---
+
+### 📬 Event-Driven Architecture (EDA)
+
+**Where:**
+
+* RabbitMQ
+* Payments producers & consumers
+
+**How it’s used:**
+
+* Async communication between services
+* Background processing decoupled from API requests
+
+**Why:**
+
+* Improves throughput
+* Reduces request latency
+* Enables scalable workflows
+
+---
+
+### 🔍 Request Tracing Pattern
+
+**Where:**
+
+* `requestId` middleware
+
+**How it’s used:**
+
+* Each request gets a unique ID
+* Propagated across services
+
+**Why:**
+
+* Simplifies debugging
+* Enables distributed tracing
+* Improves observability
+
+---
+
+### 🧪 Health Check Pattern
+
+**Where:**
+
+* `/health` endpoints
+* Docker healthchecks
+
+**How it’s used:**
+
+* Services expose liveness/readiness status
+* Containers depend on healthy dependencies
+
+**Why:**
+
+* Safer startup sequencing
+* Better monitoring & orchestration
+
+
+## 🧠 Additional Design Patterns (Async & Reliability)
+
+The async workers and messaging layer introduce additional **robustness and reliability patterns**, critical for distributed payment systems.
+
+---
+
+### 📬 Message Queue Pattern
+
+**Where:**
+
+* RabbitMQ (topic exchange `payments`)
+* `payments-producer`
+* `payments-consumer`
+
+**How it’s used:**
+
+* Events are published to a durable topic exchange
+* Consumers subscribe using routing keys (`payment.*`)
+* Messages are persisted (`DeliveryMode.PERSISTENT`)
+
+**Why:**
+
+* Decouples producers from consumers
+* Allows independent scaling
+* Prevents data loss during restarts
+
+---
+
+### 🔁 Producer–Consumer Pattern
+
+**Where:**
+
+* Producer: timeline / log-driven publisher
+* Consumer: merchant notification worker
+
+**How it’s used:**
+
+* Producer scans DB and publishes eligible events
+* Consumer processes events asynchronously
+* Workload is distributed across consumers
+
+**Why:**
+
+* Improves throughput
+* Keeps API requests fast
+* Enables background retries and batching
+
+---
+
+### 🧾 Transactional Outbox Pattern (Log-Based)
+
+**Where:**
+
+* `PaymentLog` table
+* Producer atomic `UPDATE … RETURNING`
+
+**How it’s used:**
+
+* Events are written to DB first
+* Producer atomically claims pending rows
+* Claimed rows are published to RabbitMQ
+
+**Why:**
+
+* Guarantees events are not lost
+* Safe with multiple producers
+* Eliminates race conditions
+
+---
+
+### 🔐 Atomic Claim / Work Stealing Pattern
+
+**Where:**
+
+* SQLAlchemy `UPDATE … RETURNING`
+
+**How it’s used:**
+
+* Multiple workers safely claim work
+* Rows are transitioned to `PROCESSING`
+* No locks or in-memory coordination needed
+
+**Why:**
+
+* Horizontal scaling of workers
+* No duplicate processing
+* Database acts as coordination point
+
+---
+
+### ♻️ Retry with Backoff Pattern
+
+**Where:**
+
+* Producer & consumer retry logic
+
+**How it’s used:**
+
+* Retry counters stored in DB
+* `next_retry_at` schedules future attempts
+* Delay increases deterministically
+* Fail after configurable threshold
+
+**Why:**
+
+* Handles transient failures
+* Prevents retry storms
+* Keeps system stable under partial outages
+
+---
+
+### ❌ Dead-Letter / Terminal Failure Pattern
+
+**Where:**
+
+* `LOG_FAILED` status
+
+**How it’s used:**
+
+* After N failed attempts, event is marked failed
+* No infinite retry loops
+* Failure is explicitly recorded
+
+**Why:**
+
+* Prevents poison messages
+* Enables manual inspection & recovery
+* Improves operational visibility
+
+---
+
+### 🔂 Idempotency Pattern
+
+**Where:**
+
+* Merchant notification consumer
+
+**How it’s used:**
+
+* Success status is checked before processing
+* Duplicate messages are ignored safely
+
+**Why:**
+
+* Safe message re-delivery
+* Exactly-once *effect* over at-least-once delivery
+* Critical for financial systems
+
+---
+
+### 🕒 Time-Based Scheduling Pattern
+
+**Where:**
+
+* `next_retry_at` logic
+
+**How it’s used:**
+
+* Events become eligible only after a timestamp
+* Producer polls and selects ready items
+
+**Why:**
+
+* Simple scheduling without cron
+* Fully database-driven
+* Predictable retry behavior
+
+---
+
+### 🧠 Compensating Workflow Pattern
+
+**Where:**
+
+* Merchant notification flow
+
+**How it’s used:**
+
+* Failures are retried asynchronously
+* Final failure is explicitly tracked
+* No blocking of upstream flows
+
+**Why:**
+
+* Payments remain consistent
+* External system failures are isolated
+* Improves system resilience
+
+---
+
+### 🧪 At-Least-Once Delivery Semantics
+
+**Where:**
+
+* RabbitMQ + manual ACK handling
+
+**How it’s used:**
+
+* Messages are acknowledged only after processing
+* Redelivery is possible on crashes
+
+**Why:**
+
+* Stronger reliability guarantees
+* Required for financial event processing
