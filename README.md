@@ -37,8 +37,7 @@ docker ps
 Generate and apply migrations:
 
 ```bash
-docker compose exec -it merchants alembic revision --autogenerate -m "create core tables"
-docker compose exec -it merchants alembic upgrade head
+docker compose exec -it merchants python -m seeders.seeders
 ```
 
 ---
@@ -48,8 +47,7 @@ docker compose exec -it merchants alembic upgrade head
 Generate and apply migrations:
 
 ```bash
-#docker compose exec -it payments alembic revision --autogenerate -m "create core tables"
-#docker compose exec -it payments alembic upgrade head
+docker compose exec -it payments python -m seeders.seeders
 ```
 
 ---
