@@ -37,6 +37,8 @@ services:
     container_name: providers-db
     env_file:
       - providers-db/.env
+    volumes:
+      - ./providers-db/init-db:/docker-entrypoint-initdb.d       
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U providers"]
       interval: 5s
@@ -47,6 +49,8 @@ services:
     container_name: merchants-db
     env_file:
       - merchants-db/.env
+    volumes:
+      - ./merchants-db/init-db:/docker-entrypoint-initdb.d      
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U merchants"]
       interval: 5s

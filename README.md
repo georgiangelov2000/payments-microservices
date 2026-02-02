@@ -93,7 +93,10 @@ docker compose exec -it merchants python -m seeders.seeders
 ### Payments Database
 
 ```bash
-docker compose exec -it payments-db psql -U payments -d payments
+docker compose exec -it payments-db psql -U postgres -d payments
+docker compose exec merchants-db psql -U merchants merchants
+docker compose exec providers-db psql -U providers providers
+docker compose exec providers-db psql -U postgres logs
 ```
 
 ```sql
