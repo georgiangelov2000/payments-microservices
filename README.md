@@ -1,280 +1,109 @@
-# 🧩 Payments Microservices – Development Environment
+# Payments Microservices — Short Reference ✅
 
-This repository contains a **Docker Compose–based development environment** for a microservices architecture that manages payments, merchants, providers, SaaS platform, gateways, and background workers.
-
-The setup is optimized for **local development**, **clean rebuilds**, and **fast iteration**.
+A concise developer reference with the key **design patterns**, **API endpoints & params**, a compact **system diagram**, and commands to connect to the databases via Docker.
 
 ---
 
-## 🏗️ Architecture Overview
+## System diagram
 
 ```
-Clients / Frontend
-        |
-        v
- ┌────────────────────┐
- │  Merchants         │  (PYTHON)
- └─────────┬──────────┘
-           v        
- ┌────────────────────┐
- │  SaaS Gateway      │  (NGINX)
- └─────────┬──────────┘
-           v
- ┌────────────────────┐
- │ Application Gateway│  (Node.js / Express)
- └─────────┬──────────┘
-           v
- ┌─────────────────────────────────────┐
- │ Microservices                       │
- │  - Payments (FastAPI)               │
- │  - Providers (FastAPI)              │
- │  - Webhook (FastAPI)                │
- └─────────┬──────────┬─────────┬──────┘
-           v          v         v
-     PostgreSQL   RabbitMQ    Redis
-
- ┌─────────────────────────────────────┐
- │ Third party service                 │
- │  - Providers (FastAPI)              │
- └─────────┬──────────┬─────────┬──────┘
-
+Clients → SaaS Gateway (NGINX) → Application Gateway (Express)
+                                  ↓
+       ┌─────────┬──────────┬───────────┐
+       │ Payments│ Providers│ Webhook   │
+       │(FastAPI)│(FastAPI) │(FastAPI)  │
+       └─────────┴──────────┴───────────┘
+        ↓         ↓           ↓
+   PostgreSQL  RabbitMQ     Redis
+   (payments)   (exchange)   (circuit/cache)
 ```
 
 ---
 
-## 🧱 Services Breakdown
+## Key design patterns (summary)
 
-### 🔌 Third-party Infrastructure
-
-#### RabbitMQ
-
-* Message broker for asynchronous communication
-* Used by payments producers & consumers
-* Management UI:
-
-  ```
-  http://localhost:15672
-  ```
-
-#### Redis
-
-* Used for:
-
-  * circuit breaker
-  * caching
-  * counters / rate-limiting
-* Non-persistent (development only)
+- **API Gateway** — centralized auth, validation, and routing (Express)
+- **Reverse Proxy** — gateway forwards requests to internal services
+- **Circuit Breaker** — Redis-based protection for flaky downstream services
+- **Transactional Outbox** — write events to DB (payment_logs) then publish (producer)
+- **Producer–Consumer (RabbitMQ)** — reliable async merchant notifications
+- **Idempotency** — guard repeated operations (payment creation & webhook handling)
+- **Retry with backoff & dead-letter** — controlled retries with final failure state
+- **Database-per-service** — independent DBs per domain (payments, logs, providers, merchants)
 
 ---
 
-### 🗄️ Databases (PostgreSQL 15)
+## API endpoints — concise reference
 
-Each domain has **its own isolated database** (Database-per-Service pattern).
+Base URL (dev): `http://localhost:8080` (through Application Gateway)
 
-| Domain    | Container          | Purpose            |
-| --------- | ------------------ | ------------------ |
-| Payments  | `payments-db`      | Payments core data |
-| Providers | `providers-db`     | Providers domain   |
-| Merchants | `merchants-db`     | Merchants domain   |
-| Logs      | `payments-logs-db` | Webhook & logs     |
+Payments
+- POST /api/v1/payments
+  - Headers: `X-Api-Key: <api_key>`, `Content-Type: application/json`, `X-Request-ID` (optional)
+  - Body (JSON): { "order_id": int, "amount": decimal, "price": decimal, "alias": string, "subscription_id": int, "event_id": string }
+  - Success: 200 `{ "payment_id": int, "status": "PAYMENT_PENDING", "payment_url": "..." }`
+  - Errors: 400 (bad request), 401 (auth), 429 (quota), 502 (provider error)
 
-All databases:
+- GET /api/v1/payments?page=&limit=
+  - Headers: `X-Api-Key: <api_key>`
+  - Query: `page` (int, default 1), `limit` (int, default 20, max 100)
 
-* use `.env` files for credentials
-* load initial SQL from `/init-db`
-* expose healthchecks via `pg_isready`
+- GET /api/v1/payments/{id}/show
+  - Headers: `X-Api-Key: <api_key>`
 
----
+- GET /api/v1/payments/{id}/tracking
+  - Headers: `X-Api-Key: <api_key>`
+  - Returns ordered timeline of `payment_logs` events
 
-### 🚪 Gateways
+Webhook (internal)
+- POST /api/v1/payments/webhook
+  - Headers: `x-internal-signature: <hex-hmac-sha256>`
+  - Raw JSON body — signature is HMAC(SHA256, INTERNAL_WEBHOOK_SECRET) over raw body (hex)
+  - Rejects invalid signature with 403 `{ "error": "invalid_signature" }`
 
-#### Application Gateway
-
-* Node.js / Express
-* Implements **API Gateway pattern**
-* Responsibilities:
-
-  * authentication (GET / POST separation)
-  * request validation
-  * circuit breaker (Redis)
-  * reverse proxy to internal services
-* Exposed on:
-
-  ```
-  http://localhost:8080
-  ```
-
-#### SaaS Gateway (NGINX)
-
-* Front-facing gateway
-* Routes traffic to Laravel SaaS
-* Exposed on:
-
-  ```
-  http://localhost
-  ```
-
-#### Gateway Verification
-
-* Internal verification service
-* Used for validating internal requests and webhooks
+Health
+- GET /health → 200 or 503 (checks Postgres and Redis)
 
 ---
 
-### 🧩 SaaS Platform
+## Example curl (create payment)
 
-#### Laravel SaaS
+curl -X POST \
+  -H "X-Api-Key: <api_key>" \
+  -H "Content-Type: application/json" \
+  -d '{"order_id":123,"amount":10.0,"price":10.0,"alias":"stripe","subscription_id":1,"event_id":"evt_123"}' \
+  http://localhost:8080/api/v1/payments
 
-* Main SaaS application
-* Handles UI, users, subscriptions
-* Ports:
 
-  * `8000` – Laravel backend
-  * `5173` – Vite frontend
+## Connect to databases via Docker (psql)
 
----
+Replace with credentials from each service's `.env` if different.
 
-### ⚙️ Core Microservices
+- Payments DB
+  - docker compose exec payments-db psql -U payments -d payments
 
-#### Payments Service
+- Logs DB
+  - docker compose exec payments-logs-db psql -U webhook_api -d logs
 
-* FastAPI
-* Core payment processing logic
-* Depends on:
+- Merchants DB
+  - docker compose exec merchants-db psql -U merchants -d merchants
 
-  * RabbitMQ
-  * Redis
-  * Payments database
-* Runs with hot reload for development
+- Providers DB
+  - docker compose exec providers-db psql -U providers -d providers
 
-#### Merchants Service
-
-* FastAPI
-* Manages merchants domain
-* Uses isolated merchants database
-
-#### Providers Service
-
-* FastAPI
-* Integrates external payment providers
-
-#### Webhook Service
-
-* FastAPI
-* Receives and validates provider webhooks
-* Stores logs in payments-logs database
+Tip: run `docker compose ps` to confirm container names and `docker compose exec <service> bash` to open a shell.
 
 ---
 
-### 🔄 Background Workers
+## Minimal troubleshooting pointers
 
-#### Payments Consumer
-
-* Consumes RabbitMQ events
-* Processes async payment workflows
-
-#### Payments Producer
-
-* Emits async events
-* Used for background operations
-
-Workers are **stateless** and can be scaled horizontally.
+- 502 from gateway on POST: check provider (`PROVIDER_URL`) health and network.
+- 401 / 429: verify API key, subscription tokens, and Redis connectivity.
+- Webhook 403: ensure `INTERNAL_WEBHOOK_SECRET` matches signer and signature is HMAC-SHA256 of raw body.
 
 ---
 
-## 🔐 Environment Variables
-
-Each service uses a local `.env` file.
-
-Example:
-
-```
-payments/.env.example → payments/.env
-```
-
-A bootstrap script can automatically create missing `.env` files from `.env.example`.
-
-⚠️ **Never commit real secrets to the repository.**
-
----
-
-## ▶️ Running the Stack
-
-### Start all services
-
-```bash
-chmod +x ./start.sh
-./start.sh
-```
-
-### Stop and clean everything (including volumes)
-
-```bash
-chmod +x ./stop.sh
-./start.sh
-```
-
----
-
-## 🧪 Useful Commands
-
-### Connect to databases
-
-```bash
-docker compose exec merchants-db psql -U merchants merchants
-docker compose exec payments-db psql -U payments payments
-docker compose exec providers-db psql -U providers providers
-```
-
-### List running services
-
-```bash
-docker compose ps
-```
-
-### View logs
-
-```bash
-docker compose logs -f payments
-```
-
----
-
-## 🧠 Design Principles
-
-* Microservices per domain
-* Database-per-service
-* Stateless services
-* API Gateway pattern
-* Circuit Breaker (Redis)
-* Async messaging (RabbitMQ)
-
----
-
-## 🚧 Development Notes
-
-* This setup is **for development only**
-* Not production-hardened
-* Production requires:
-
-  * secrets management
-  * TLS
-  * monitoring & alerting
-  * persistent volumes
-  * scaling policies
-
----
-
-## ✅ Summary
-
-This Docker Compose setup provides a **complete local microservices ecosystem**, allowing you to:
-
-* develop services independently
-* test async event flows
-* reset databases easily
-* iterate fast with minimal setup
-
----
+If you'd like, I can also add a short OpenAPI summary or a one-page cheat sheet for common commands. 💡
 
 ## 🌐 API Endpoints Overview
 
