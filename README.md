@@ -864,3 +864,138 @@ The async workers and messaging layer introduce additional **robustness and reli
 
 * Stronger reliability guarantees
 * Required for financial event processing
+
+## 🌐 External API Usage (via Application Gateway)
+
+All public APIs are exposed **only through the Application Gateway**.
+
+**Base URL (local development):**
+```
+http://localhost:8080
+```
+
+All requests **must include an API key**.
+
+---
+
+## 🔐 Authentication
+
+All endpoints require the following header:
+
+```
+X-Api-Key: <your_api_key>
+```
+
+---
+
+## 💳 Payments API
+
+### 🔹 Get payments (paginated list)
+
+**GET**
+```
+/api/v1/payments
+```
+
+**Headers**
+```
+X-Api-Key: <your_api_key>
+```
+
+**Query parameters**
+
+| Name  | Type | Description                          |
+| ----  | ---- | ------------------------------------ |
+| page  | int  | Page number (default: 1)             |
+| limit | int  | Items per page (default: 20, max:100)|
+
+**Example**
+```
+GET http://localhost:8080/api/v1/payments?page=1&limit=10
+```
+
+---
+
+### 🔹 Get single payment (details)
+
+**GET**
+```
+/api/v1/payments/{id}/show
+```
+
+**Headers**
+```
+X-Api-Key: <your_api_key>
+```
+
+**Example**
+```
+GET http://localhost:8080/api/v1/payments/123/show
+```
+
+---
+
+### 🔹 Get payment tracking (timeline)
+
+**GET**
+```
+/api/v1/payments/{id}/tracking
+```
+
+**Headers**
+```
+X-Api-Key: <your_api_key>
+```
+
+**Example**
+```
+GET http://localhost:8080/api/v1/payments/123/tracking
+```
+
+---
+
+## 🛒 Orders API
+
+**POST**
+```
+http://localhost:8001/api/v1/orders
+```
+
+**Headers**
+```
+X-Api-Key: <your_api_key>
+Content-Type: application/json
+```
+
+**Body**
+```json
+{
+  "product_id": 1,
+  "amount": 1,
+  "alias": "string"
+}
+```
+
+---
+
+## 🔁 Payments Webhook
+
+**POST**
+```
+/api/v1/payments/webhook
+```
+
+**Headers**
+```
+X-Provider-Signature: <provider_signature>
+Content-Type: application/json
+```
+
+---
+
+## 📚 API Docs
+
+FastAPI Swagger UI:
+```
+http://localhost:8001/docs
+```
