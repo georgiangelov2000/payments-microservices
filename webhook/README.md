@@ -22,25 +22,6 @@ LOGS_DB_URL=postgresql://webhook_api:password@host:5432/logs
 PAYMENTS_DB_URL=postgresql://payments_api:password@host:5432/payments
 ```
 
-2. Install and run locally
-
-```bash
-# create venv, activate it, then:
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-3. Using Docker
-
-```bash
-docker build -t webhook-service .
-docker run -e LOGS_DB_URL=... -e PAYMENTS_DB_URL=... -p 8000:8000 webhook-service
-```
-
-The Docker image uses Python 3.11 and the container exposes port `8000`.
-
----
-
 ## 📡 Endpoint
 
 - POST /api/v1/payments/webhook
@@ -89,11 +70,3 @@ Examples of possible `result` objects:
 - Run the service locally with `uvicorn` and write tests for the handler to cover idempotency, success/failure transitions, and DB log creation.
 
 ---
-
-## 📄 License
-
-This module follows the repository license (see top-level `LICENSE`).
-
----
-
-If you'd like, I can add example curl commands and a small test harness for the handler. 💡
