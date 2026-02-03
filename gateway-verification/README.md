@@ -30,27 +30,6 @@ REDIS_URL=redis://host:6379
 
 > Note: The repository contains `.env.example` (empty here) — populate it with the variables above.
 
-2. Run locally
-
-```bash
-cd gateway-verification/app
-npm install
-npm run dev    # development with nodemon
-# or
-npm start      # run node index.js
-```
-
-3. Or build/run with Docker
-
-```bash
-# from gateway-verification root
-docker build -t gateway-verification -f Dockerfile .
-docker run -e PORT=3000 -e PAYMENTS_URL=... -e REDIS_URL=... -e DATABASE_URL=... -p 3000:3000 gateway-verification
-```
-
-> The provided Dockerfile uses `node:20-alpine` and runs `npm run dev` by default.
-
----
 
 ## 📡 Endpoints
 
@@ -123,18 +102,3 @@ The gateway forwards or returns structured errors. Important ones:
 - Check logs (stdout) — the app prints auth and gateway errors.
 
 ---
-
-## 🧩 Contributing
-
-- Follow existing patterns: ES modules, small focused middleware, and clear error responses.
-- Run `npm run dev` while developing to reload on file changes.
-
----
-
-## 📄 License
-
-This module follows the repository license (see top-level `LICENSE`).
-
----
-
-If you'd like, I can also add example curl commands or Postman collection snippets for all endpoints. 💡
