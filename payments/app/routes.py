@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Header, Query
+from fastapi import APIRouter, Header, Depends, Query
 from app.schemas.payments import CreatePaymentRequest, GetPaymentsRequest
 from app.classes.payments import Payment
 
@@ -52,8 +52,9 @@ async def show(payment_id: str):
 # Get payments list (paginated)
 # -----------------------------
 @router.get("")
+@router.get("/")
 async def get_payments(
-    request: GetPaymentsRequest,
+    request: GetPaymentsRequest = Depends(),
     x_merchant_id: str = Header(..., alias="X-Merchant-Id"),
 ):
     return await handler.get(

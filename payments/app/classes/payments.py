@@ -1,7 +1,7 @@
 import httpx
 import os
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from datetime import datetime
 
@@ -364,8 +364,8 @@ class Payment:
     # --------------------------------------------------
     async def get(
         self,
-        merchant_id: str,
         request: GetPaymentsRequest,
+        merchant_id: str,
     ):
         payments_db: Session = PaymentsSessionLocal()
 
@@ -376,9 +376,9 @@ class Payment:
         try:
             # -------- total count --------
             total = payments_db.scalar(
-                select(PaymentModel.id)
+                select(func.count())
+                .select_from(PaymentModel)
                 .where(PaymentModel.merchant_id == merchant_id)
-                .count()
             )
 
             # -------- paginated rows --------
