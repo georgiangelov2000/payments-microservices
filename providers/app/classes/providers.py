@@ -26,7 +26,8 @@ class ProviderService:
 
         raw = f"{request.provider}:{request.merchant_id}:{request.payment_id}"
         token = hashlib.sha256(raw.encode()).hexdigest()
-        payment_url = f"https://pay.{request.provider}.test/{token}"
+        page_base = os.getenv("PAYMENT_PAGE_BASE_URL", "http://localhost:8002")
+        payment_url = f"{page_base}/pay/{token}"
 
         db: Session = SessionLocal()
         try:
@@ -66,6 +67,9 @@ class ProviderService:
 
         webhook_url = os.getenv("PAYMENT_URL_BASE_WEBHOOK")
         secret = os.getenv("INTERNAL_WEBHOOK_SECRET")
+
+        if not webhook_url:
+            raise RuntimeError("PAYMENT_URL_BASE_WEBHOOK is not set")
 
         if not secret:
             raise RuntimeError("INTERNAL_WEBHOOK_SECRET is not set")
@@ -120,15 +124,22 @@ class ProviderService:
                 "X-Internal-Signature": signature,
             }
 
-            print(webhook_url)
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.post(
+                        webhook_url,
+                        content=payload_json,
+                        headers=headers,
+                    )
+                    response.raise_for_status()
+            except httpx.HTTPError as exc:
+                db.rollback()
+                raise HTTPException(
+                    status_code=502,
+                    detail="Payment accepted but webhook delivery failed",
+                ) from exc
 
-            # Send webhook
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                await client.post(
-                    webhook_url,
-                    content=payload_json,  # IMPORTANT: raw JSON string
-                    headers=headers,
-                )
+            db.commit()
 
             return payload
 

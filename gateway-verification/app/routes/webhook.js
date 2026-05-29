@@ -9,6 +9,9 @@ router.post("/", (req, res) => {
   if (!verifyInternalSignature(req)) {
     return res.status(403).json({ error: "invalid_signature" })
   }
+  // Express strips the mount prefix so req.url is "/".
+  // Restore the full path so the webhook service receives the correct route.
+  req.url = "/api/v1/payments/webhook"
   proxy.web(req, res, { target: env.WEBHOOK_URL })
 })
 

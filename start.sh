@@ -95,11 +95,41 @@ echo ""
 echo "================ LARAVEL ================"
 
 if docker compose ps --services --status running | grep -q "^saas-laravel$"; then
-  docker compose exec saas-laravel php artisan migrate:fresh
+  docker compose exec saas-laravel composer install --no-interaction
+  docker compose exec saas-laravel php artisan key:generate --no-interaction
+  docker compose exec saas-laravel npm install
+  docker compose exec saas-laravel npm run build
   docker compose exec saas-laravel php artisan optimize:clear
-  docker compose exec saas-laravel npm run dev
 else
   echo "Service saas-laravel not running, skipping..."
+fi
+
+# =================================================
+# CREDENTIALS FILE
+# =================================================
+echo ""
+echo "================ CREDENTIALS ================"
+
+CREDS_SRC="payments/credentials.txt"
+
+if [ -f "$CREDS_SRC" ]; then
+  cp "$CREDS_SRC" ./credentials.txt
+  echo ""
+  echo "Saved to: $(pwd)/credentials.txt"
+  echo ""
+  cat ./credentials.txt
+  echo ""
+  # Populate merchant-demo API key automatically
+  FIRST_KEY=$(grep "API Key" ./credentials.txt | head -1 | awk -F': ' '{print $2}')
+  if [ -n "$FIRST_KEY" ]; then
+    sed -i.bak "s|^MERCHANT_API_KEY=.*|MERCHANT_API_KEY=$FIRST_KEY|" merchant-demo/.env
+    rm -f merchant-demo/.env.bak
+    echo "merchant-demo/.env updated with API key: $FIRST_KEY"
+    echo "Recreating merchant-demo to apply new API key..."
+    $COMPOSE up -d --force-recreate --no-deps merchant-demo
+  fi
+else
+  echo "No new credentials generated (merchants already existed or seeder skipped)."
 fi
 
 # =================================================

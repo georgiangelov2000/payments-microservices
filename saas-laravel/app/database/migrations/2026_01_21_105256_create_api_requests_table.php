@@ -19,7 +19,7 @@ return new class extends Migration
                 $table->unsignedBigInteger('user_id');
 
                 $table->unsignedBigInteger('payment_id');
-                $table->decimal('amount', 10, 8);
+                $table->decimal('amount', 18, 8);
 
                 $table->string('source', 50);
 

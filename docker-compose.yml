@@ -78,12 +78,21 @@ services:
       depends_on:
         payments:
           condition: service_started
+  merchant-demo:
+    build: ./merchant-demo
+    container_name: merchant-demo
+    env_file: merchant-demo/.env
+    ports:
+      - "3001:80"
+    depends_on:
+      - gateway
   saas-gateway:
     image: nginx:alpine
     container_name: saas-gateway
     volumes:
       - ./saas-gateway/nginx.conf:/etc/nginx/nginx.conf
       - ./saas-gateway/default.conf:/etc/nginx/conf.d/default.conf
+      - ./saas-laravel/app/public:/var/www/public
     ports:
       - "80:80"
     depends_on:

@@ -12,8 +12,8 @@ return new class extends Migration
             Schema::create('payments', function (Blueprint $table) {
                 $table->id();
 
-                $table->decimal('price', 10, 8);
-                $table->decimal('amount', 10, 8);
+                $table->decimal('price', 18, 8);
+                $table->decimal('amount', 18, 8);
 
                 $table->unsignedBigInteger('merchant_id');
                 $table->unsignedBigInteger('order_id')->unique();

@@ -75,8 +75,8 @@ CREATE INDEX ix_providers_name  ON providers(name);
 CREATE TABLE payments (
     id BIGSERIAL PRIMARY KEY,
 
-    price  NUMERIC(10,8) NOT NULL,
-    amount NUMERIC(10,8) NOT NULL,
+    price  NUMERIC(18,8) NOT NULL,
+    amount NUMERIC(18,8) NOT NULL,
 
     merchant_id BIGINT NOT NULL CHECK (merchant_id >= 0),
     provider_id BIGINT NOT NULL CHECK (provider_id >= 0),
@@ -128,7 +128,7 @@ CREATE TABLE api_requests (
     subscription_id BIGINT NOT NULL CHECK (subscription_id >= 0),
     user_id         BIGINT NOT NULL CHECK (user_id >= 0),
 
-    amount NUMERIC(10,8) NOT NULL CHECK (amount >= 0),
+    amount NUMERIC(18,8) NOT NULL CHECK (amount >= 0),
     source VARCHAR(255) NOT NULL,
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

@@ -174,8 +174,33 @@ def run():
                 f"API key: {k['api_key']}"
             )
 
+        _write_credentials(api_keys)
+
     finally:
         db.close()
+
+
+def _write_credentials(api_keys: list) -> None:
+    if not api_keys:
+        return
+
+    lines = ["=== PAYMENTS SERVICE — GENERATED CREDENTIALS ===\n"]
+    for k in api_keys:
+        lines += [
+            f"Merchant : {k['merchant']}",
+            f"Email    : {k['email']}",
+            f"Password : {k['password']}",
+            f"API Key  : {k['api_key']}",
+            "",
+        ]
+
+    output = "\n".join(lines)
+    path = "/app/credentials.txt"
+
+    with open(path, "w") as f:
+        f.write(output)
+
+    print(f"\nCredentials written to {path}")
 
 
 if __name__ == "__main__":
