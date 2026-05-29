@@ -20,6 +20,38 @@ Clients → SaaS Gateway (NGINX) → Application Gateway (Express)
 
 ---
 
+## UI screenshots
+
+### TechShop products
+
+![TechShop products page](docs/images/techshop-products.png)
+
+### TechShop cart
+
+![TechShop cart drawer](docs/images/techshop-cart.png)
+
+### TechShop orders
+
+![TechShop orders page](docs/images/techshop-orders.png)
+
+### SaaS Laravel dashboard
+
+![SaaS Laravel dashboard](docs/images/saas-dashboard.png)
+
+### SaaS Laravel payments
+
+![SaaS Laravel payments page](docs/images/saas-payments.png)
+
+### SaaS Laravel API keys
+
+![SaaS Laravel API keys page](docs/images/saas-api-keys.png)
+
+### SaaS Laravel subscriptions
+
+![SaaS Laravel subscriptions page](docs/images/saas-subscriptions.png)
+
+---
+
 ## Key design patterns (summary)
 
 - **API Gateway** — centralized auth, validation, and routing (Express)
