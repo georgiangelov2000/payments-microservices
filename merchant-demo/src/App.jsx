@@ -17,6 +17,7 @@ function readStoredValue(key, fallback) {
 }
 
 export default function App() {
+  const [page, setPage] = useState("products")
   const [checkout, setCheckout] = useState(null)
   const [cartOpen, setCartOpen] = useState(false)
   const [cart, setCart] = useState(() => readStoredValue(CART_STORAGE_KEY, []))
@@ -102,6 +103,7 @@ export default function App() {
     ])
     setCart([])
     setCheckout(null)
+    setPage("orders")
   }, [])
 
   const handleStatusChange = useCallback((paymentId, status) => {
@@ -119,11 +121,25 @@ export default function App() {
             <span className="brand-name">{STORE_NAME}</span>
             <span className="brand-tag">Demo Store</span>
           </div>
+          <nav className="main-nav" aria-label="Store navigation">
+            <button
+              className={page === "products" ? "nav-active" : ""}
+              onClick={() => setPage("products")}
+            >
+              Products
+            </button>
+            <button
+              className={page === "orders" ? "nav-active" : ""}
+              onClick={() => setPage("orders")}
+            >
+              Orders
+            </button>
+          </nav>
           <div className="header-actions">
             {orders.length > 0 && (
-              <span className="header-count">
+              <button className="header-count" onClick={() => setPage("orders")}>
                 {orders.length} order{orders.length !== 1 ? "s" : ""}
-              </span>
+              </button>
             )}
             <button className="cart-button" onClick={() => setCartOpen(true)}>
               <span>Cart</span>
@@ -135,24 +151,49 @@ export default function App() {
 
       <main className="main">
         <div className="container">
-          <div className="page-intro">
-            <h1>Featured Products</h1>
-            <p>Each purchase creates a real payment through the Application Gateway</p>
-          </div>
+          {page === "products" ? (
+            <>
+              <div className="page-intro">
+                <h1>Featured Products</h1>
+                <p>Each purchase creates a real payment through the Application Gateway</p>
+              </div>
 
-          <div className="product-grid">
-            {products.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                onBuy={() => setCheckout({ items: [{ product: p, quantity: 1 }] })}
-                onAddToCart={() => addToCart(p)}
-              />
-            ))}
-          </div>
+              <div className="product-grid">
+                {products.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    onBuy={() => setCheckout({ items: [{ product: p, quantity: 1 }] })}
+                    onAddToCart={() => addToCart(p)}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <section className="orders-page">
+              <div className="page-intro page-intro--split">
+                <div>
+                  <h1>Orders</h1>
+                  <p>Track payment links, provider acceptance, and completed purchases.</p>
+                </div>
+                <button className="btn-shop" onClick={() => setPage("products")}>
+                  Continue Shopping
+                </button>
+              </div>
 
-          {orders.length > 0 && (
-            <OrderHistory orders={orders} onStatusChange={handleStatusChange} />
+              {orders.length > 0 ? (
+                <OrderHistory orders={orders} onStatusChange={handleStatusChange} />
+              ) : (
+                <div className="orders-empty">
+                  <span>🧾</span>
+                  <h2>No orders yet</h2>
+                  <p>Your completed checkouts will appear here.</p>
+                  <button className="btn-confirm" onClick={() => setPage("products")}>
+                    Browse Products
+                  </button>
+                </div>
+              )}
+            </section>
           )}
         </div>
       </main>
