@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\PaymentStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ExportRequest extends FormRequest
 {
@@ -14,13 +14,8 @@ class ExportRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $status = $this->input('status');
-
         $this->merge([
             'merchant_id' => auth()->id(),
-            'status' => $status
-                ? PaymentStatus::fromString($status)->value
-                : null,
         ]);
     }
 
@@ -29,9 +24,10 @@ class ExportRequest extends FormRequest
         return [
             'merchant_id' => ['required', 'integer'],
             'order_id'    => ['nullable', 'integer'],
-            'status'      => ['nullable'],
+            'status'      => ['nullable', Rule::in(['pending', 'finished', 'failed'])],
             'from'        => ['nullable', 'date'],
             'to'          => ['nullable', 'date'],
+            'format'      => ['required', Rule::in(['csv', 'xlsx', 'json'])],
         ];
     }
 }

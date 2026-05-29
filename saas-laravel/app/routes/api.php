@@ -20,7 +20,7 @@ Route::middleware('api')
          */
         Route::prefix('payment-logs')->group(function () {
             Route::get('/', [PaymentLogsApiController::class, 'index']);
-            Route::get('{log}', [PaymentLogsApiController::class, 'show']);
             Route::get('payments/{paymentId}/logs',[PaymentLogsApiController::class, 'byPayment']);
+            Route::get('{log}', [PaymentLogsApiController::class, 'show']);
         });
     });

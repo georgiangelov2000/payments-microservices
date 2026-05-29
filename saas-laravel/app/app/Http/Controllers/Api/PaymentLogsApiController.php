@@ -34,7 +34,7 @@ class PaymentLogsApiController extends Controller
 
     public function byPayment(int $paymentId, Request $request): JsonResponse
     {
-        $result = $this->service->byPament($paymentId, $request->all());
+        $result = $this->service->byPayment($paymentId, $request->all());
 
         return response()->json([
             'results' => $result->items(),

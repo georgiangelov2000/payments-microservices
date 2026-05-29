@@ -27,7 +27,7 @@ class PaymentLogsService
         return $this->repository->show($logId);
     }
 
-    public function byPament (int $paymentId, array $filters = []) {
+    public function byPayment (int $paymentId, array $filters = []) {
         $paginator = $this->repository->byPayment($paymentId, $filters);
 
         $paginator = $paginator->through(

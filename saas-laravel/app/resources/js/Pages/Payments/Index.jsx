@@ -7,6 +7,8 @@ import React from 'react'
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
   const { csrf_token } = usePage().props
+  const csrfToken =
+    csrf_token || document.querySelector('meta[name="csrf-token"]')?.content || ''
 
   const [openLogs, setOpenLogs] = useState(null)
   const [logs, setLogs] = useState({})
@@ -34,30 +36,52 @@ export default function Payments({ payments, filters = {} }) {
   }
 
   const exportPayments = async (format) => {
-    const toastId = toast.loading('Starting export…')
+    const toastId = toast.loading('Preparing export…')
 
     try {
       const response = await fetch(route('payments.export'), {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
+          Accept: 'application/json, application/octet-stream',
           'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrf_token,
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({
+          order_id: data.order_id,
+          status: data.status,
           from: data.from,
           to: data.to,
           format,
         }),
       })
 
-      const result = await response.json()
-
       if (!response.ok) {
-        throw new Error(result.message || 'Export failed')
+        const contentType = response.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          const result = await response.json()
+          throw new Error(result.message || 'Export failed')
+        }
+
+        throw new Error(`Export failed with HTTP ${response.status}`)
       }
 
-      toast.success(result.message, { id: toastId })
+      const blob = await response.blob()
+      const disposition = response.headers.get('content-disposition') || ''
+      const match = disposition.match(/filename="?([^"]+)"?/)
+      const filename = match?.[1] || `payments.${format}`
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+
+      toast.success(`Exported ${filename}`, { id: toastId })
     } catch (err) {
       toast.error(err.message || 'Export failed', { id: toastId })
     }

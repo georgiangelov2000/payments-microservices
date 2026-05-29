@@ -3,13 +3,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\PaymentStatus;
+use App\Exports\PaymentsExport;
 use App\Http\Requests\ExportRequest;
 use App\Http\Requests\PaymentRequest;
-use App\Jobs\PaymentsExportJob;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelFormat;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class PaymentController extends Controller
 {
@@ -26,13 +31,42 @@ final class PaymentController extends Controller
         ]);
     }
 
-    public function export(ExportRequest $request): JsonResponse
+    public function export(ExportRequest $request): JsonResponse|BinaryFileResponse|StreamedResponse
     {
         $params = $request->safe()->toArray();
-        PaymentsExportJob::dispatch(filters: $params);
+        $format = $params['format'];
+        $params['status'] = $params['status']
+            ? PaymentStatus::fromString($params['status'])->value
+            : null;
 
-        return response()->json([
-            'message' => 'Export request received. You will get the file by email.',
-        ], 202);
+        $filename = sprintf('payments_%s.%s', now()->format('Ymd_His'), $format);
+
+        if ($format === 'json') {
+            $rows = (new PaymentsExport($params['merchant_id'], $params))
+                ->query()
+                ->get()
+                ->map(fn ($payment) => [
+                    'id' => $payment->id,
+                    'order_id' => $payment->order_id,
+                    'amount' => (float) $payment->price,
+                    'status' => $payment->status->label(),
+                    'provider' => $payment->provider?->name,
+                    'created_at' => $payment->created_at->toDateTimeString(),
+                ]);
+
+            return response()->streamDownload(
+                fn () => print json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+                $filename,
+                ['Content-Type' => 'application/json']
+            );
+        }
+
+        $writerType = $format === 'csv' ? ExcelFormat::CSV : ExcelFormat::XLSX;
+
+        return Excel::download(
+            new PaymentsExport($params['merchant_id'], $params),
+            $filename,
+            $writerType
+        );
     }
 }
