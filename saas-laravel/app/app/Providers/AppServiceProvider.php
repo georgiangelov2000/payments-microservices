@@ -10,7 +10,6 @@ use App\Models\UserSubscription;
 use App\Services\GatewayAccessProfileService;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
-use Inertia\Inertia;
 use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
 use App\Contracts\ApiRequests\ApiRequestsRepositoryInterface;
 use App\Contracts\Payments\PaymentRepositoryInterface;
@@ -53,10 +52,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Inertia::share([
-            'csrf_token' => fn () => csrf_token(),
-        ]);        
-
         MerchantApiKey::saved(fn (MerchantApiKey $apiKey) => app(GatewayAccessProfileService::class)->syncApiKey($apiKey));
         MerchantApiKey::deleted(fn (MerchantApiKey $apiKey) => app(GatewayAccessProfileService::class)->invalidate($apiKey->hash));
         User::saved(fn (User $user) => app(GatewayAccessProfileService::class)->syncForMerchant($user->id));

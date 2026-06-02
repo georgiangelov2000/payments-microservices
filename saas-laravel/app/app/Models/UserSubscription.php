@@ -2,10 +2,13 @@
 
 namespace App\Models;
 use App\Enums\SubscriptionStatus;
+use App\Models\Concerns\HasUuidV7PrimaryKey;
 use Illuminate\Database\Eloquent\Model;
 
 class UserSubscription extends Model
 {
+    use HasUuidV7PrimaryKey;
+
     protected $fillable = [
         'user_id',
         'subscription_id',

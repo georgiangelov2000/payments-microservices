@@ -7,7 +7,7 @@ use App\Models\UserSubscription;
 final class UserSubscriptionsDTO
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $name,
         public float $monthlyFee,
         public float $transactionFeePercent,

@@ -13,7 +13,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class PaymentsExport implements FromQuery, WithChunkReading, WithHeadings, WithMapping
 {
     public function __construct(
-        protected int $merchantId,
+        protected string $merchantId,
         protected array $filters = []
     ) {}
 

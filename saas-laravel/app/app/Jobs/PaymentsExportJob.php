@@ -22,17 +22,16 @@ class PaymentsExportJob implements ShouldQueue
     public array $backoff = [60, 300, 600];
 
     public function __construct(protected array $filters) {
-        $this->onConnection('redis');
-        $this->onQueue('notifications');
+        $this->onQueue('exports');
     }
 
     public function handle(): void
     {
         Storage::disk('public')->makeDirectory('exports');
-        $userId = $this->filters["merchant_id"];
+        $userId = $this->filters['merchant_id'];
 
         $path = sprintf(
-            'exports/payments_%d_%s.xlsx',
+            'exports/payments_%s_%s.xlsx',
             $userId,
             now()->format('Ymd_His')
         );

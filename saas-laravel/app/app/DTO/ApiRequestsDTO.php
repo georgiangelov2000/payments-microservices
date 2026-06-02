@@ -7,11 +7,11 @@ use App\Models\ApiRequest;
 final class ApiRequestsDTO
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public string $event_id,
-        public int $subscription_id,
+        public string $subscription_id,
         public ?string $subscription_name,
-        public ?int $payment_id,
+        public ?string $payment_id,
         public ?int $order_id,
         public float $amount,
         public string $source,

@@ -13,9 +13,9 @@ return new class extends Migration
     {
         if(!Schema::hasTable('user_subscriptions')) {
             Schema::create('user_subscriptions', function (Blueprint $table) {
-                $table->id();
-                $table->unsignedBigInteger('user_id');
-                $table->unsignedBigInteger('subscription_id');
+                $table->uuid('id')->primary();
+                $table->uuid('user_id');
+                $table->uuid('subscription_id');
                 $table->unsignedBigInteger('current_period_transactions')->default(0);
                 $table->decimal('current_period_volume', 18, 2)->default('0.00');
                 $table->tinyInteger('status')

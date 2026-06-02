@@ -13,27 +13,25 @@ class PaymentLogsService
 
     public function get(array $filters = [])
     {
-        $paginator = $this->repository->get($filters);
-
-        $paginator = $paginator->through(
-            fn ($log) => PaymentLogsDTO::fromModel($log)->toArray()
-        );
-
-        return $paginator;        
+        return $this->repository->get($filters)
+            ->through(fn ($log) => PaymentLogsDTO::fromModel($log)->toArray());
     }
 
-    public function show(int $logId, array $filters = [])
+    public function show(string $logId, string $merchantId): ?array
     {
-        return $this->repository->show($logId);
+        $log = $this->repository->show($logId, $merchantId);
+
+        return $log ? PaymentLogsDTO::fromModel($log)->toArray() : null;
     }
 
-    public function byPayment (int $paymentId, array $filters = []) {
-        $paginator = $this->repository->byPayment($paymentId, $filters);
+    public function byPayment(string $paymentId, string $merchantId)
+    {
+        $paginator = $this->repository->byPayment($paymentId, $merchantId);
 
-        $paginator = $paginator->through(
-            fn ($log) => PaymentLogsDTO::fromModel($log)->toArray()
-        );
+        if (!$paginator) {
+            return null;
+        }
 
-        return $paginator;
+        return $paginator->through(fn ($log) => PaymentLogsDTO::fromModel($log)->toArray());
     }
 }

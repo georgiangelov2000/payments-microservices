@@ -28,10 +28,10 @@ class PaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'merchant_id' => ['required', 'integer'],
+            'merchant_id' => ['required', 'uuid'],
             'order_id'    => ['nullable', 'integer'],
             'per_page'    => ['integer', 'min:1', 'max:100'],
-            'id'          => ['nullable', 'integer'],
+            'id'          => ['nullable', 'uuid'],
             'status'      => ['nullable'],
             'from'        => ['nullable', 'date'],
             'to'          => ['nullable', 'date'],

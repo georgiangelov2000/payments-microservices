@@ -29,7 +29,7 @@ class UserSubscriptionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'merchant_id' => ['required', 'integer'],
+            'merchant_id' => ['required', 'uuid'],
             'per_page'    => ['integer', 'min:1', 'max:100'],
             'status'      => ['nullable'],
             'plan'        => ['nullable', 'string'],

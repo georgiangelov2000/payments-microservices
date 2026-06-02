@@ -2,7 +2,7 @@
 -- USERS
 -- =========================
 CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
 
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -26,7 +26,7 @@ CREATE INDEX ix_users_role   ON users(role);
 -- SUBSCRIPTIONS
 -- =========================
 CREATE TABLE subscriptions (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     name   VARCHAR(255) NOT NULL UNIQUE,
     code   VARCHAR(50) NOT NULL UNIQUE,
     monthly_fee NUMERIC(10,2) NOT NULL,
@@ -42,10 +42,10 @@ CREATE INDEX ix_subscriptions_code ON subscriptions(code);
 -- MERCHANT API KEYS
 -- =========================
 CREATE TABLE merchant_api_keys (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     hash VARCHAR(64) NOT NULL UNIQUE,
 
-    merchant_id BIGINT NOT NULL CHECK (merchant_id >= 0),
+    merchant_id UUID NOT NULL,
 
     status SMALLINT NOT NULL DEFAULT 1 CHECK (status >= 0),
 
@@ -62,16 +62,16 @@ CREATE INDEX ix_merchant_api_keys_merchant_id ON merchant_api_keys(merchant_id);
 -- Denormalized gateway read model.
 -- =========================
 CREATE TABLE gateway_access_profiles (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     api_key_hash VARCHAR(64) NOT NULL UNIQUE,
-    merchant_api_key_id BIGINT NOT NULL,
-    merchant_id BIGINT NOT NULL,
+    merchant_api_key_id UUID NOT NULL,
+    merchant_id UUID NOT NULL,
     merchant_name VARCHAR(255) NOT NULL,
     merchant_email VARCHAR(255) NOT NULL,
     merchant_status SMALLINT NOT NULL DEFAULT 1,
     merchant_role SMALLINT NOT NULL DEFAULT 2,
     api_key_status SMALLINT NOT NULL DEFAULT 1,
-    subscription_id BIGINT,
+    subscription_id UUID,
     subscription_name VARCHAR(255),
     subscription_code VARCHAR(50),
     subscription_status SMALLINT,
@@ -96,7 +96,7 @@ CREATE INDEX ix_gateway_access_profiles_fast_auth
 -- PROVIDERS
 -- =========================
 CREATE TABLE providers (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
     name  VARCHAR(255) NOT NULL,
     alias VARCHAR(255) NOT NULL UNIQUE,
     url   VARCHAR(255) NOT NULL,
@@ -109,16 +109,41 @@ CREATE INDEX ix_providers_alias ON providers(alias);
 CREATE INDEX ix_providers_name  ON providers(name);
 
 -- =========================
+-- MERCHANT PROVIDER CREDENTIALS
+-- One active credential set per merchant/provider/environment.
+-- =========================
+CREATE TABLE merchant_provider_credentials (
+    id UUID PRIMARY KEY,
+    merchant_id UUID NOT NULL,
+    provider_id UUID NOT NULL,
+    environment VARCHAR(20) NOT NULL DEFAULT 'test',
+    display_name VARCHAR(255),
+    public_key VARCHAR(255),
+    secret_value TEXT,
+    status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    last_validated_at TIMESTAMPTZ,
+    last_rotated_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT merchant_provider_credentials_unique UNIQUE (merchant_id, provider_id, environment)
+);
+
+CREATE INDEX ix_merchant_provider_credentials_merchant_id ON merchant_provider_credentials(merchant_id);
+CREATE INDEX ix_merchant_provider_credentials_provider_id ON merchant_provider_credentials(provider_id);
+CREATE INDEX ix_merchant_provider_credentials_status ON merchant_provider_credentials(status);
+
+-- =========================
 -- PAYMENTS
 -- =========================
 CREATE TABLE payments (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
 
     price  NUMERIC(18,8) NOT NULL,
     amount NUMERIC(18,8) NOT NULL,
 
-    merchant_id BIGINT NOT NULL CHECK (merchant_id >= 0),
-    provider_id BIGINT NOT NULL CHECK (provider_id >= 0),
+    merchant_id UUID NOT NULL,
+    provider_id UUID NOT NULL,
     order_id    BIGINT NOT NULL UNIQUE CHECK (order_id >= 0),
 
     provider_reference    VARCHAR(255),
@@ -143,10 +168,10 @@ CREATE INDEX ix_payments_created_at      ON payments(created_at);
 -- USER SUBSCRIPTIONS
 -- =========================
 CREATE TABLE user_subscriptions (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
 
-    user_id         BIGINT NOT NULL CHECK (user_id >= 0),
-    subscription_id BIGINT NOT NULL CHECK (subscription_id >= 0),
+    user_id         UUID NOT NULL,
+    subscription_id UUID NOT NULL,
     current_period_transactions BIGINT NOT NULL DEFAULT 0 CHECK (current_period_transactions >= 0),
     current_period_volume NUMERIC(18,2) NOT NULL DEFAULT 0 CHECK (current_period_volume >= 0),
 
@@ -165,13 +190,13 @@ CREATE INDEX ix_user_subscriptions_subscription_id ON user_subscriptions(subscri
 -- API REQUESTS
 -- =========================
 CREATE TABLE api_requests (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
 
     event_id VARCHAR(255) NOT NULL UNIQUE,
 
-    payment_id      BIGINT NOT NULL CHECK (payment_id >= 0),
-    subscription_id BIGINT NOT NULL CHECK (subscription_id >= 0),
-    user_id         BIGINT NOT NULL CHECK (user_id >= 0),
+    payment_id      UUID NOT NULL,
+    subscription_id UUID NOT NULL,
+    user_id         UUID NOT NULL,
 
     amount NUMERIC(18,8) NOT NULL CHECK (amount >= 0),
     source VARCHAR(255) NOT NULL,

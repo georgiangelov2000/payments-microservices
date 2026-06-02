@@ -1,13 +1,14 @@
 from sqlalchemy import (
     Column,
-    BigInteger,
     SmallInteger,
     Text,
     DateTime,
     Index,
     func,
 )
+from sqlalchemy.dialects.postgresql import UUID
 from app.db.bases import LogsBase
+from app.support.uuid import uuid7
 
 # =========================
 # Payment Logs
@@ -15,8 +16,8 @@ from app.db.bases import LogsBase
 class PaymentLog(LogsBase):
     __tablename__ = "payment_logs"
 
-    id = Column(BigInteger, primary_key=True)
-    payment_id = Column(BigInteger, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    payment_id = Column(UUID(as_uuid=True), nullable=False)
 
     event_type = Column(SmallInteger, nullable=False)
     status = Column(SmallInteger, nullable=False)

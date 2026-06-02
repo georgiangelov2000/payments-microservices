@@ -14,10 +14,10 @@ return new class extends Migration
     
         if(!Schema::hasTable('merchant_api_keys')) {
             Schema::create('merchant_api_keys', function (Blueprint $table) {
-                $table->id();
+                $table->uuid('id')->primary();
                 $table->string('hash',64)->unique();
                 
-                $table->unsignedBigInteger('merchant_id');
+                $table->uuid('merchant_id');
 
                 $table->tinyInteger('status')
                         ->default(1)

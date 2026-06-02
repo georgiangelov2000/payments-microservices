@@ -17,27 +17,33 @@ class GatewayAccessProfileService
     private const CACHE_PREFIX = 'gateway:auth:v1:';
     private const CACHE_TTL_SECONDS = 900;
 
-    public function syncForMerchant(int $merchantId): void
+    public function syncForMerchant(string $merchantId): void
     {
+        $providers = $this->loadProviders();
+
         MerchantApiKey::query()
             ->where('merchant_id', $merchantId)
             ->with('merchant')
             ->get()
-            ->each(fn (MerchantApiKey $apiKey) => $this->syncApiKey($apiKey));
+            ->each(fn (MerchantApiKey $apiKey) => $this->syncApiKey($apiKey, $providers));
     }
 
     public function syncAll(): void
     {
+        $providers = $this->loadProviders();
+
         MerchantApiKey::query()
             ->with('merchant')
             ->orderBy('id')
-            ->chunkById(100, function ($apiKeys) {
-                $apiKeys->each(fn (MerchantApiKey $apiKey) => $this->syncApiKey($apiKey));
+            ->chunkById(100, function ($apiKeys) use ($providers) {
+                $apiKeys->each(fn (MerchantApiKey $apiKey) => $this->syncApiKey($apiKey, $providers));
             });
     }
 
-    public function syncApiKey(MerchantApiKey $apiKey): ?GatewayAccessProfile
+    public function syncApiKey(MerchantApiKey $apiKey, ?array $providers = null): ?GatewayAccessProfile
     {
+        $providers ??= $this->loadProviders();
+
         $apiKey->loadMissing('merchant');
         $merchant = $apiKey->merchant;
 
@@ -53,12 +59,6 @@ class GatewayAccessProfileService
             ->where('status', SubscriptionStatus::ACTIVE)
             ->latest('id')
             ->first();
-
-        $providers = Provider::query()
-            ->orderBy('alias')
-            ->pluck('alias')
-            ->values()
-            ->all();
 
         $payload = [
             'api_key_hash' => $apiKey->hash,
@@ -151,5 +151,14 @@ class GatewayAccessProfileService
     private function negativeCacheKey(string $apiKeyHash): string
     {
         return self::CACHE_PREFIX . 'invalid:' . $apiKeyHash;
+    }
+
+    private function loadProviders(): array
+    {
+        return Provider::query()
+            ->orderBy('alias')
+            ->pluck('alias')
+            ->values()
+            ->all();
     }
 }

@@ -10,15 +10,15 @@ return new class extends Migration
     {
         if(!Schema::hasTable('api_requests')) {
             Schema::create('api_requests', function (Blueprint $table) {
-                $table->id();
+                $table->uuid('id')->primary();
 
                 // idempotency
                 $table->string('event_id', 255)->unique();
 
-                $table->unsignedBigInteger('subscription_id');
-                $table->unsignedBigInteger('user_id');
+                $table->uuid('subscription_id');
+                $table->uuid('user_id');
 
-                $table->unsignedBigInteger('payment_id');
+                $table->uuid('payment_id');
                 $table->decimal('amount', 18, 8);
 
                 $table->string('source', 50);

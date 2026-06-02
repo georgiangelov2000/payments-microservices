@@ -8,13 +8,13 @@ class ApiRequestRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check();
+        return $this->user() !== null;
     }
 
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'user_id'     => auth()->id(),
+            'merchant_id' => $this->user()?->getAuthIdentifier(),
             'per_page'    => $this->input('per_page', 15),
         ]);
     }
@@ -23,7 +23,7 @@ class ApiRequestRequest extends FormRequest
     {
         return [
             'per_page'    => ['integer', 'min:1', 'max:100'],
-            'user_id'     => ['nullable', 'integer', 'exists:users,id'],
+            'merchant_id' => ['nullable', 'uuid', 'exists:users,id'],
             'from'        => ['nullable', 'date'],
             'to'          => ['nullable', 'date'],
             'source'      => ['nullable', 'string', 'max:100'],

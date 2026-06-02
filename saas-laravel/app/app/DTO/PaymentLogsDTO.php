@@ -8,8 +8,8 @@ use App\Support\PaymentWorkflowFormatter;
 class PaymentLogsDTO
 {
     public function __construct(
-        public int $id,
-        public int $payment_id,
+        public string $id,
+        public string $payment_id,
         public int $event_type,
         public string $event_type_label,
         public int $status,

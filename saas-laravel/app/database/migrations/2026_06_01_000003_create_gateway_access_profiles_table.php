@@ -10,16 +10,16 @@ return new class extends Migration
     {
         if (!Schema::hasTable('gateway_access_profiles')) {
             Schema::create('gateway_access_profiles', function (Blueprint $table) {
-                $table->id();
+                $table->uuid('id')->primary();
                 $table->string('api_key_hash', 64)->unique();
-                $table->foreignId('merchant_api_key_id')->index();
-                $table->foreignId('merchant_id')->index();
+                $table->uuid('merchant_api_key_id')->index();
+                $table->uuid('merchant_id')->index();
                 $table->string('merchant_name');
                 $table->string('merchant_email');
                 $table->unsignedSmallInteger('merchant_status')->default(1)->index();
                 $table->unsignedSmallInteger('merchant_role')->default(2);
                 $table->unsignedSmallInteger('api_key_status')->default(1)->index();
-                $table->foreignId('subscription_id')->nullable()->index();
+                $table->uuid('subscription_id')->nullable()->index();
                 $table->string('subscription_name')->nullable();
                 $table->string('subscription_code', 50)->nullable();
                 $table->unsignedSmallInteger('subscription_status')->nullable()->index();

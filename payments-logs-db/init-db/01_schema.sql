@@ -2,9 +2,9 @@
 -- PAYMENT LOGS
 -- =========================
 CREATE TABLE payment_logs (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY,
 
-    payment_id BIGINT NOT NULL CHECK (payment_id >= 0),
+    payment_id UUID NOT NULL,
 
     event_type SMALLINT NOT NULL,
     status     SMALLINT NOT NULL, -- 0=success,1=failed,2=retrying,3=blocked

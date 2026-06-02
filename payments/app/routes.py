@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Header, Depends, Query
+from fastapi import APIRouter, Header, Depends
 from app.schemas.payments import CreatePaymentRequest, GetPaymentsRequest
 from app.classes.payments import Payment
 
 router = APIRouter(
     prefix="/api/v1/payments",
     tags=["Payments"],
+    redirect_slashes=False,
 )
 
 handler = Payment()
@@ -15,11 +16,7 @@ def ping():
     return {"ok": True}
 
 
-# -----------------------------
-# Create payment
-# -----------------------------
 @router.post("")
-@router.post("/")
 async def create_payment(
     request: CreatePaymentRequest,
     x_merchant_id: str = Header(..., alias="X-Merchant-Id"),
@@ -30,29 +27,17 @@ async def create_payment(
     )
 
 
-# -----------------------------
-# Track payment (timeline)
-# -----------------------------
 @router.get("/{payment_id}/tracking")
-@router.get("/{payment_id}/tracking/")
 async def tracking(payment_id: str):
     return await handler.tracking(payment_id)
 
 
-# -----------------------------
-# Show single payment (details)
-# -----------------------------
 @router.get("/{payment_id}/show")
-@router.get("/{payment_id}/show/")
 async def show(payment_id: str):
     return await handler.show(payment_id)
 
 
-# -----------------------------
-# Get payments list (paginated)
-# -----------------------------
 @router.get("")
-@router.get("/")
 async def get_payments(
     request: GetPaymentsRequest = Depends(),
     x_merchant_id: str = Header(..., alias="X-Merchant-Id"),
@@ -64,24 +49,20 @@ async def get_payments(
 
 
 @router.get("/provider-return/stripe")
-@router.get("/provider-return/stripe/")
-async def stripe_return(payment_id: int, session_id: str):
+async def stripe_return(payment_id: str, session_id: str):
     return await handler.stripe_return(payment_id=payment_id, session_id=session_id)
 
 
 @router.get("/provider-return/stripe/cancel")
-@router.get("/provider-return/stripe/cancel/")
-async def stripe_cancel(payment_id: int, session_id: str | None = None):
+async def stripe_cancel(payment_id: str, session_id: str | None = None):
     return await handler.stripe_cancel(payment_id=payment_id, session_id=session_id)
 
 
 @router.get("/provider-return/paypal")
-@router.get("/provider-return/paypal/")
-async def paypal_return(payment_id: int, token: str):
+async def paypal_return(payment_id: str, token: str):
     return await handler.paypal_return(payment_id=payment_id, token=token)
 
 
 @router.get("/provider-return/paypal/cancel")
-@router.get("/provider-return/paypal/cancel/")
-async def paypal_cancel(payment_id: int):
+async def paypal_cancel(payment_id: str):
     return await handler.paypal_cancel(payment_id=payment_id)

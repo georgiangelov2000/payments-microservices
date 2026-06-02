@@ -25,6 +25,9 @@ class ApiKeysBuilder
 
     public function forMerchant(?string $merchantId): self
     {
+        if ($merchantId === null) {
+            throw new \InvalidArgumentException('Merchant ID is required.');
+        }
         $this->query->where('merchant_id', $merchantId);
         return $this;
     }

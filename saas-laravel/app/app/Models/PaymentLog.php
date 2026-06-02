@@ -4,11 +4,14 @@ namespace App\Models;
 
 use App\Enums\PaymentLogEventType;
 use App\Enums\PaymentLogStatus;
+use App\Models\Concerns\HasUuidV7PrimaryKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PaymentLog extends Model
 {
+    use HasUuidV7PrimaryKey;
+
     protected $connection = 'pgsql_logs';
 
     protected $table = 'payment_logs';

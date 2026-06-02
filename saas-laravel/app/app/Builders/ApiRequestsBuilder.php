@@ -18,7 +18,7 @@ class ApiRequestsBuilder
             ]);
     }
 
-    public function forMerchant(?int $merchantId): self
+    public function forMerchant(?string $merchantId): self
     {
         if ($merchantId) {
             $this->query->where('user_id', $merchantId);
@@ -27,7 +27,7 @@ class ApiRequestsBuilder
         return $this;
     }
 
-    public function whereSubscription(?int $subscriptionId): self
+    public function whereSubscription(?string $subscriptionId): self
     {
         if ($subscriptionId) {
             $this->query->where('subscription_id', $subscriptionId);
@@ -36,7 +36,7 @@ class ApiRequestsBuilder
         return $this;
     }
 
-    public function wherePayment(?int $paymentId): self
+    public function wherePayment(?string $paymentId): self
     {
         if ($paymentId) {
             $this->query->where('payment_id', $paymentId);

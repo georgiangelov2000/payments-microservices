@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuidV7PrimaryKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ApiRequest extends Model
 {
+    use HasUuidV7PrimaryKey;
+
     protected $table = 'api_requests';
 
     protected $fillable = [

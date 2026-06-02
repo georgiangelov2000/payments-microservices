@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 
 import httpx
 from fastapi import HTTPException
@@ -36,10 +37,14 @@ class Payment:
     - Write logs to logs DB
     """
 
+    def _uuid(self, value: str | UUID) -> UUID:
+        return value if isinstance(value, UUID) else UUID(str(value))
+
     # --------------------------------------------------
     # Create payment
     # --------------------------------------------------
     async def create_payment(self, request: CreatePaymentRequest, merchant_id: str):
+        merchant_uuid = UUID(str(merchant_id))
         payments_db: Session = PaymentsSessionLocal()
         logs_db: Session = LogsSessionLocal()
 
@@ -69,7 +74,7 @@ class Payment:
                 payment_id, status = existing
                 return {
                     "message": "payment already exists",
-                    "payment_id": payment_id,
+                    "payment_id": str(payment_id),
                     "status": PaymentStatus(status).name,
                 }
 
@@ -81,7 +86,7 @@ class Payment:
                     UserSubscription.id,
                 )
                 .where(
-                    UserSubscription.user_id == merchant_id,
+                    UserSubscription.user_id == merchant_uuid,
                     UserSubscription.subscription_id == request.subscription_id,
                     UserSubscription.status == SubscriptionStatus.SUBSCRIPTION_ACTIVE.value,
                 )
@@ -100,7 +105,7 @@ class Payment:
                 amount=request.amount,
                 price=request.price,
                 provider_id=provider_id,
-                merchant_id=merchant_id,
+                merchant_id=merchant_uuid,
                 status=PaymentStatus.PAYMENT_PENDING.value,
             )
 
@@ -142,7 +147,7 @@ class Payment:
             payments_db.add(
                 ApiRequest(
                     event_id=request.event_id,
-                    user_id=merchant_id,
+                    user_id=merchant_uuid,
                     subscription_id=request.subscription_id,
                     payment_id=payment_id,
                     amount=request.amount,
@@ -189,8 +194,8 @@ class Payment:
         try:
             checkout = await provider_connector(provider_alias).create_checkout(
                 CheckoutRequest(
-                    payment_id=payment_id,
-                    merchant_id=merchant_id,
+                    payment_id=str(payment_id),
+                    merchant_id=str(merchant_uuid),
                     order_id=request.order_id,
                     amount=request.price,
                     currency="USD",
@@ -250,14 +255,14 @@ class Payment:
             logs_db.close()
 
         return {
-            "payment_id": payment_id,
+            "payment_id": str(payment_id),
             "status": PaymentStatus.PAYMENT_PENDING.name,
             "provider": provider_alias,
             "provider_reference": checkout.provider_reference,
             "payment_url": checkout.payment_url,
         }
 
-    async def stripe_return(self, payment_id: int, session_id: str):
+    async def stripe_return(self, payment_id: str, session_id: str):
         session = await provider_connector("stripe").retrieve_checkout_session(session_id)
         paid = session.get("payment_status") == "paid" or session.get("status") == "complete"
         status = PaymentStatus.PAYMENT_FINISHED if paid else PaymentStatus.PAYMENT_FAILED
@@ -276,16 +281,18 @@ class Payment:
             "provider_status": session.get("payment_status") or session.get("status"),
         }
 
-    async def stripe_cancel(self, payment_id: int, session_id: str | None = None):
+    async def stripe_cancel(self, payment_id: str, session_id: str | None = None):
+        payment_uuid = self._uuid(payment_id)
         await self._finalize_provider_return(
-            payment_id=payment_id,
+            payment_id=payment_uuid,
             status=PaymentStatus.PAYMENT_FAILED,
             provider_status="cancelled",
             payload={"session_id": session_id, "reason": "customer_cancelled"},
         )
         return {"payment_id": payment_id, "provider": "stripe", "status": "PAYMENT_FAILED"}
 
-    async def paypal_return(self, payment_id: int, token: str):
+    async def paypal_return(self, payment_id: str, token: str):
+        payment_uuid = self._uuid(payment_id)
         capture = await provider_connector("paypal").capture_order(token)
         status = (
             PaymentStatus.PAYMENT_FINISHED
@@ -294,7 +301,7 @@ class Payment:
         )
 
         await self._finalize_provider_return(
-            payment_id=payment_id,
+            payment_id=payment_uuid,
             status=status,
             provider_status=capture.get("status"),
             payload=capture,
@@ -307,9 +314,10 @@ class Payment:
             "provider_status": capture.get("status"),
         }
 
-    async def paypal_cancel(self, payment_id: int):
+    async def paypal_cancel(self, payment_id: str):
+        payment_uuid = self._uuid(payment_id)
         await self._finalize_provider_return(
-            payment_id=payment_id,
+            payment_id=payment_uuid,
             status=PaymentStatus.PAYMENT_FAILED,
             provider_status="cancelled",
             payload={"reason": "customer_cancelled"},
@@ -321,6 +329,7 @@ class Payment:
     # Track payment
     # --------------------------------------------------
     async def tracking(self, payment_id: str):
+        payment_uuid = self._uuid(payment_id)
         payments_db: Session = PaymentsSessionLocal()
         logs_db: Session = LogsSessionLocal()
 
@@ -332,7 +341,7 @@ class Payment:
                 select(
                     PaymentModel.id,
                     PaymentModel.status,
-                ).where(PaymentModel.id == payment_id)
+                ).where(PaymentModel.id == payment_uuid)
             ).first()
 
             if not payment_row:
@@ -367,7 +376,7 @@ class Payment:
             ]
 
             return {
-                "payment_id": pid,
+                "payment_id": str(pid),
                 "payment_status": PaymentStatus(payment_status).name,
                 "events": events,
             }
@@ -380,6 +389,7 @@ class Payment:
     # Show payment (details)
     # --------------------------------------------------
     async def show(self, payment_id: str):
+        payment_uuid = self._uuid(payment_id)
         payments_db: Session = PaymentsSessionLocal()
 
         try:
@@ -394,7 +404,7 @@ class Payment:
                     Provider.alias,
                 )
                 .join(Provider, Provider.id == PaymentModel.provider_id)
-                .where(PaymentModel.id == payment_id)
+                .where(PaymentModel.id == payment_uuid)
             ).first()
 
             if not row:
@@ -411,7 +421,7 @@ class Payment:
             ) = row
 
             return {
-                "payment_id": pid,
+                "payment_id": str(pid),
                 "order_id": order_id,
                 "provider": provider_alias,
                 "amount": amount,
@@ -434,6 +444,7 @@ class Payment:
         request: GetPaymentsRequest,
         merchant_id: str,
     ):
+        merchant_uuid = UUID(str(merchant_id))
         payments_db: Session = PaymentsSessionLocal()
 
         page = request.page
@@ -445,7 +456,7 @@ class Payment:
             total = payments_db.scalar(
                 select(func.count())
                 .select_from(PaymentModel)
-                .where(PaymentModel.merchant_id == merchant_id)
+                .where(PaymentModel.merchant_id == merchant_uuid)
             )
 
             # -------- paginated rows --------
@@ -459,7 +470,7 @@ class Payment:
                     Provider.alias,
                 )
                 .join(Provider, Provider.id == PaymentModel.provider_id)
-                .where(PaymentModel.merchant_id == merchant_id)
+                .where(PaymentModel.merchant_id == merchant_uuid)
                 .order_by(PaymentModel.created_at.desc())
                 .limit(limit)
                 .offset(offset)
@@ -467,7 +478,7 @@ class Payment:
 
             items = [
                 {
-                    "payment_id": row.id,
+                    "payment_id": str(row.id),
                     "order_id": row.order_id,
                     "provider": row.alias,
                     "amount": row.amount,
@@ -495,36 +506,33 @@ class Payment:
     # --------------------------------------------------
     # Safe failure transition (payments DB only)
     # --------------------------------------------------
-    async def _mark_failed_if_pending(self, payment_id: int):
+    async def _mark_failed_if_pending(self, payment_id: str):
+        payment_uuid = self._uuid(payment_id)
         payments_db: Session = PaymentsSessionLocal()
         try:
-            row = payments_db.execute(
-                select(PaymentModel.status)
-                .where(PaymentModel.id == payment_id)
-            ).first()
-
-            if row and row[0] == PaymentStatus.PAYMENT_PENDING.value:
-                payments_db.execute(
-                    PaymentModel.__table__.update()
-                    .where(PaymentModel.id == payment_id)
-                    .values(status=PaymentStatus.PAYMENT_FAILED.value)
-                )
-                payments_db.commit()
+            result = payments_db.execute(
+                PaymentModel.__table__.update()
+                .where(PaymentModel.id == payment_uuid)
+                .where(PaymentModel.status == PaymentStatus.PAYMENT_PENDING.value)
+                .values(status=PaymentStatus.PAYMENT_FAILED.value)
+            )
+            payments_db.commit()
         finally:
             payments_db.close()
 
     async def _finalize_provider_return(
         self,
-        payment_id: int,
+        payment_id: str | UUID,
         status: PaymentStatus,
         provider_status: str | None,
         payload: dict,
     ):
         payments_db: Session = PaymentsSessionLocal()
         logs_db: Session = LogsSessionLocal()
+        payment_uuid = self._uuid(payment_id)
 
         try:
-            payment = payments_db.get(PaymentModel, payment_id)
+            payment = payments_db.get(PaymentModel, payment_uuid)
             if not payment:
                 raise HTTPException(status_code=404, detail="Payment not found")
 
@@ -538,7 +546,7 @@ class Payment:
 
                 logs_db.add(
                     PaymentLog(
-                        payment_id=payment_id,
+                        payment_id=payment_uuid,
                         event_type=PaymentLogEvent.EVENT_PROVIDER_PAYMENT_ACCEPTED.value,
                         status=(
                             LogStatus.LOG_SUCCESS.value

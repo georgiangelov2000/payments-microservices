@@ -29,17 +29,20 @@ class ApiKeyService
         );
     }
 
-    public function generateForMerchant(int $merchantId): string
+    public function generateForMerchant(string $merchantId): string
     {
         $plainTextKey = 'pgw_test_' . bin2hex(random_bytes(24));
+        $hash = hash_hmac('sha256', $plainTextKey, config('services.gateway.hmac_secret'));
 
-        $apiKey = MerchantApiKey::create([
-            'merchant_id' => $merchantId,
-            'hash' => hash('sha256', $plainTextKey),
-            'status' => MerchantAPIKeyStatus::ACTIVE,
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($merchantId, $hash, &$apiKey) {
+            $apiKey = MerchantApiKey::create([
+                'merchant_id' => $merchantId,
+                'hash'        => $hash,
+                'status'      => MerchantAPIKeyStatus::ACTIVE,
+            ]);
 
-        $this->gatewayAccessProfileService->syncApiKey($apiKey);
+            $this->gatewayAccessProfileService->syncApiKey($apiKey);
+        });
 
         return $plainTextKey;
     }

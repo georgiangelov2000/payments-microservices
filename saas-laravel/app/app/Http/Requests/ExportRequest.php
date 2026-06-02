@@ -22,7 +22,7 @@ class ExportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'merchant_id' => ['required', 'integer'],
+            'merchant_id' => ['required', 'uuid'],
             'order_id'    => ['nullable', 'integer'],
             'status'      => ['nullable', Rule::in(['pending', 'finished', 'failed'])],
             'from'        => ['nullable', 'date'],

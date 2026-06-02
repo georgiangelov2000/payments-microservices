@@ -9,8 +9,10 @@ from sqlalchemy import (
     Index,
     func,
 )
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.bases import PaymentsBase
+from app.support.uuid import uuid7
 
 
 # =========================
@@ -19,7 +21,7 @@ from app.db.bases import PaymentsBase
 class User(PaymentsBase):
     __tablename__ = "users"
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     name = Column(String(255), nullable=False)
 
     email = Column(String(255), nullable=False, unique=True)
@@ -50,7 +52,7 @@ class User(PaymentsBase):
 class Subscription(PaymentsBase):
     __tablename__ = "subscriptions"
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     name = Column(String(255), nullable=False, unique=True)
     code = Column(String(50), nullable=False, unique=True)
     monthly_fee = Column(Numeric(10, 2), nullable=False)
@@ -67,9 +69,9 @@ class Subscription(PaymentsBase):
 class MerchantAPIKey(PaymentsBase):
     __tablename__ = "merchant_api_keys"
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     hash = Column(String(64), nullable=False, unique=True)
-    merchant_id = Column(BigInteger, nullable=False)
+    merchant_id = Column(UUID(as_uuid=True), nullable=False)
 
     status = Column(SmallInteger, nullable=False, server_default="1")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -90,7 +92,7 @@ class MerchantAPIKey(PaymentsBase):
 class Provider(PaymentsBase):
     __tablename__ = "providers"
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     name = Column(String(255), nullable=False)
     alias = Column(String(255), nullable=False, unique=True)
     url = Column(String(255), nullable=False)
@@ -105,17 +107,44 @@ class Provider(PaymentsBase):
 
 
 # =========================
+# Merchant Provider Credentials
+# =========================
+class MerchantProviderCredential(PaymentsBase):
+    __tablename__ = "merchant_provider_credentials"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    merchant_id = Column(UUID(as_uuid=True), nullable=False)
+    provider_id = Column(UUID(as_uuid=True), nullable=False)
+    environment = Column(String(20), nullable=False, server_default="test")
+    display_name = Column(String(255))
+    public_key = Column(String(255))
+    secret_value = Column(String)
+    status = Column(String(30), nullable=False, server_default="pending")
+    last_validated_at = Column(DateTime(timezone=True))
+    last_rotated_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("merchant_id", "provider_id", "environment", name="merchant_provider_credentials_unique"),
+        Index("ix_merchant_provider_credentials_merchant_id", "merchant_id"),
+        Index("ix_merchant_provider_credentials_provider_id", "provider_id"),
+        Index("ix_merchant_provider_credentials_status", "status"),
+    )
+
+
+# =========================
 # Payments
 # =========================
 class Payment(PaymentsBase):
     __tablename__ = "payments"
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     price = Column(Numeric(18, 8), nullable=False)
     amount = Column(Numeric(18, 8), nullable=False)
 
-    merchant_id = Column(BigInteger, nullable=False)
-    provider_id = Column(BigInteger, nullable=False)
+    merchant_id = Column(UUID(as_uuid=True), nullable=False)
+    provider_id = Column(UUID(as_uuid=True), nullable=False)
     order_id = Column(BigInteger, nullable=False, unique=True)
     provider_reference = Column(String(255))
     provider_checkout_url = Column(String(2048))
@@ -146,9 +175,9 @@ class Payment(PaymentsBase):
 class UserSubscription(PaymentsBase):
     __tablename__ = "user_subscriptions"
 
-    id = Column(BigInteger, primary_key=True)
-    user_id = Column(BigInteger, nullable=False)
-    subscription_id = Column(BigInteger, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
+    subscription_id = Column(UUID(as_uuid=True), nullable=False)
     current_period_transactions = Column(BigInteger, nullable=False, default=0)
     current_period_volume = Column(Numeric(18, 2), nullable=False, server_default="0")
 
@@ -170,12 +199,12 @@ class UserSubscription(PaymentsBase):
 class ApiRequest(PaymentsBase):
     __tablename__ = "api_requests"
 
-    id = Column(BigInteger, primary_key=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     event_id = Column(String(255), nullable=False, unique=True)
 
-    payment_id = Column(BigInteger, nullable=False)
-    subscription_id = Column(BigInteger, nullable=False)
-    user_id = Column(BigInteger, nullable=False)
+    payment_id = Column(UUID(as_uuid=True), nullable=False)
+    subscription_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
 
     amount = Column(Numeric(18, 8), nullable=False)
     source = Column(String(50), nullable=False)

@@ -12,12 +12,17 @@ services:
       retries: 5
     ports:
       - "15672:15672"
+
   redis:
     image: redis:latest
     container_name: redis
     command: ["redis-server"]
-
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 # Databases
   payments-db:
@@ -27,11 +32,13 @@ services:
       - payments-db/.env
     volumes:
       - ./payments-db/init-db:/docker-entrypoint-initdb.d
+      - payments-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U payments"]
       interval: 5s
       timeout: 5s
       retries: 5
+
   payments-logs-db:
     image: postgres:15
     container_name: payments-logs-db
@@ -39,6 +46,7 @@ services:
       - payments-logs-db/.env
     volumes:
       - ./payments-logs-db/init-db:/docker-entrypoint-initdb.d
+      - payments-logs-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d logs"]
       interval: 5s
@@ -47,13 +55,14 @@ services:
 
 # Gateways
   gateway:
-      build: ./gateway
-      container_name: gateway
-      ports:
-        - "8080:80"
-      depends_on:
-        payments:
-          condition: service_started
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      payments:
+        condition: service_healthy
+
   merchant-demo:
     build: ./merchant-demo
     container_name: merchant-demo
@@ -62,6 +71,7 @@ services:
       - "3001:80"
     depends_on:
       - gateway
+
   public-site:
     build: ./public-site
     container_name: public-site
@@ -69,6 +79,7 @@ services:
       - "8082:80"
     depends_on:
       - saas-gateway
+
   saas-gateway:
     image: nginx:alpine
     container_name: saas-gateway
@@ -80,6 +91,7 @@ services:
       - "80:80"
     depends_on:
       - saas-laravel
+
   gateway-verification:
     build:
       context: ./gateway-verification
@@ -91,11 +103,11 @@ services:
       - /app/node_modules
     depends_on:
       payments:
-        condition: service_started
+        condition: service_healthy
       payments-db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
 # SaaS platform
   saas-laravel:
@@ -109,14 +121,22 @@ services:
     depends_on:
       payments-db:
         condition: service_healthy
+      payments-logs-db:
+        condition: service_healthy
 
-# Service
+# Payment service
   payments:
     build: ./payments
     container_name: payments
     env_file: payments/.env
     volumes:
       - ./payments:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/payments/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -125,9 +145,12 @@ services:
       payments-logs-db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     command: >
       uvicorn app.main:app
       --host 0.0.0.0
       --port 8000
-      --reload
+
+volumes:
+  payments-db-data:
+  payments-logs-db-data:

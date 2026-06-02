@@ -3,11 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Enums\SubscriptionStatus;
-use App\Models\Subscription;
 use App\Models\User;
-use App\Models\UserSubscription;
-use App\Services\GatewayAccessProfileService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,10 +15,6 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    public function __construct(
-        private readonly GatewayAccessProfileService $gatewayAccessProfileService,
-    ) {}
-
     /**
      * Display the registration view.
      */
@@ -50,30 +42,10 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $defaultSubscription = Subscription::query()
-            ->orderBy('monthly_fee')
-            ->first();
-
-        if ($defaultSubscription) {
-            UserSubscription::firstOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'subscription_id' => $defaultSubscription->id,
-                ],
-                [
-                    'current_period_transactions' => 0,
-                    'current_period_volume' => 0,
-                    'status' => SubscriptionStatus::ACTIVE,
-                ],
-            );
-        }
-
-        $this->gatewayAccessProfileService->syncForMerchant($user->id);
-
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('onboarding.index', absolute: false));
+        return redirect(route('dashboard', absolute: false));
     }
 }

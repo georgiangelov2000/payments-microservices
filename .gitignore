@@ -1,0 +1,23 @@
+# Environment files — never commit real credentials
+payments/.env
+payments-db/.env
+payments-logs-db/.env
+merchant-demo/.env
+gateway-verification/.env
+saas-laravel/app/.env
+saas-laravel/app/.env.testing
+
+# Keep .env.example files (they contain safe placeholder values)
+!**/.env.example
+
+# Docker volumes / build artefacts
+**/node_modules/
+**/__pycache__/
+**/*.pyc
+saas-laravel/app/vendor/
+saas-laravel/app/public/build/
+saas-laravel/app/public/hot
+saas-laravel/app/storage/logs/*.log
+saas-laravel/app/storage/framework/sessions/*
+saas-laravel/app/storage/framework/cache/*
+saas-laravel/app/storage/framework/views/*

@@ -13,7 +13,7 @@ return new class extends Migration
     {
         if(!Schema::hasTable('subscriptions')) {
             Schema::create('subscriptions', function (Blueprint $table) {
-                $table->id();
+                $table->uuid('id')->primary();
                 $table->string('name')->unique();
                 $table->string('code', 50)->unique();
                 $table->decimal('monthly_fee', 10, 2)->default('0.00');

@@ -10,10 +10,10 @@ use Illuminate\Support\Collection;
 final class PaymentsDTO
 {
     public function __construct(
-        public int $id,
+        public string $id,
         public float $price,
         public float $amount,
-        public int $merchant_id,
+        public string $merchant_id,
         public int $order_id,
         public string $status,
         public string $provider,

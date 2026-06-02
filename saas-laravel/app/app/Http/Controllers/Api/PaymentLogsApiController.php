@@ -13,39 +13,40 @@ class PaymentLogsApiController extends Controller
         protected PaymentLogsService $service
     ) {}
 
-    /**
-     * GET /api/v1/logs
-     */
     public function index(Request $request): JsonResponse
     {
-        $result = $this->service->get($request->all());
-        
-        return response()->json($result, 200);
+        return response()->json(
+            $this->service->get($request->all())
+        );
     }
 
-    /**
-     * GET /api/v1/logs/{log}
-     */
-    public function show(int $logId, Request $request): JsonResponse
+    public function show(string $logId, Request $request): JsonResponse
     {
-        $result = $this->service->show($logId, $request->all());
-        return response()->json($result, 200);
+        $result = $this->service->show($logId, (string) auth()->id());
+
+        if (!$result) {
+            return response()->json(['message' => 'Not found.'], 404);
+        }
+
+        return response()->json($result);
     }
 
-    public function byPayment(int $paymentId, Request $request): JsonResponse
+    public function byPayment(string $paymentId, Request $request): JsonResponse
     {
-        $result = $this->service->byPayment($paymentId, $request->all());
+        $result = $this->service->byPayment($paymentId, (string) auth()->id());
+
+        if (!$result) {
+            return response()->json(['message' => 'Not found.'], 404);
+        }
 
         return response()->json([
-            'results' => $result->items(),
+            'results'    => $result->items(),
             'pagination' => [
-                'total' => $result->total(),
-                'per_page' => $result->perPage(),
+                'total'        => $result->total(),
+                'per_page'     => $result->perPage(),
                 'current_page' => $result->currentPage(),
-                'last_page' => $result->lastPage(),
+                'last_page'    => $result->lastPage(),
             ],
-        ], 200);
+        ]);
     }
-
-
 }

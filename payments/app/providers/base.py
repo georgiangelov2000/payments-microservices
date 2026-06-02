@@ -4,7 +4,7 @@ from decimal import Decimal
 
 @dataclass(frozen=True)
 class CheckoutRequest:
-    payment_id: int
+    payment_id: str
     merchant_id: str
     order_id: int
     amount: Decimal
@@ -17,4 +17,3 @@ class CheckoutSession:
     provider_reference: str
     payment_url: str
     raw_status: str
-

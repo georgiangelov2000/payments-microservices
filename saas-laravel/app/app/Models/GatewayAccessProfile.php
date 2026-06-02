@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuidV7PrimaryKey;
 use Illuminate\Database\Eloquent\Model;
 
 class GatewayAccessProfile extends Model
 {
+    use HasUuidV7PrimaryKey;
+
     protected $fillable = [
         'api_key_hash',
         'merchant_api_key_id',

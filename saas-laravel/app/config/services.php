@@ -40,4 +40,8 @@ return [
         'public_url' => env('PAYMENT_GATEWAY_PUBLIC_URL', 'http://localhost:8080/api/v1/payments'),
     ],
 
+    'gateway' => [
+        'hmac_secret' => env('GATEWAY_HMAC_SECRET'),
+    ],
+
 ];

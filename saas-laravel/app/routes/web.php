@@ -7,18 +7,13 @@ use App\Http\Controllers\ApiRequestController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\ContactFormController;
-use App\Http\Controllers\OnboardingController;
-use Illuminate\Foundation\Application;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+Route::get('/', function (): RedirectResponse {
+    return auth()->check()
+        ? redirect()->route('dashboard')
+        : redirect()->route('login');
 });
 
 Route::middleware('auth')->group(function () {
@@ -26,13 +21,6 @@ Route::middleware('auth')->group(function () {
     /* Dashboard */
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
-
-    /* Onboarding */
-    Route::prefix('onboarding')->name('onboarding.')->group(function () {
-        Route::get('/', [OnboardingController::class, 'index'])->name('index');
-        Route::post('/api-key', [OnboardingController::class, 'generateApiKey'])->name('api-key');
-        Route::post('/test-payment', [OnboardingController::class, 'createTestPayment'])->name('test-payment');
-    });
 
     /* Profile */
     Route::prefix('profile')->name('profile.')->group(function () {

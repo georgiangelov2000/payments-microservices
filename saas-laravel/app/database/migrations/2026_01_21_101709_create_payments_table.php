@@ -10,14 +10,14 @@ return new class extends Migration
     {
         if (!Schema::hasTable('payments')) {
             Schema::create('payments', function (Blueprint $table) {
-                $table->id();
+                $table->uuid('id')->primary();
 
                 $table->decimal('price', 18, 8);
                 $table->decimal('amount', 18, 8);
 
-                $table->unsignedBigInteger('merchant_id');
+                $table->uuid('merchant_id');
                 $table->unsignedBigInteger('order_id')->unique();
-                $table->unsignedBigInteger('provider_id');
+                $table->uuid('provider_id');
                 $table->string('provider_reference')->nullable();
                 $table->string('provider_checkout_url', 2048)->nullable();
                 $table->string('provider_status', 100)->nullable();

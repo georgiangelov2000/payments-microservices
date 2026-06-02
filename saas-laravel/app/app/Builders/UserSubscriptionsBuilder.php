@@ -14,8 +14,11 @@ class UserSubscriptionsBuilder
             ->with('subscription');
     }    
 
-    public function forMerchant(?int $merchantId): self
+    public function forMerchant(?string $merchantId): self
     {
+        if ($merchantId === null) {
+            throw new \InvalidArgumentException('Merchant ID is required.');
+        }
         $this->query->where('user_id', $merchantId);
         return $this;
     }

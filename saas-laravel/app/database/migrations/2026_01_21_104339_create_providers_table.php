@@ -13,7 +13,7 @@ return new class extends Migration
     {
         if(!Schema::hasTable('providers')) {
             Schema::create('providers', function (Blueprint $table) {
-                $table->id();
+                $table->uuid('id')->primary();
                 $table->string('name');
                 $table->string('alias')->unique();
                 $table->string('url');

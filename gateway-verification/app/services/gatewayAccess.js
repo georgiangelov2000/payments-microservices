@@ -7,7 +7,7 @@ const CACHE_PREFIX = "gateway:auth:v1:"
 const INVALID_PREFIX = `${CACHE_PREFIX}invalid:`
 
 export function hashApiKey(apiKey) {
-  return crypto.createHash("sha256").update(apiKey).digest("hex")
+  return crypto.createHmac("sha256", env.GATEWAY_HMAC_SECRET).update(apiKey).digest("hex")
 }
 
 export async function getGatewayAccess(apiKey) {
@@ -57,8 +57,8 @@ export function routeAllowed(profile, req) {
 
 export function providerAllowed(profile, req) {
   const alias = req.body?.alias
-  if (!alias) return true
-  return profile.allowedProviders?.includes(alias)
+  if (!alias) return false
+  return profile.allowedProviders?.includes(alias) ?? false
 }
 
 async function loadGatewayProfile(apiKeyHash) {

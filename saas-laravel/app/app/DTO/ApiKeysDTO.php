@@ -8,9 +8,8 @@ use Carbon\CarbonInterface;
 final class ApiKeysDTO
 {
     public function __construct(
-        public int $id,
-        public int $merchant_id,
-        public string $hash,
+        public string $id,
+        public string $merchant_id,
         public string $status,
         public CarbonInterface $created_at,
     ) {}
@@ -20,8 +19,7 @@ final class ApiKeysDTO
         return new self(
             id: $apiKey->id,
             merchant_id: $apiKey->merchant_id,
-            hash: $apiKey->hash,
-            status: $apiKey->status->label(), // active / inactive
+            status: $apiKey->status->label(),
             created_at: $apiKey->created_at,
         );
     }
@@ -29,10 +27,9 @@ final class ApiKeysDTO
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
-            'merchant_id' => $this->merchant_id,
-            'hash' => $this->hash,
-            'status' => $this->status,
+            'id'         => $this->id,
+            'merchant_id'=> $this->merchant_id,
+            'status'     => $this->status,
             'created_at' => $this->created_at->toISOString(),
         ];
     }

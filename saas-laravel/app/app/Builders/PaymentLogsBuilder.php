@@ -14,7 +14,7 @@ class PaymentLogsBuilder
         $this->query = PaymentLog::query();
     }
 
-    public function whereId(?int $id) 
+    public function whereId(?string $id) 
     {
         if ($id !== null) {
             $this->query->where("id", $id); 
@@ -23,7 +23,7 @@ class PaymentLogsBuilder
         return $this;
     }
 
-    public function forPayment(?int $paymentId): self
+    public function forPayment(?string $paymentId): self
     {
         if ($paymentId !== null) {
             $this->query->where('payment_id', $paymentId);
