@@ -23,6 +23,7 @@
       <a href="#features" class="nav-link">Features</a>
       <a href="#orchestration" class="nav-link">How it works</a>
       <a href="/docs.html" class="nav-link">Developers</a>
+      <a href="#contact" class="nav-link">Contact</a>
     </div>
 
     <div class="nav-actions" data-nav-links>
@@ -533,20 +534,94 @@
       </div>
     </section>
 
-    <!-- ─── Final CTA ─────────────────────────────────────────────── -->
-    <section class="section-cta">
+    <!-- ─── Contact / Sales ───────────────────────────────────────── -->
+    <section class="section-cta" id="contact">
       <div class="cta-bg">
         <div class="hero-glow hero-glow-1"></div>
         <div class="hero-glow hero-glow-2"></div>
       </div>
-      <div class="container cta-inner" data-reveal>
-        <span class="eyebrow eyebrow-light">Get in touch</span>
-        <h2>Ready to simplify your payment stack?</h2>
-        <p>Talk to our team about your payment infrastructure. We'll walk you through the platform and explore how PayFlow fits your architecture.</p>
-        <div class="cta-actions">
-          <a class="btn btn-primary btn-lg" href="/register.html">Request a demo</a>
-          <a class="btn btn-ghost btn-lg" href="/docs.html">Explore the docs</a>
+      <div class="container contact-inner">
+
+        <div class="contact-copy" data-reveal>
+          <span class="eyebrow eyebrow-light">Contact sales</span>
+          <h2>Let's talk about your payment infrastructure.</h2>
+          <p>Tell us what you're building and we'll walk you through how PayFlow fits — routing strategy, provider connections, and what production deployment looks like.</p>
+          <ul class="contact-benefits">
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              Live platform walkthrough
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              Custom routing architecture review
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              Provider migration support
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+              Reply within one business day
+            </li>
+          </ul>
         </div>
+
+        <div class="contact-form-wrap" data-reveal data-reveal-delay="100">
+          <div id="contact-success" class="contact-success" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <h3>Message sent!</h3>
+            <p>Thanks for reaching out. We'll be in touch within one business day.</p>
+          </div>
+
+          <form id="contact-form" class="contact-form" novalidate>
+            <div class="cf-row">
+              <label class="cf-label">
+                Full name <span class="cf-req">*</span>
+                <input type="text" name="name" placeholder="Georgi Angelov" required autocomplete="name">
+                <small class="cf-error">Name is required.</small>
+              </label>
+              <label class="cf-label">
+                Work email <span class="cf-req">*</span>
+                <input type="email" name="email" placeholder="you@company.com" required autocomplete="email">
+                <small class="cf-error">Enter a valid email.</small>
+              </label>
+            </div>
+            <div class="cf-row">
+              <label class="cf-label">
+                Company <span class="cf-req">*</span>
+                <input type="text" name="company" placeholder="Acme Commerce" required autocomplete="organization">
+                <small class="cf-error">Company is required.</small>
+              </label>
+              <label class="cf-label">
+                Job title
+                <input type="text" name="job_title" placeholder="Head of Engineering" autocomplete="organization-title">
+              </label>
+            </div>
+            <label class="cf-label">
+              Monthly payment volume
+              <select name="monthly_volume">
+                <option value="">Select range</option>
+                <option>Under $10k</option>
+                <option>$10k – $100k</option>
+                <option>$100k – $1M</option>
+                <option>$1M – $10M</option>
+                <option>$10M+</option>
+              </select>
+            </label>
+            <label class="cf-label">
+              What are you trying to build?
+              <textarea name="message" rows="4" placeholder="Tell us about your current payment stack, what providers you're using, and what problems you're trying to solve…"></textarea>
+            </label>
+
+            <div class="alert-error" id="contact-error" role="alert" style="display:none"></div>
+
+            <button class="btn btn-primary btn-lg full" type="submit">
+              Send message
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </form>
+        </div>
+
       </div>
     </section>
 
@@ -567,6 +642,7 @@
           <a href="#orchestration">How it works</a>
           <a href="#providers">Providers</a>
           <a href="#security">Security</a>
+          <a href="#contact">Contact sales</a>
         </div>
         <div class="footer-col">
           <h5>Developers</h5>

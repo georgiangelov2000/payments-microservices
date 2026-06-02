@@ -2,12 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PaymentLogsApiController;
+use App\Http\Controllers\Api\ContactController;
 
 /*
 |--------------------------------------------------------------------------
 | Payments API
 |--------------------------------------------------------------------------
 */
+
+/* Public — no auth required */
+Route::middleware('api')->post('/contact', [ContactController::class, 'store'])
+    ->middleware('throttle:5,60');
 
 Route::middleware(['api', 'auth:sanctum'])
     ->prefix('v1')

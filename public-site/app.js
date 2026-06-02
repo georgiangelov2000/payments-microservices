@@ -99,6 +99,76 @@ if (sections.length && navLinks.length) {
   sections.forEach(s => sectionObserver.observe(s));
 }
 
+// ─── Contact / sales form ─────────────────────────────────────────────
+const contactForm    = document.getElementById("contact-form");
+const contactSuccess = document.getElementById("contact-success");
+const contactError   = document.getElementById("contact-error");
+
+if (contactForm) {
+  const submit   = contactForm.querySelector("button[type='submit']");
+  const origText = submit?.innerHTML ?? "";
+
+  contactForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // Client-side required field check
+    let valid = true;
+    contactForm.querySelectorAll(".cf-label").forEach(label => {
+      label.classList.remove("cf-invalid");
+      const input = label.querySelector("input, select, textarea");
+      if (input?.hasAttribute("required") && !input.value.trim()) {
+        label.classList.add("cf-invalid");
+        valid = false;
+      }
+    });
+    if (!valid) return;
+
+    if (contactError) { contactError.style.display = "none"; contactError.textContent = ""; }
+
+    if (submit) { submit.innerHTML = "Sending…"; submit.disabled = true; }
+
+    const body = {};
+    new FormData(contactForm).forEach((v, k) => { if (v) body[k] = v; });
+
+    try {
+      const res  = await fetch(`${LARAVEL_URL}/api/contact`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body:    JSON.stringify(body),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        contactForm.style.display = "none";
+        if (contactSuccess) contactSuccess.style.display = "flex";
+      } else if (res.status === 422 && json.errors) {
+        Object.entries(json.errors).forEach(([field, msgs]) => {
+          const input = contactForm.querySelector(`[name="${field}"]`);
+          const label = input?.closest(".cf-label");
+          if (label) {
+            label.classList.add("cf-invalid");
+            const err = label.querySelector(".cf-error");
+            if (err) err.textContent = msgs[0];
+          }
+        });
+      } else {
+        if (contactError) {
+          contactError.textContent = json.message ?? "Something went wrong. Please try again.";
+          contactError.style.display = "block";
+        }
+      }
+    } catch {
+      if (contactError) {
+        contactError.textContent = "Could not reach the server. Please try again.";
+        contactError.style.display = "block";
+      }
+    } finally {
+      if (submit) { submit.innerHTML = origText; submit.disabled = false; }
+    }
+  });
+}
+
 // ─── Auth forms (login + register) ───────────────────────────────────
 //
 // Forms on the static site POST to Laravel's JSON auth endpoints via fetch()
