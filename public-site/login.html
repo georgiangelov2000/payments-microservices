@@ -4,13 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sign in | PayFlow.io</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <script defer src="/app.js"></script>
 </head>
 <body>
-  <nav class="nav">
+  <nav class="nav" id="nav">
     <a class="brand" href="/">PayFlow<span>.io</span></a>
-    <div class="nav-links"><a href="/docs.html">API Docs</a><a href="/register.html">Create account</a></div>
+    <div class="nav-links" data-nav-links>
+      <a href="/docs.html" class="nav-link">API Docs</a>
+      <a href="/register.html" class="nav-link">Request access</a>
+    </div>
+    <button class="nav-toggle" type="button" data-nav-toggle aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
 
   <main class="auth-wrap">
@@ -18,33 +27,41 @@
       <div class="auth-copy">
         <span class="eyebrow">Merchant console</span>
         <h1>Sign in to manage payment orchestration.</h1>
-        <p>Continue to onboarding, API keys, payment request history, provider workflow timelines, and sandbox checkout testing.</p>
+        <p>Access your API keys, payment history, provider workflow timelines, and routing configuration.</p>
         <div class="auth-preview">
-          <div><strong>Gateway profile</strong><span>Redis-first access</span></div>
-          <div><strong>Providers</strong><span>Stripe and PayPal</span></div>
-          <div><strong>Workflow</strong><span>Timeline and summaries</span></div>
+          <div><strong>Gateway profile</strong><span>Redis-first access control</span></div>
+          <div><strong>Providers</strong><span>Stripe and PayPal routing</span></div>
+          <div><strong>Workflow</strong><span>Full timeline and summaries</span></div>
         </div>
       </div>
 
-      <form class="auth-box" data-auth-form data-redirect="http://localhost/dashboard" novalidate>
+      <form class="auth-box" id="login-form" novalidate>
         <h2>Welcome back</h2>
-        <p>Use your SaaS credentials to continue.</p>
+        <p>Sign in with your PayFlow merchant credentials.</p>
+
+        <div class="alert-error" id="login-error" role="alert" style="display:none"></div>
+
         <label>
           Email
-          <input type="email" name="email" placeholder="merchant@example.com" required>
+          <input type="email" name="email" placeholder="merchant@example.com" required autocomplete="email">
           <small class="field-error">Enter a valid email address.</small>
         </label>
         <label>
           Password
-          <input type="password" name="password" placeholder="Your password" minlength="8" required>
+          <input type="password" name="password" placeholder="Your password" minlength="8" required autocomplete="current-password">
           <small class="field-error">Password must be at least 8 characters.</small>
         </label>
+
         <div class="form-row">
           <label class="check"><input type="checkbox" name="remember"> Remember me</label>
           <a href="http://localhost/forgot-password">Forgot password?</a>
         </div>
-        <button class="button primary full" type="submit" data-loading-text="Signing in...">Sign in</button>
-        <div class="form-note">This static entry page redirects to the running Laravel application.</div>
+
+        <button class="btn btn-primary full" type="submit">
+          Sign in
+        </button>
+
+        <p class="form-note">Don't have an account? <a href="/register.html">Request access →</a></p>
       </form>
     </section>
   </main>

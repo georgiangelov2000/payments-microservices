@@ -1193,6 +1193,19 @@ pre {
   .plan-price strong { font-size: 40px; }
 }
 
+/* ─── Auth alert ────────────────────────────────────────────────────── */
+.alert-error {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(239,68,68,.25);
+  border-radius: var(--radius);
+  background: rgba(239,68,68,.06);
+  color: var(--red);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 /* ─── Focus / accessibility ──────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--brand);

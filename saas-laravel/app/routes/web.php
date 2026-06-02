@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthApiController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ApiKeyController;
@@ -13,7 +14,18 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function (): RedirectResponse {
     return auth()->check()
         ? redirect()->route('dashboard')
-        : redirect()->route('login');
+        : redirect(config('services.static_site.url'), 302);
+});
+
+/*
+ * JSON authentication endpoints — called by the static marketing site via fetch().
+ * These routes use the web middleware group (session + cookies) but are exempt
+ * from CSRF verification (configured in bootstrap/app.php) because they receive
+ * cross-origin requests from the static site with credentials.
+ */
+Route::prefix('auth')->middleware('web')->group(function () {
+    Route::post('/login',    [AuthApiController::class, 'login'])->name('auth.api.login');
+    Route::post('/register', [AuthApiController::class, 'register'])->name('auth.api.register');
 });
 
 Route::middleware('auth')->group(function () {

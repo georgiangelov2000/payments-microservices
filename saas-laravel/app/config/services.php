@@ -44,4 +44,8 @@ return [
         'hmac_secret' => env('GATEWAY_HMAC_SECRET'),
     ],
 
+    'static_site' => [
+        'url' => env('STATIC_SITE_URL', 'http://localhost:8082'),
+    ],
+
 ];
