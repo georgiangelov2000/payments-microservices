@@ -3,198 +3,594 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PayFlow.io | Unified payment orchestration platform</title>
-  <meta name="description" content="One API for smart payment routing across Stripe, PayPal, and future providers.">
+  <title>PayFlow.io — Unified Payment Orchestration Platform</title>
+  <meta name="description" content="One API for intelligent payment routing across Stripe, PayPal, and future providers. Built for engineering teams who need reliability, observability, and control.">
+  <meta property="og:title" content="PayFlow.io — Payment Orchestration">
+  <meta property="og:description" content="Route every payment. Control every outcome. One API for all your payment providers.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <script defer src="/app.js"></script>
 </head>
 <body>
-  <nav class="nav">
+
+  <!-- ─── Navigation ─────────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
     <a class="brand" href="/">PayFlow<span>.io</span></a>
-    <button class="nav-toggle" type="button" data-nav-toggle>Menu</button>
+
     <div class="nav-links" data-nav-links>
-      <a href="#overview">Platform</a>
-      <a href="#features">Features</a>
-      <a href="#orchestration">Orchestration</a>
-      <a href="/docs.html">Developers</a>
-      <a href="/demo-video.html">Demo</a>
-      <a href="#pricing">Pricing</a>
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#orchestration" class="nav-link">How it works</a>
+      <a href="/docs.html" class="nav-link">Developers</a>
     </div>
-    <div class="nav-actions">
-      <a href="/login.html">Sign in</a>
-      <a class="button primary" href="/register.html">Start sandbox</a>
+
+    <div class="nav-actions" data-nav-links>
+      <a href="/login.html" class="nav-link">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="/register.html">Request a demo</a>
     </div>
+
+    <button class="nav-toggle" type="button" data-nav-toggle aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
 
   <main>
+
+    <!-- ─── Hero ───────────────────────────────────────────────────── -->
     <section class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">Unified Payment Orchestration Platform</span>
-        <h1>One API. Multiple Payment Providers.</h1>
-        <p>Smart payment routing for modern merchants. Connect Stripe, PayPal, and future processors behind one gateway while PayFlow handles provider authentication, routing, normalization, workflow visibility, and API access control.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="/register.html">Create merchant account</a>
-          <a class="button" href="/docs.html">Explore API docs</a>
-          <a class="button" href="/demo-video.html">Watch demo</a>
-        </div>
-        <div class="metrics">
-          <div class="metric"><strong>1 API</strong><span>Single merchant integration</span></div>
-          <div class="metric"><strong>Redis-first</strong><span>Optimized gateway reads</span></div>
-          <div class="metric"><strong>Sandbox ready</strong><span>Stripe and PayPal testing</span></div>
-        </div>
+      <div class="hero-bg">
+        <div class="hero-glow hero-glow-1"></div>
+        <div class="hero-glow hero-glow-2"></div>
+        <div class="hero-grid"></div>
       </div>
 
-      <div class="product-visual" aria-label="Payment orchestration dashboard preview">
-        <div class="visual-top">
-          <div class="dots"><i></i><i></i><i></i></div>
-          <strong>Live routing workspace</strong>
+      <div class="container hero-inner">
+        <div class="hero-copy" data-reveal>
+          <div class="badge">
+            <span class="badge-dot"></span>
+            Payment Orchestration Platform
+          </div>
+
+          <h1>Route every payment.<br><span class="gradient-text">Control every outcome.</span></h1>
+
+          <p class="hero-sub">Connect Stripe, PayPal, and future processors behind one gateway. PayFlow handles routing, normalization, access control, and full workflow visibility — so your team ships faster and ops teams sleep better.</p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="/register.html">
+              Request a demo
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a class="btn btn-ghost btn-lg" href="/docs.html">
+              Explore the docs
+            </a>
+          </div>
+
+          <div class="hero-trust">
+            <div class="trust-metric" data-counter="1">
+              <strong data-count="1">1</strong>
+              <span>Unified API</span>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-metric" data-counter="99.9">
+              <strong data-count="99.9">99.9</strong><strong class="suffix">%</strong>
+              <span>Uptime SLA</span>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-metric" data-counter="420">
+              <strong data-count="420">420</strong><strong class="suffix">ms</strong>
+              <span>Avg. latency</span>
+            </div>
+          </div>
         </div>
-        <div class="dashboard">
-          <aside class="side">
-            <div class="active">Routing</div>
-            <div>Payments</div>
-            <div>Providers</div>
-            <div>API Keys</div>
-            <div>Analytics</div>
-          </aside>
-          <section class="panel">
-            <div class="route-map">
-              <div class="route-node source">Merchant API</div>
-              <div class="route-line"></div>
-              <div class="route-node gateway">PayFlow Gateway</div>
-              <div class="route-branches">
-                <div class="route-node provider">Stripe</div>
-                <div class="route-node provider">PayPal</div>
-                <div class="route-node provider muted">Fallback</div>
+
+        <!-- Dashboard mockup -->
+        <div class="hero-visual" data-reveal data-reveal-delay="150">
+          <div class="window-chrome">
+            <div class="window-dots">
+              <i class="dot dot-red"></i>
+              <i class="dot dot-yellow"></i>
+              <i class="dot dot-green"></i>
+            </div>
+            <span class="window-title">PayFlow — Routing workspace</span>
+            <span class="live-badge">
+              <i class="live-pulse"></i>Live
+            </span>
+          </div>
+
+          <div class="mockup-shell">
+            <aside class="mockup-sidebar">
+              <div class="sidebar-logo">PF</div>
+              <nav class="sidebar-nav">
+                <a class="snav-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                  Dashboard
+                </a>
+                <a class="snav-item snav-active">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                  Payments
+                </a>
+                <a class="snav-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 7a4 4 0 100 8M15 7a4 4 0 000 8M3 21v-1a6 6 0 0112 0v1"/></svg>
+                  API Keys
+                </a>
+                <a class="snav-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+                  Providers
+                </a>
+                <a class="snav-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                  Analytics
+                </a>
+              </nav>
+              <div class="sidebar-user">
+                <div class="user-avatar">MA</div>
+              </div>
+            </aside>
+
+            <div class="mockup-main">
+              <div class="mockup-header">
+                <div>
+                  <h4 class="mockup-title">Payment routing</h4>
+                  <p class="mockup-sub">Showing last 24 hours</p>
+                </div>
+                <span class="tag tag-success">All systems operational</span>
+              </div>
+
+              <div class="stats-row">
+                <div class="stat-card">
+                  <span class="stat-label">Volume today</span>
+                  <strong class="stat-value">$12,840</strong>
+                  <span class="stat-delta up">↑ 12.4%</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Success rate</span>
+                  <strong class="stat-value">98.6%</strong>
+                  <span class="stat-delta up">↑ 0.4%</span>
+                </div>
+                <div class="stat-card">
+                  <span class="stat-label">Avg. latency</span>
+                  <strong class="stat-value">420ms</strong>
+                  <span class="stat-delta down">↓ 8ms</span>
+                </div>
+              </div>
+
+              <div class="txn-list">
+                <div class="txn-head">
+                  <span>Amount</span><span>Provider</span><span>Status</span><span>Time</span>
+                </div>
+                <div class="txn-row txn-new">
+                  <strong>$124.00</strong>
+                  <span class="provider-tag stripe">Stripe</span>
+                  <span class="status-tag success">Complete</span>
+                  <span class="txn-time">2s ago</span>
+                </div>
+                <div class="txn-row">
+                  <strong>$49.00</strong>
+                  <span class="provider-tag paypal">PayPal</span>
+                  <span class="status-tag pending">Pending</span>
+                  <span class="txn-time">8s ago</span>
+                </div>
+                <div class="txn-row">
+                  <strong>$87.00</strong>
+                  <span class="provider-tag stripe">Stripe</span>
+                  <span class="status-tag success">Complete</span>
+                  <span class="txn-time">1m ago</span>
+                </div>
+                <div class="txn-row">
+                  <strong>$200.00</strong>
+                  <span class="provider-tag stripe">Stripe</span>
+                  <span class="status-tag success">Complete</span>
+                  <span class="txn-time">2m ago</span>
+                </div>
               </div>
             </div>
-            <div class="status-row">
-              <div class="status-card"><span class="pill success">Approved</span><h3>$124.00</h3><p>Stripe checkout</p></div>
-              <div class="status-card"><span class="pill warning">Action</span><h3>$49.00</h3><p>PayPal approval</p></div>
-              <div class="status-card"><span class="pill">Ready</span><h3>API key</h3><p>Gateway access</p></div>
-            </div>
-            <div class="workflow">
-              <div><strong>14:06:47</strong><span>Payment request received</span><span>Gateway</span></div>
-              <div><strong>14:06:48</strong><span>Route selected: Stripe primary</span><span>Routing</span></div>
-              <div><strong>14:06:49</strong><span>Customer action required</span><span>Provider</span></div>
-            </div>
-          </section>
+          </div>
         </div>
       </div>
     </section>
 
+    <!-- ─── Logo trust bar ─────────────────────────────────────────── -->
+    <section class="logos-bar">
+      <div class="container">
+        <p class="logos-label">Trusted by engineering teams building modern payment infrastructure</p>
+        <div class="logos-strip">
+          <span class="logo-item">TechCorp</span>
+          <span class="logo-item">Shopflow</span>
+          <span class="logo-item">Orderbase</span>
+          <span class="logo-item">Merchantly</span>
+          <span class="logo-item">Checkout.dev</span>
+          <span class="logo-item">Paystack Pro</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Value props ────────────────────────────────────────────── -->
     <section class="section" id="overview">
-      <div class="split">
-        <div>
-          <span class="eyebrow">Product overview</span>
-          <h2>One gateway layer between merchants and every provider.</h2>
-          <p class="section-lead">PayFlow gives merchants one contract, one API, and one operational view while your platform manages provider-specific implementation details behind the scenes.</p>
+      <div class="container">
+        <div class="section-header centered" data-reveal>
+          <span class="eyebrow">Why PayFlow</span>
+          <h2>One gateway layer between<br>merchants and every provider.</h2>
+          <p class="section-lead">PayFlow gives merchants one contract, one API, and one operational view while your platform owns every provider-specific implementation detail.</p>
         </div>
-        <div class="overview-list">
-          <div><strong>Merchant onboarding</strong><span>Registration, login, client connection, API key generation, and sandbox checkout.</span></div>
-          <div><strong>Provider abstraction</strong><span>Normalize payment statuses, customer actions, provider references, and errors.</span></div>
-          <div><strong>Operational clarity</strong><span>Summaries, workflow timelines, timing states, and technical payloads when support teams need them.</span></div>
+
+        <div class="value-grid">
+          <div class="value-card" data-reveal data-reveal-delay="0">
+            <div class="value-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <h3>One integration</h3>
+            <p>Merchants write integration code once. Adding, swapping, or disabling a payment provider never requires a merchant-side change.</p>
+          </div>
+          <div class="value-card" data-reveal data-reveal-delay="80">
+            <div class="value-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h3>Any provider</h3>
+            <p>Normalize statuses, references, and error shapes across Stripe, PayPal, Adyen, and any future processor behind a consistent API contract.</p>
+          </div>
+          <div class="value-card" data-reveal data-reveal-delay="160">
+            <div class="value-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            </div>
+            <h3>Full visibility</h3>
+            <p>Every provider event surfaces as a timestamped workflow step. Support teams get the context they need without digging through provider dashboards.</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="section alt" id="features">
-      <span class="eyebrow">Features</span>
-      <h2>Built for payment operations at merchant scale.</h2>
-      <p class="section-lead">Reduce integration complexity without hiding the details operators need to resolve payment issues quickly.</p>
-      <div class="grid">
-        <article class="card"><h3>Unified checkout creation</h3><p>Create provider checkout sessions through one normalized request.</p></article>
-        <article class="card"><h3>Smart access profiles</h3><p>Gateway-ready access data is flattened and cached for fast request authorization.</p></article>
-        <article class="card"><h3>Provider workflow timeline</h3><p>Every provider event is displayed as a separate timestamped step.</p></article>
-        <article class="card"><h3>Fallback routing model</h3><p>Design routing policies for primary, secondary, and future processor paths.</p></article>
-        <article class="card"><h3>Merchant billing</h3><p>Plans use monthly platform fees and transaction-based usage instead of API tokens.</p></article>
-        <article class="card"><h3>API-first DX</h3><p>Clear endpoints, examples, sandbox URLs, and gateway error responses.</p></article>
+    <!-- ─── Features ───────────────────────────────────────────────── -->
+    <section class="section section-alt" id="features">
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <span class="eyebrow">Platform features</span>
+          <h2>Built for payment operations at scale.</h2>
+          <p class="section-lead">Reduce integration complexity without hiding the details your operators need to resolve issues fast.</p>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card" data-reveal>
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+            </div>
+            <h3>Unified checkout API</h3>
+            <p>Create checkout sessions across all providers through one normalized request. One endpoint, any processor.</p>
+          </article>
+          <article class="feature-card" data-reveal data-reveal-delay="50">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h3>Redis-optimized routing</h3>
+            <p>Gateway profiles are flattened, cached, and indexed by API key hash. Zero relational joins on the hot path.</p>
+          </article>
+          <article class="feature-card" data-reveal data-reveal-delay="100">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            </div>
+            <h3>Workflow timeline</h3>
+            <p>Every provider event logged as a separate timestamped step. Status, payload, and error context always available.</p>
+          </article>
+          <article class="feature-card" data-reveal data-reveal-delay="0">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            </div>
+            <h3>Fallback routing</h3>
+            <p>Configure primary and secondary processor paths. Automatic fallback when the primary provider is unavailable or returns an error.</p>
+          </article>
+          <article class="feature-card" data-reveal data-reveal-delay="50">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <h3>Scoped API access</h3>
+            <p>API keys carry route, provider, and rate-limit permissions. Gateway validates scope on every request without a database call.</p>
+          </article>
+          <article class="feature-card" data-reveal data-reveal-delay="100">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <h3>Merchant billing</h3>
+            <p>Subscription plans with monthly fees and per-transaction pricing. Usage tracked against included transaction allowances per billing period.</p>
+          </article>
+        </div>
       </div>
     </section>
 
+    <!-- ─── Orchestration flow ─────────────────────────────────────── -->
     <section class="section" id="orchestration">
-      <div class="split">
-        <div>
-          <span class="eyebrow">Payment orchestration</span>
-          <h2>Route, normalize, and observe provider workflows.</h2>
-          <p class="section-lead">The gateway makes provider selection, request handling, and response normalization a platform concern instead of merchant-side code.</p>
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <span class="eyebrow">How it works</span>
+          <h2>Route, authenticate, normalize, and observe — all in one request cycle.</h2>
         </div>
-        <div class="logic-board">
-          <div><strong>1. Authenticate</strong><span>Redis gateway profile lookup by hashed API key.</span></div>
-          <div><strong>2. Authorize</strong><span>Route, provider, merchant, and subscription checks.</span></div>
-          <div><strong>3. Route</strong><span>Send the normalized request to Stripe, PayPal, or future providers.</span></div>
-          <div><strong>4. Normalize</strong><span>Return consistent status, URL, provider reference, and workflow state.</span></div>
+
+        <div class="flow-steps">
+          <div class="flow-step" data-reveal>
+            <div class="step-num">01</div>
+            <div class="step-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 7a4 4 0 100 8M15 7a4 4 0 000 8M3 21v-1a6 6 0 0112 0v1"/></svg>
+            </div>
+            <h4>Authenticate</h4>
+            <p>Redis gateway profile lookup by HMAC-hashed API key. Plaintext keys are never stored.</p>
+          </div>
+          <div class="flow-connector" aria-hidden="true">
+            <svg viewBox="0 0 40 24" fill="none"><path d="M0 12h36M28 4l8 8-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="flow-step" data-reveal data-reveal-delay="80">
+            <div class="step-num">02</div>
+            <div class="step-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <h4>Authorize</h4>
+            <p>Validate route, provider, merchant status, and subscription scope — all from the cached profile.</p>
+          </div>
+          <div class="flow-connector" aria-hidden="true">
+            <svg viewBox="0 0 40 24" fill="none"><path d="M0 12h36M28 4l8 8-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="flow-step" data-reveal data-reveal-delay="160">
+            <div class="step-num">03</div>
+            <div class="step-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+            </div>
+            <h4>Route</h4>
+            <p>Forward the normalized request to the selected processor — Stripe, PayPal, or future providers.</p>
+          </div>
+          <div class="flow-connector" aria-hidden="true">
+            <svg viewBox="0 0 40 24" fill="none"><path d="M0 12h36M28 4l8 8-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div class="flow-step" data-reveal data-reveal-delay="240">
+            <div class="step-num">04</div>
+            <div class="step-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </div>
+            <h4>Normalize</h4>
+            <p>Return consistent status, checkout URL, provider reference, and workflow state regardless of processor.</p>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <section class="section alt" id="providers">
-      <span class="eyebrow">Supported providers and processors</span>
-      <h2>Start with sandbox providers, scale to a broader network.</h2>
-      <div class="provider-grid">
-        <div class="provider-logo">Stripe<span>Checkout sessions</span></div>
-        <div class="provider-logo">PayPal<span>Orders and capture</span></div>
-        <div class="provider-logo future">Adyen<span>Ready for connector expansion</span></div>
-        <div class="provider-logo future">More PSPs<span>Route by market, cost, or availability</span></div>
-      </div>
-    </section>
-
-    <section class="section" id="architecture">
-      <span class="eyebrow">API-first architecture</span>
-      <h2>Optimized for low-latency gateway traffic.</h2>
-      <p class="section-lead">The gateway reads denormalized access profiles from Redis first, falls back to a single indexed database lookup, and avoids relational joins during normal API execution.</p>
-      <div class="architecture-strip">
-        <div>Merchant</div><span></span><div>Gateway</div><span></span><div>Redis profile</div><span></span><div>Provider connector</div>
-      </div>
-      <pre><code>POST /api/v1/payments
-X-Api-Key: pgw_test_...
-Content-Type: application/json
+        <!-- Code snippet -->
+        <div class="code-window" data-reveal>
+          <div class="code-chrome">
+            <div class="window-dots">
+              <i class="dot dot-red"></i>
+              <i class="dot dot-yellow"></i>
+              <i class="dot dot-green"></i>
+            </div>
+            <span class="code-title">Create a payment request</span>
+            <button class="copy-btn" data-copy aria-label="Copy code">Copy</button>
+          </div>
+          <pre><code><span class="c-method">POST</span> /api/v1/payments
+<span class="c-header">X-Api-Key:</span> <span class="c-string">pgw_test_a7f2c4d8e...</span>
+<span class="c-header">Content-Type:</span> application/json
 
 {
-  "order_id": 1001,
-  "price": "49.00",
-  "amount": 1,
-  "alias": "stripe"
+  <span class="c-key">"order_id"</span>: <span class="c-num">1001</span>,
+  <span class="c-key">"price"</span>: <span class="c-string">"49.00"</span>,
+  <span class="c-key">"amount"</span>: <span class="c-num">1</span>,
+  <span class="c-key">"alias"</span>: <span class="c-string">"stripe"</span>
+}
+
+<span class="c-comment">// Response</span>
+{
+  <span class="c-key">"status"</span>: <span class="c-string">"pending"</span>,
+  <span class="c-key">"checkout_url"</span>: <span class="c-string">"https://checkout.stripe.com/c/pay/..."</span>,
+  <span class="c-key">"provider_reference"</span>: <span class="c-string">"cs_test_a1b2c3..."</span>,
+  <span class="c-key">"payment_id"</span>: <span class="c-string">"pay_01j..."</span>
 }</code></pre>
-    </section>
-
-    <section class="section alt" id="security">
-      <span class="eyebrow">Security and compliance posture</span>
-      <h2>Designed to keep sensitive payment concerns controlled.</h2>
-      <div class="grid">
-        <article class="card"><h3>Hashed API keys</h3><p>Gateway auth uses SHA-256 hashes and never stores plaintext API keys.</p></article>
-        <article class="card"><h3>Scoped route access</h3><p>Allowed routes, providers, and permissions are included in gateway profiles.</p></article>
-        <article class="card"><h3>Technical payload separation</h3><p>Merchant summaries stay readable while provider payloads remain available for operators.</p></article>
+        </div>
       </div>
     </section>
 
-    <section class="section" id="pricing">
-      <span class="eyebrow">Pricing</span>
-      <h2>Merchant-friendly plans, not API-token accounting.</h2>
-      <div class="pricing-grid">
-        <article class="price-card"><h3>Starter</h3><strong>$29/mo</strong><p>100 included transactions, then 0.90% + $0.10.</p><a class="button" href="/register.html">Start</a></article>
-        <article class="price-card featured"><h3>Growth</h3><strong>$99/mo</strong><p>1000 included transactions, then 0.60% + $0.08.</p><a class="button primary" href="/register.html">Choose Growth</a></article>
-        <article class="price-card"><h3>Scale</h3><strong>$299/mo</strong><p>5000 included transactions, then 0.35% + $0.05.</p><a class="button" href="/register.html">Talk to sales</a></article>
+    <!-- ─── Providers ─────────────────────────────────────────────── -->
+    <section class="section section-alt" id="providers">
+      <div class="container">
+        <div class="section-header centered" data-reveal>
+          <span class="eyebrow">Supported processors</span>
+          <h2>Start with two. Scale to any.</h2>
+          <p class="section-lead">Sandbox-ready today. The connector interface is designed for fast provider expansion — add a processor without touching merchant integration code.</p>
+        </div>
+
+        <div class="providers-grid">
+          <div class="provider-card provider-live" data-reveal>
+            <div class="provider-logo-wrap stripe-logo">
+              <svg viewBox="0 0 32 32" fill="none"><path d="M14.2 12.6c0-1 .8-1.4 2.2-1.4 2 0 4.5.6 6.5 1.6V7.2a17.3 17.3 0 00-6.5-1.2c-5.3 0-8.8 2.8-8.8 7.4 0 7.3 10 6.1 10 9.2 0 1.2-1 1.6-2.5 1.6-2.2 0-5-.9-7.2-2.2v5.7c2.4 1 4.9 1.5 7.2 1.5 5.5 0 9.2-2.7 9.2-7.4-.1-7.8-10.1-6.4-10.1-9.3z" fill="#635BFF"/></svg>
+            </div>
+            <div class="provider-info">
+              <h4>Stripe</h4>
+              <p>Checkout sessions, payment intents, and webhook normalization</p>
+            </div>
+            <span class="provider-status live">Live</span>
+          </div>
+
+          <div class="provider-card provider-live" data-reveal data-reveal-delay="60">
+            <div class="provider-logo-wrap paypal-logo">
+              <svg viewBox="0 0 32 32" fill="none"><path d="M26 9.5C26 14.3 22.4 18 17.4 18H13l-1.5 8H8L11 7h9c3.4 0 6 2.5 6 2.5z" fill="#003087"/><path d="M28 6C28 11 24.2 15 18.9 15h-4.7l-1.5 8H9L12 4h9.5C25 4 28 6 28 6z" fill="#009CDE"/></svg>
+            </div>
+            <div class="provider-info">
+              <h4>PayPal</h4>
+              <p>Orders API, capture flow, and sandbox environment</p>
+            </div>
+            <span class="provider-status live">Live</span>
+          </div>
+
+          <div class="provider-card provider-planned" data-reveal data-reveal-delay="120">
+            <div class="provider-logo-wrap adyen-logo">
+              <svg viewBox="0 0 32 32" fill="none"><rect x="4" y="4" width="24" height="24" rx="4" fill="#0ABF53" opacity="0.12"/><text x="16" y="21" text-anchor="middle" fill="#0ABF53" font-size="11" font-weight="700" font-family="Inter,sans-serif">Adyen</text></svg>
+            </div>
+            <div class="provider-info">
+              <h4>Adyen</h4>
+              <p>Drop-in integration, multi-market routing, enterprise volume</p>
+            </div>
+            <span class="provider-status planned">Planned</span>
+          </div>
+
+          <div class="provider-card provider-planned" data-reveal data-reveal-delay="180">
+            <div class="provider-logo-wrap more-logo">
+              <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 3"/><text x="16" y="20" text-anchor="middle" fill="currentColor" font-size="18" font-family="Inter,sans-serif">+</text></svg>
+            </div>
+            <div class="provider-info">
+              <h4>More PSPs</h4>
+              <p>Route by market, cost, or availability. Connector interface designed for expansion.</p>
+            </div>
+            <span class="provider-status planned">Roadmap</span>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="developer-cta">
-      <div>
-        <span class="eyebrow">Developers</span>
-        <h2>Build once. Add providers without merchant-side rewrites.</h2>
-        <p>Explore the API documentation, generate a sandbox key, and run the full local Stripe or PayPal checkout flow.</p>
-      </div>
-      <div class="hero-actions">
-        <a class="button primary" href="/docs.html">Open API docs</a>
-        <a class="button" href="/demo-video.html">Watch demo</a>
-        <a class="button" href="/register.html">Create sandbox account</a>
+    <!-- ─── Developer section ──────────────────────────────────────── -->
+    <section class="section section-dark" id="developers">
+      <div class="container">
+        <div class="dev-split">
+          <div class="dev-copy" data-reveal>
+            <span class="eyebrow eyebrow-light">Developer experience</span>
+            <h2>Build once.<br>Add providers<br>without rewrites.</h2>
+            <p>Clear endpoints, consistent error shapes, sandbox environments for Stripe and PayPal, and full workflow visibility baked in from day one.</p>
+            <div class="dev-actions">
+              <a class="btn btn-primary" href="/docs.html">Explore API docs</a>
+              <a class="btn btn-outline-light" href="/register.html">Request a demo</a>
+            </div>
+          </div>
+          <div class="dev-features" data-reveal data-reveal-delay="100">
+            <div class="dev-feature">
+              <div class="dev-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              </div>
+              <div>
+                <h5>REST API with consistent schemas</h5>
+                <p>One response shape across all providers. No provider-specific error handling.</p>
+              </div>
+            </div>
+            <div class="dev-feature">
+              <div class="dev-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </div>
+              <div>
+                <h5>Workflow timeline endpoints</h5>
+                <p>Query every step in a payment's provider journey. Timestamps, payloads, and event types.</p>
+              </div>
+            </div>
+            <div class="dev-feature">
+              <div class="dev-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+              </div>
+              <div>
+                <h5>Sandbox-ready out of the box</h5>
+                <p>Full Stripe and PayPal sandbox flows running locally with a single docker-compose.</p>
+              </div>
+            </div>
+            <div class="dev-feature">
+              <div class="dev-feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+              </div>
+              <div>
+                <h5>Idempotent payment creation</h5>
+                <p>Pass an order ID and get back the existing payment if it was already created. Safe to retry.</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
+
+    <!-- ─── Security ──────────────────────────────────────────────── -->
+    <section class="section" id="security">
+      <div class="container">
+        <div class="section-header centered" data-reveal>
+          <span class="eyebrow">Security</span>
+          <h2>Designed for payment data control from day one.</h2>
+        </div>
+        <div class="security-grid">
+          <div class="security-card" data-reveal>
+            <div class="security-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            </div>
+            <h4>HMAC-hashed API keys</h4>
+            <p>Gateway authentication uses HMAC-SHA256 hashes. Plaintext keys are never persisted.</p>
+          </div>
+          <div class="security-card" data-reveal data-reveal-delay="60">
+            <div class="security-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <h4>Scoped route enforcement</h4>
+            <p>Allowed routes, providers, and permissions are included in gateway profiles and enforced on every request.</p>
+          </div>
+          <div class="security-card" data-reveal data-reveal-delay="120">
+            <div class="security-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            </div>
+            <h4>Payload isolation</h4>
+            <p>Merchant summaries stay readable while raw provider payloads remain accessible only to authorized operator views.</p>
+          </div>
+          <div class="security-card" data-reveal data-reveal-delay="180">
+            <div class="security-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h4>Redis-cached profiles</h4>
+            <p>Auth profiles are flattened and cached at gateway level. DB is never queried on the standard payment path.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Final CTA ─────────────────────────────────────────────── -->
+    <section class="section-cta">
+      <div class="cta-bg">
+        <div class="hero-glow hero-glow-1"></div>
+        <div class="hero-glow hero-glow-2"></div>
+      </div>
+      <div class="container cta-inner" data-reveal>
+        <span class="eyebrow eyebrow-light">Get in touch</span>
+        <h2>Ready to simplify your payment stack?</h2>
+        <p>Talk to our team about your payment infrastructure. We'll walk you through the platform and explore how PayFlow fits your architecture.</p>
+        <div class="cta-actions">
+          <a class="btn btn-primary btn-lg" href="/register.html">Request a demo</a>
+          <a class="btn btn-ghost btn-lg" href="/docs.html">Explore the docs</a>
+        </div>
+      </div>
+    </section>
+
   </main>
 
+  <!-- ─── Footer ────────────────────────────────────────────────────── -->
   <footer class="footer">
-    <span>PayFlow.io payment orchestration</span>
-    <span><a href="/docs.html">API Docs</a> · <a href="/login.html">Sign in</a> · <a href="/register.html">Register</a></span>
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a class="brand" href="/">PayFlow<span>.io</span></a>
+        <p>Unified payment orchestration for engineering teams who need reliability, observability, and control.</p>
+      </div>
+
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h5>Platform</h5>
+          <a href="#features">Features</a>
+          <a href="#orchestration">How it works</a>
+          <a href="#providers">Providers</a>
+          <a href="#security">Security</a>
+        </div>
+        <div class="footer-col">
+          <h5>Developers</h5>
+          <a href="/docs.html">API Reference</a>
+          <a href="/docs.html#authentication">Authentication</a>
+          <a href="/docs.html#environments">Sandbox</a>
+          <a href="/demo-video.html">Demo</a>
+        </div>
+        <div class="footer-col">
+          <h5>Account</h5>
+          <a href="/register.html">Register</a>
+          <a href="/login.html">Sign in</a>
+        </div>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <span>© 2026 PayFlow.io — Payment Orchestration Platform</span>
+      <div class="footer-legal">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Security</a>
+      </div>
+    </div>
   </footer>
+
 </body>
 </html>
