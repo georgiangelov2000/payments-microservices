@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PayFlow.io Product Demo</title>
+  <link rel="stylesheet" href="/demo-video.css">
+  <script defer src="/demo-video.js"></script>
+</head>
+<body>
+  <main class="stage" data-demo-stage>
+    <section class="scene active" data-scene="0">
+      <div class="ambient"></div>
+      <div class="logo-mark">PayFlow<span>.io</span></div>
+      <div class="hero-card">
+        <span>Unified Payment Orchestration Platform</span>
+        <h1>One API. Multiple Payment Providers.</h1>
+        <p>Smart payment routing for modern merchants.</p>
+      </div>
+    </section>
+
+    <section class="scene dashboard-scene" data-scene="1">
+      <div class="browser-frame floating">
+        <div class="browser-top"><i></i><i></i><i></i><strong>Merchant Dashboard</strong></div>
+        <div class="dashboard-grid">
+          <aside><b>PayFlow.io</b><span>Payments</span><span>Providers</span><span>Analytics</span><span>API Keys</span></aside>
+          <div class="dashboard-main">
+            <div class="metric-row">
+              <article><span>Volume</span><strong>$184,920</strong></article>
+              <article><span>Approval rate</span><strong>98.4%</strong></article>
+              <article><span>Active providers</span><strong>3</strong></article>
+            </div>
+            <div class="chart"><b></b><b></b><b></b><b></b><b></b><b></b></div>
+            <div class="table-row success"><span>#1029</span><span>Stripe</span><span>Approved</span><span>$124.00</span></div>
+            <div class="table-row pending"><span>#1030</span><span>PayPal</span><span>Customer action</span><span>$49.00</span></div>
+            <div class="table-row"><span>#1031</span><span>Adyen</span><span>Fallback ready</span><span>$300.00</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene workflow-scene" data-scene="2">
+      <h2>Intelligent workflow routing</h2>
+      <div class="flow-map">
+        <div class="node source">Payment Request</div>
+        <div class="line down"></div>
+        <div class="node decision">Routing Logic</div>
+        <div class="branches">
+          <div class="path">
+            <div class="line"></div>
+            <div class="node provider">Stripe</div>
+            <em>Failed</em>
+          </div>
+          <div class="path active">
+            <div class="line"></div>
+            <div class="node provider">Adyen Retry</div>
+            <em>Success</em>
+          </div>
+          <div class="path">
+            <div class="line"></div>
+            <div class="node provider">PayPal</div>
+            <em>Backup</em>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene api-scene" data-scene="3">
+      <div class="docs-frame">
+        <aside><strong>API Docs</strong><span>Authentication</span><span>Create Payment</span><span>Webhooks</span><span>SDKs</span></aside>
+        <div>
+          <h2>Developer-first API</h2>
+          <pre><code>curl -X POST http://localhost:8080/api/v1/payments \
+  -H "X-Api-Key: pgw_test_..." \
+  -d '{
+    "order_id": 1001,
+    "price": "49.00",
+    "alias": "stripe"
+  }'</code></pre>
+          <div class="terminal"><span>$</span> payment_url: https://checkout.stripe.com/...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene timeline-scene" data-scene="4">
+      <h2>Provider workflow timeline</h2>
+      <div class="timeline">
+        <div><time>14:06:47</time><strong>Payment request received</strong><span>Gateway</span></div>
+        <div><time>14:06:48</time><strong>Provider URL request sent</strong><span>Stripe</span></div>
+        <div><time>14:06:49</time><strong>Customer action required</strong><span>Pending</span></div>
+        <div><time>14:07:10</time><strong>Provider status update received</strong><span>Approved</span></div>
+      </div>
+    </section>
+
+    <section class="scene providers-scene" data-scene="5">
+      <h2>Multi-provider orchestration</h2>
+      <div class="globe-grid">
+        <div class="provider-card">Stripe<span>Primary card route</span></div>
+        <div class="provider-card">PayPal<span>Wallet approval</span></div>
+        <div class="provider-card">Adyen<span>Regional fallback</span></div>
+      </div>
+      <div class="routing-panel">
+        <span>US traffic → Stripe</span>
+        <span>EU retry → Adyen</span>
+        <span>Wallet preference → PayPal</span>
+      </div>
+    </section>
+
+    <section class="scene mobile-scene" data-scene="6">
+      <div class="phone floating">
+        <div class="notch"></div>
+        <h3>Payment Monitor</h3>
+        <article><span>Approval rate</span><strong>98.4%</strong></article>
+        <article><span>Pending actions</span><strong>12</strong></article>
+        <article class="alert"><span>Provider failover</span><strong>Resolved</strong></article>
+      </div>
+      <div class="mobile-copy">
+        <h2>Monitor payments anywhere.</h2>
+        <p>Responsive dashboards and clear provider status updates for teams on the move.</p>
+      </div>
+    </section>
+
+    <section class="scene final-scene" data-scene="7">
+      <div class="final-grid">
+        <div class="logo-mark">PayFlow<span>.io</span></div>
+        <h1>Build scalable payment experiences with modern orchestration infrastructure.</h1>
+        <a href="/register.html">Get Started Today</a>
+      </div>
+    </section>
+
+    <div class="caption-bar">
+      <div>
+        <strong data-scene-title>Introduction</strong>
+        <p data-caption>One platform. Multiple payment providers.</p>
+      </div>
+      <button type="button" data-toggle>Pause</button>
+    </div>
+
+    <div class="progress"><i data-progress></i></div>
+  </main>
+</body>
+</html>

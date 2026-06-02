@@ -35,7 +35,7 @@ export default function ProductCard({ product, onBuy, onAddToCart }) {
             Add to Cart
           </button>
           <button className="btn-buy" onClick={onBuy}>
-            Buy Now
+            Pay
           </button>
         </div>
       </div>

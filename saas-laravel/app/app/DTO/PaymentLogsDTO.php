@@ -3,6 +3,7 @@
 namespace App\DTO;
 
 use App\Models\PaymentLog;
+use App\Support\PaymentWorkflowFormatter;
 
 class PaymentLogsDTO
 {
@@ -15,6 +16,7 @@ class PaymentLogsDTO
         public string $status_label,
         public ?string $message,
         public ?string $payload,
+        public array $workflow_events,
         public string $created_at,
     ) {}
 
@@ -35,6 +37,7 @@ class PaymentLogsDTO
 
             message: $log->message,
             payload: $log->payload,
+            workflow_events: PaymentWorkflowFormatter::eventsFromLog($log),
             created_at: $log->created_at
         );
     }
@@ -56,6 +59,7 @@ class PaymentLogsDTO
 
             'message' => $this->message,
             'payload' => $this->payload,
+            'workflow_events' => $this->workflow_events,
 
             'created_at' => $this->created_at,
         ];

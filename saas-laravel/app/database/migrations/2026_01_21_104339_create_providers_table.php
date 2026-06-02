@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if(!Schema::hasTable('merchant_api_keys')) {
+        if(!Schema::hasTable('providers')) {
             Schema::create('providers', function (Blueprint $table) {
                 $table->id();
                 $table->string('name');

@@ -32,14 +32,20 @@ export default function AuthenticatedLayout({ header, children }) {
                                 </div>
 
                                 <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                    <NavLink
-                                        href={route('dashboard')}
-                                        active={route().current('dashboard')}
-                                    >
-                                        Dashboard
-                                    </NavLink>
-                                    <NavLink
-                                        href={route('payments.index')}
+	                                    <NavLink
+	                                        href={route('dashboard')}
+	                                        active={route().current('dashboard')}
+	                                    >
+	                                        Dashboard
+	                                    </NavLink>
+	                                    <NavLink
+	                                        href={route('onboarding.index')}
+	                                        active={route().current('onboarding.*')}
+	                                    >
+	                                        Onboarding
+	                                    </NavLink>
+	                                    <NavLink
+	                                        href={route('payments.index')}
                                         active={route().current('payments.*')}
                                     >
                                         Payments
@@ -161,13 +167,19 @@ export default function AuthenticatedLayout({ header, children }) {
                         }
                     >
                         <div className="space-y-1 pb-3 pt-2">
-                            <ResponsiveNavLink
-                                href={route('dashboard')}
-                                active={route().current('dashboard')}
-                            >
-                                Dashboard
-                            </ResponsiveNavLink>
-                        </div>
+	                            <ResponsiveNavLink
+	                                href={route('dashboard')}
+	                                active={route().current('dashboard')}
+	                            >
+	                                Dashboard
+	                            </ResponsiveNavLink>
+	                            <ResponsiveNavLink
+	                                href={route('onboarding.index')}
+	                                active={route().current('onboarding.*')}
+	                            >
+	                                Onboarding
+	                            </ResponsiveNavLink>
+	                        </div>
 
                         <div className="border-t border-gray-200 pb-1 pt-4">
                             <div className="px-4">

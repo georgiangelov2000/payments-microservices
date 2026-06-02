@@ -8,8 +8,11 @@ class Subscription extends Model
 {
     protected $fillable = [
         'name',
-        'price',
-        'tokens',
+        'code',
+        'monthly_fee',
+        'transaction_fee_percent',
+        'transaction_fee_fixed',
+        'included_transactions',
     ];
     public $timestamps = false;
 

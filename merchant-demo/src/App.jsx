@@ -75,7 +75,7 @@ export default function App() {
     setCartOpen(false)
   }, [cart])
 
-  const handleSuccess = useCallback((result, checkoutItems) => {
+  const rememberOrder = useCallback((result, checkoutItems) => {
     const quantity = checkoutItems.reduce((sum, item) => sum + item.quantity, 0)
     const total = checkoutItems.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
@@ -101,10 +101,18 @@ export default function App() {
       },
       ...prev,
     ])
+  }, [])
+
+  const handleSuccess = useCallback((result, checkoutItems) => {
+    if (!result.payment_url) {
+      throw new Error("Checkout session was created, but no provider redirect URL was returned.")
+    }
+
+    rememberOrder(result, checkoutItems)
     setCart([])
     setCheckout(null)
-    setPage("orders")
-  }, [])
+    window.location.assign(result.payment_url)
+  }, [rememberOrder])
 
   const handleStatusChange = useCallback((paymentId, status) => {
     setOrders((prev) =>

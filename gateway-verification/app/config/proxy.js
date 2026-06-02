@@ -1,7 +1,18 @@
 import httpProxy from "http-proxy"
+import http from "http"
+
+const keepAliveAgent = new http.Agent({
+  keepAlive: true,
+  maxSockets: 256,
+  maxFreeSockets: 32,
+  timeout: 10000,
+})
 
 export const proxy = httpProxy.createProxyServer({
-  proxyTimeout: 3000,
+  agent: keepAliveAgent,
+  proxyTimeout: 5000,
+  timeout: 5000,
+  xfwd: true,
 })
 
 proxy.on("proxyReq", (proxyReq, req) => {

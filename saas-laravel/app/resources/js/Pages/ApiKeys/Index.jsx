@@ -1,8 +1,9 @@
-import { useForm, Head, Link } from '@inertiajs/react'
+import { useForm, Head, Link, usePage } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { router } from '@inertiajs/react'
 
 export default function ApiKeys({ keys, filters = {} }) {
+  const { flash } = usePage().props
   const rows = keys.data ?? []
 
   const { data, setData, get, processing } = useForm({
@@ -23,12 +24,36 @@ export default function ApiKeys({ keys, filters = {} }) {
     })
   }
 
+  const generateKey = () => {
+    router.post(route('api-keys.store'), {}, {
+      preserveScroll: true,
+    })
+  }
+
   return (
     <AuthenticatedLayout>
       <Head title="API Keys" />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold">API Keys</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold">API Keys</h1>
+          <button
+            type="button"
+            onClick={generateKey}
+            className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            Generate API key
+          </button>
+        </div>
+
+        {flash?.generated_api_key && (
+          <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-900">
+            <div className="font-medium">New API key</div>
+            <div className="mt-2 break-all font-mono text-xs">
+              {flash.generated_api_key}
+            </div>
+          </div>
+        )}
 
         {/* FILTERS */}
         <form

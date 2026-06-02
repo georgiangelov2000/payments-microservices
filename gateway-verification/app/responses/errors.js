@@ -22,10 +22,15 @@ export const Errors = {
   INVALID_API_KEY: {
     status: 401,
     body: { error: "invalid api key" },
-  },  
+  },
 
-  QUOTA_EXCEEDED: {
-    status: 429,
-    body: { error: "quota_exceeded" },
+  FORBIDDEN_ROUTE: {
+    status: 403,
+    body: { error: "route_not_allowed" },
+  },
+
+  PROVIDER_NOT_ALLOWED: {
+    status: 403,
+    body: { error: "provider_not_allowed" },
   },
 }

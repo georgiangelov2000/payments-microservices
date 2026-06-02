@@ -7,6 +7,7 @@ use App\Http\Controllers\ApiRequestController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\ContactFormController;
+use App\Http\Controllers\OnboardingController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -26,6 +27,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
+    /* Onboarding */
+    Route::prefix('onboarding')->name('onboarding.')->group(function () {
+        Route::get('/', [OnboardingController::class, 'index'])->name('index');
+        Route::post('/api-key', [OnboardingController::class, 'generateApiKey'])->name('api-key');
+        Route::post('/test-payment', [OnboardingController::class, 'createTestPayment'])->name('test-payment');
+    });
+
     /* Profile */
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'edit'])->name('edit');
@@ -42,6 +50,7 @@ Route::middleware('auth')->group(function () {
     /* API Keys */
     Route::prefix('api-keys')->name('api-keys.')->group(function () {
         Route::get('/', [ApiKeyController::class, 'index'])->name('index');
+        Route::post('/', [ApiKeyController::class, 'store'])->name('store');
     });
 
     /* Subscriptions */

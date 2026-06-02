@@ -18,6 +18,9 @@ return new class extends Migration
                 $table->unsignedBigInteger('merchant_id');
                 $table->unsignedBigInteger('order_id')->unique();
                 $table->unsignedBigInteger('provider_id');
+                $table->string('provider_reference')->nullable();
+                $table->string('provider_checkout_url', 2048)->nullable();
+                $table->string('provider_status', 100)->nullable();
 
                 $table->tinyInteger('status')
                     ->default(1)
@@ -29,6 +32,7 @@ return new class extends Migration
                 $table->index('order_id', 'ix_payments_order_id');
                 $table->index('merchant_id', 'ix_payments_merchant_id');
                 $table->index('provider_id', 'ix_payments_provider_id');
+                $table->index('provider_reference', 'ix_payments_provider_reference');
                 $table->index('status', 'ix_payments_status');
                 $table->index('created_at', 'ix_payments_created_at');
             });

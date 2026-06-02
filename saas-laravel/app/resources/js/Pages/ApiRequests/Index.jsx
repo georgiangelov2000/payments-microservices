@@ -71,13 +71,13 @@ export default function ApiRequests() {
             </label>
             <select
               value={data.source}
-              onChange={e => setData('plan', e.target.value)}
+              onChange={e => setData('source', e.target.value)}
               className="mt-1 w-full rounded border-gray-300 text-sm"
             >
-            <option value="">All</option>
-            <option value="basic_plan">Basic Plan</option>
-            <option value="premium_plan">Premium Plan</option>
-            <option value="enterprise_plan">Enterprise Plan</option>
+              <option value="">All</option>
+              <option value="Starter">Starter</option>
+              <option value="Growth">Growth</option>
+              <option value="Scale">Scale</option>
             </select>
           </div>
 

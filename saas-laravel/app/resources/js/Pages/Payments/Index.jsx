@@ -4,15 +4,36 @@ import { Head, Link, useForm, usePage, router } from '@inertiajs/react'
 import toast from 'react-hot-toast'
 import React from 'react'
 
+const formatDateTime = (value) => {
+  if (!value) return 'Not available'
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString('sv-SE')
+}
+
+const formatNumber = (value, decimals = 2) => {
+  const number = Number(value)
+
+  return Number.isFinite(number) ? number.toFixed(decimals) : '0.00'
+}
+
+const statusClass = (status, timingState) => {
+  if (timingState === 'delayed') return 'bg-orange-100 text-orange-700'
+  if (status === 'finished') return 'bg-green-100 text-green-700'
+  if (status === 'pending') return 'bg-yellow-100 text-yellow-700'
+  return 'bg-red-100 text-red-700'
+}
+
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
   const { csrf_token } = usePage().props
   const csrfToken =
     csrf_token || document.querySelector('meta[name="csrf-token"]')?.content || ''
 
-  const [openLogs, setOpenLogs] = useState(null)
-  const [logs, setLogs] = useState({})
-  const [logsLoading, setLogsLoading] = useState({})
+  const [openWorkflow, setOpenWorkflow] = useState(null)
 
   const { data, setData, get, processing } = useForm({
     order_id: filters.order_id || '',
@@ -87,36 +108,8 @@ export default function Payments({ payments, filters = {} }) {
     }
   }
 
-  const toggleLogs = async (paymentId) => {
-    if (openLogs === paymentId) {
-      setOpenLogs(null)
-      return
-    }
-
-    setOpenLogs(paymentId)
-
-    if (logs[paymentId]) return
-
-    setLogsLoading(prev => ({ ...prev, [paymentId]: true }))
-
-    try {
-      const response = await fetch(
-        `/api/v1/payment-logs/payments/${paymentId}/logs`,
-        {
-          headers: { Accept: 'application/json' },
-          credentials: 'same-origin',
-        }
-      )
-
-      const result = await response.json()
-
-      setLogs(prev => ({
-        ...prev,
-        [paymentId]: result.results ?? [],
-      }))
-    } finally {
-      setLogsLoading(prev => ({ ...prev, [paymentId]: false }))
-    }
+  const toggleWorkflow = (paymentId) => {
+    setOpenWorkflow(openWorkflow === paymentId ? null : paymentId)
   }
 
   return (
@@ -202,18 +195,20 @@ export default function Payments({ payments, filters = {} }) {
               <tr>
                 <th className="px-4 py-3">#</th>
                 <th className="px-4 py-3">Order</th>
+                <th className="px-4 py-3">Price</th>
                 <th className="px-4 py-3">Amount</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Timing</th>
                 <th className="px-4 py-3">Provider</th>
-                <th className="px-4 py-3">Logs</th>
+                <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
 
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center text-gray-500">
+                  <td colSpan={9} className="px-6 py-10 text-center text-gray-500">
                     No payments found.
                   </td>
                 </tr>
@@ -223,75 +218,87 @@ export default function Payments({ payments, filters = {} }) {
                     <tr className="border-b">
                       <td className="px-4 py-3">{payment.id}</td>
                       <td className="px-4 py-3 font-medium">{payment.order_id}</td>
-                      <td className="px-4 py-3">${payment.price}</td>
+                      <td className="px-4 py-3">${formatNumber(payment.price)}</td>
+                      <td className="px-4 py-3">{formatNumber(payment.amount)}</td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium
-                            ${
-                              payment.status === 'finished'
-                                ? 'bg-green-100 text-green-700'
-                                : payment.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${statusClass(payment.status, payment.timing?.state)}`}
                         >
                           {payment.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        {new Date(payment.created_at).toLocaleString('sv-SE')}
+                        {formatDateTime(payment.created_at)}
                       </td>
-                      <td className="px-4 py-3">{payment.provider}</td>
+                      <td className="px-4 py-3">
+                        <div className="space-y-1 text-xs text-gray-600">
+                          <div>
+                            <span className="font-medium text-gray-700">Duration:</span>{' '}
+                            {payment.timing?.processing_duration ?? 'Not available'}
+                          </div>
+                          <div>
+                            <span className="font-medium text-gray-700">Last update:</span>{' '}
+                            {formatDateTime(payment.timing?.last_provider_update_at)}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        {payment.provider}
+                      </td>
                       <td className="px-4 py-3">
                         <button
-                          onClick={() => toggleLogs(payment.id)}
+                          onClick={() => toggleWorkflow(payment.id)}
                           className="text-indigo-600 text-xs hover:underline"
                         >
-                          {openLogs === payment.id ? 'Hide logs' : 'View logs'}
+                          {openWorkflow === payment.id ? 'Hide Provider Workflow' : 'View Provider Workflow'}
                         </button>
                       </td>
                     </tr>
 
-                    {openLogs === payment.id && (
+                    {openWorkflow === payment.id && (
                       <tr className="bg-gray-50">
-                        <td colSpan={7} className="px-6 py-4">
+                        <td colSpan={9} className="px-6 py-4">
                           <div className="border-l-4 border-indigo-500 pl-4">
-                            {logsLoading[payment.id] ? (
-                              <p className="text-sm text-gray-500">
-                                Loading logs…
-                              </p>
-                            ) : logs[payment.id]?.length ? (
-                              <table className="w-full text-xs border border-gray-200 rounded">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th className="px-3 py-2 text-left">Event</th>
-                                    <th className="px-3 py-2 text-left">Status</th>
-                                    <th className="px-3 py-2 text-left">Message</th>
-                                    <th className="px-3 py-2 text-right">Date</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {logs[payment.id].map(log => (
-                                    <tr key={log.id} className="border-t">
-                                      <td className="px-3 py-2 font-medium">
-                                        {log.event_type_label}
-                                      </td>
-                                      <td className="px-3 py-2">
-                                        {log.status_label}
-                                      </td>
-                                      <td className="px-3 py-2 text-gray-700">
-                                        {log.message ?? '—'}
-                                      </td>
-                                      <td className="px-3 py-2 text-right text-gray-500">
-                                        {new Date(log.created_at).toLocaleString('sv-SE')}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <div>
+                                <h3 className="font-semibold text-gray-900">Payment Timeline</h3>
+                                <p className="text-xs text-gray-500">
+                                  Provider workflow events are shown chronologically.
+                                </p>
+                              </div>
+                            </div>
+
+                            {payment.workflow_timeline?.length ? (
+                              <ol className="mt-4 space-y-3">
+                                {payment.workflow_timeline.map((event, index) => (
+                                  <li key={`${payment.id}-${index}`} className="grid gap-3 border-l-2 border-indigo-200 pl-4 md:grid-cols-[230px_1fr]">
+                                    <time className="font-mono text-xs text-gray-500">
+                                      {formatDateTime(event.timestamp)}
+                                    </time>
+                                    <div>
+                                      <div className="font-medium text-gray-900">
+                                        {event.message || 'Provider response received without a readable summary'}
+                                      </div>
+                                      <div className="mt-1 text-xs text-gray-500">
+                                        {event.event_type} · {event.status}
+                                      </div>
+                                      {event.technical_response && (
+                                        <details className="mt-2">
+                                          <summary className="cursor-pointer text-xs text-indigo-600">
+                                            View Technical Details
+                                          </summary>
+                                          <pre className="mt-2 max-h-56 overflow-auto rounded bg-gray-950 p-3 text-xs text-gray-100">
+                                            {JSON.stringify(event.technical_response, null, 2)}
+                                          </pre>
+                                        </details>
+                                      )}
+                                    </div>
+                                  </li>
+                                ))}
+                              </ol>
                             ) : (
-                              <p className="text-sm text-gray-500">
-                                No logs for this payment
+                              <p className="mt-4 text-sm text-gray-500">
+                                No provider workflow events are available yet.
                               </p>
                             )}
                           </div>

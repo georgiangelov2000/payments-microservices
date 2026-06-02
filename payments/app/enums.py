@@ -17,7 +17,7 @@ class PaymentStatus(IntEnum):
 # State of a user subscription
 class SubscriptionStatus(IntEnum):
     SUBSCRIPTION_ACTIVE = 1     # Subscription is valid and usable
-    SUBSCRIPTION_INACTIVE = 2   # Subscription expired or exhausted
+    SUBSCRIPTION_INACTIVE = 2   # Subscription is inactive, canceled, or disabled
 
 
 # ==================================================

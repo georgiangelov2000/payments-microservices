@@ -1,0 +1,288 @@
+<?php
+
+namespace App\Support;
+
+use App\Models\Payment;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+
+class PaymentWorkflowFormatter
+{
+    public static function timelineFromLogs(iterable $logs): array
+    {
+        $events = [];
+
+        foreach ($logs as $log) {
+            $events = array_merge($events, self::eventsFromLog($log));
+        }
+
+        usort($events, fn (array $a, array $b) => strcmp($a['timestamp'] ?? '', $b['timestamp'] ?? ''));
+
+        return $events;
+    }
+
+    public static function eventsFromLog($log): array
+    {
+        $message = trim((string) ($log->message ?? ''));
+        $fallbackTimestamp = self::formatTimestamp($log->created_at ?? null);
+        $fallbackMessage = $log->event_type?->label() ?? 'Provider workflow event';
+        $payload = self::decodePayload($log->payload ?? null);
+        $events = self::splitTimestampedMessage($message, $fallbackTimestamp, $fallbackMessage);
+
+        if ($events === []) {
+            $events[] = [
+                'timestamp' => $fallbackTimestamp,
+                'message' => $fallbackMessage,
+            ];
+        }
+
+        return array_map(function (array $event) use ($log, $payload) {
+            return [
+                'timestamp' => $event['timestamp'],
+                'message' => self::cleanMessage($event['message']),
+                'event_type' => $log->event_type?->label() ?? 'Provider workflow event',
+                'status' => $log->status?->label() ?? 'Processed',
+                'technical_response' => $payload,
+            ];
+        }, $events);
+    }
+
+    public static function summaryForPayment(Payment $payment, Collection $logs): array
+    {
+        $provider = $payment->provider?->name ?? 'Provider';
+        $latestPayload = self::latestReadablePayload($logs);
+        $providerStatus = strtolower((string) ($payment->provider_status ?? ''));
+        $hasCheckoutUrl = filled($payment->provider_checkout_url);
+
+        $summary = match ($payment->status->label()) {
+            'finished' => 'Payment approved',
+            'failed' => self::failureSummary($latestPayload, $providerStatus),
+            default => $hasCheckoutUrl
+                ? "Redirect customer to {$provider}"
+                : self::pendingSummary($latestPayload, $providerStatus),
+        };
+
+        return [
+            'label' => $summary,
+            'provider_status' => $payment->provider_status ?: 'No provider status yet',
+            'next_step' => self::nextStep($payment->status->label(), $hasCheckoutUrl, $provider),
+        ];
+    }
+
+    public static function timingForPayment(Payment $payment, Collection $logs): array
+    {
+        $startedAt = self::asCarbon($payment->created_at);
+        $timeline = self::timelineFromLogs($logs);
+        $lastEventAt = collect($timeline)
+            ->map(fn (array $event) => self::asCarbon($event['timestamp'] ?? null))
+            ->filter()
+            ->sortBy(fn (Carbon $timestamp) => $timestamp->getTimestamp())
+            ->last();
+        $lastProviderUpdate = $lastEventAt ?: self::asCarbon($payment->updated_at);
+        $endAt = $payment->status->label() === 'pending' ? Carbon::now() : $lastProviderUpdate;
+        $durationSeconds = $startedAt && $endAt ? (int) max(0, round($startedAt->diffInSeconds($endAt))) : null;
+        $isDelayed = $payment->status->label() === 'pending' && $durationSeconds !== null && $durationSeconds > 900;
+
+        return [
+            'request_started_at' => self::formatTimestamp($startedAt),
+            'last_provider_update_at' => self::formatTimestamp($lastProviderUpdate),
+            'processing_duration' => self::humanDuration($durationSeconds),
+            'duration_seconds' => $durationSeconds,
+            'state' => $isDelayed ? 'delayed' : $payment->status->label(),
+            'state_label' => $isDelayed ? 'Provider response delayed' : self::stateLabel($payment->status->label()),
+        ];
+    }
+
+    private static function splitTimestampedMessage(string $message, string $fallbackTimestamp, string $fallbackMessage): array
+    {
+        if ($message === '') {
+            return [];
+        }
+
+        preg_match_all('/\[([^\]]+)\]/', $message, $matches, PREG_OFFSET_CAPTURE);
+
+        if ($matches[0] === []) {
+            return [[
+                'timestamp' => $fallbackTimestamp,
+                'message' => $message ?: $fallbackMessage,
+            ]];
+        }
+
+        $events = [];
+        $count = count($matches[0]);
+
+        for ($i = 0; $i < $count; $i++) {
+            $timestamp = $matches[1][$i][0] ?: $fallbackTimestamp;
+            $start = $matches[0][$i][1] + strlen($matches[0][$i][0]);
+            $end = $i + 1 < $count ? $matches[0][$i + 1][1] : strlen($message);
+            $line = trim(substr($message, $start, $end - $start));
+
+            $events[] = [
+                'timestamp' => $timestamp,
+                'message' => $line !== '' ? $line : $fallbackMessage,
+            ];
+        }
+
+        return $events;
+    }
+
+    private static function cleanMessage(?string $message): string
+    {
+        $message = trim((string) $message);
+        $message = preg_replace('/\s+/', ' ', $message);
+
+        return $message !== '' ? $message : 'Provider response received without a readable summary';
+    }
+
+    private static function decodePayload(?string $payload): array|string|null
+    {
+        if (!filled($payload)) {
+            return null;
+        }
+
+        $decoded = json_decode($payload, true);
+
+        return json_last_error() === JSON_ERROR_NONE ? $decoded : $payload;
+    }
+
+    private static function latestReadablePayload(Collection $logs): array|string|null
+    {
+        return $logs
+            ->sortByDesc('created_at')
+            ->map(fn ($log) => self::decodePayload($log->payload ?? null))
+            ->first(fn ($payload) => filled($payload));
+    }
+
+    private static function failureSummary(array|string|null $payload, string $providerStatus): string
+    {
+        $reason = self::payloadValue($payload, ['failure_message', 'decline_code', 'reason', 'message', 'error_description']);
+
+        if ($reason === 'customer_cancelled' || $providerStatus === 'cancelled') {
+            return 'Customer cancelled checkout';
+        }
+
+        if (filled($reason)) {
+            return ucfirst(str_replace('_', ' ', (string) $reason));
+        }
+
+        return filled($providerStatus)
+            ? 'Payment failed: ' . ucfirst($providerStatus)
+            : 'Provider response received without a readable summary';
+    }
+
+    private static function pendingSummary(array|string|null $payload, string $providerStatus): string
+    {
+        $message = self::payloadValue($payload, ['message', 'status', 'payment_status']);
+
+        if (filled($message)) {
+            return 'Waiting for provider update: ' . ucfirst(str_replace('_', ' ', (string) $message));
+        }
+
+        return filled($providerStatus)
+            ? 'Waiting for customer action'
+            : 'Payment request sent successfully';
+    }
+
+    private static function nextStep(string $status, bool $hasCheckoutUrl, string $provider): string
+    {
+        return match ($status) {
+            'finished' => 'No action required',
+            'failed' => 'Review provider message and ask the customer to retry if needed',
+            default => $hasCheckoutUrl
+                ? "Customer must complete checkout on {$provider}"
+                : 'Wait for the next provider response',
+        };
+    }
+
+    private static function payloadValue(array|string|null $payload, array $keys): mixed
+    {
+        if (is_string($payload)) {
+            return null;
+        }
+
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        foreach ($keys as $key) {
+            $value = self::findKey($payload, $key);
+            if (filled($value)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private static function findKey(array $payload, string $key): mixed
+    {
+        foreach ($payload as $payloadKey => $value) {
+            if ($payloadKey === $key) {
+                return $value;
+            }
+
+            if (is_array($value)) {
+                $nested = self::findKey($value, $key);
+                if (filled($nested)) {
+                    return $nested;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static function asCarbon(mixed $value): ?Carbon
+    {
+        if (!$value) {
+            return null;
+        }
+
+        try {
+            return $value instanceof Carbon ? $value : Carbon::parse($value);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private static function formatTimestamp(mixed $value): string
+    {
+        $timestamp = self::asCarbon($value);
+
+        return $timestamp?->toISOString() ?? Carbon::now()->toISOString();
+    }
+
+    private static function humanDuration(?int $seconds): string
+    {
+        if ($seconds === null) {
+            return 'Not available';
+        }
+
+        if ($seconds < 1) {
+            return 'under 1s';
+        }
+
+        if ($seconds < 60) {
+            return "{$seconds}s";
+        }
+
+        if ($seconds < 3600) {
+            return intdiv($seconds, 60) . 'm ' . ($seconds % 60) . 's';
+        }
+
+        if ($seconds < 86400) {
+            return intdiv($seconds, 3600) . 'h ' . intdiv($seconds % 3600, 60) . 'm';
+        }
+
+        return intdiv($seconds, 86400) . 'd ' . intdiv($seconds % 86400, 3600) . 'h';
+    }
+
+    private static function stateLabel(string $status): string
+    {
+        return match ($status) {
+            'finished' => 'Completed',
+            'failed' => 'Failed',
+            default => 'Pending provider response',
+        };
+    }
+}

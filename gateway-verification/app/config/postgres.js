@@ -3,5 +3,8 @@ import { env } from "./env.js"
 
 export const pool = new pg.Pool({
   connectionString: env.DATABASE_URL,
-  max: 10,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 1000,
+  keepAlive: true,
 })

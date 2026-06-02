@@ -1,6 +1,5 @@
 import { Errors } from "../responses/errors.js"
-import { apiAuth } from "../config/auth.js"
-import { redis } from "../config/redis.js"
+import { getGatewayAccess, routeAllowed } from "../services/gatewayAccess.js"
 
 export async function authGet(req, res, next) {
   const apiKey = req.header("x-api-key")
@@ -13,50 +12,25 @@ export async function authGet(req, res, next) {
   }
 
   try {
-    const cacheKey = `api_key:${apiKey}`
-
-    // ---- Redis cache ----
-    const cached = await redis.get(cacheKey)
-    if (cached) {
-      const data = JSON.parse(cached)
-
-      if (!data.valid) {
-        return res
-          .status(Errors.INVALID_API_KEY.status)
-          .json(Errors.INVALID_API_KEY.body)
-      }
-
-      // attach context
-      req.merchantId = data.merchantId
-      req.subscriptionId = data.subscriptionId
-      req.headers["x-merchant-id"] = data.merchantId
-
-      return next()
-    }
-
-    // ---- DB auth ----
-    const result = await apiAuth(apiKey)
+    const result = await getGatewayAccess(apiKey)
 
     if (!result.ok) {
       return res
-        .status(result.error.status)
-        .json(result.error.body)
+        .status(Errors.INVALID_API_KEY.status)
+        .json(Errors.INVALID_API_KEY.body)
     }
 
-    // ---- Cache success ----
-    await redis.setEx(
-      cacheKey,
-      300,
-      JSON.stringify({
-        valid: true,
-        merchantId: result.data.merchantId,
-        subscriptionId: result.data.subscriptionId,
-      })
-    )
+    const authData = result.data
 
-    req.merchantId = result.data.merchantId
-    req.subscriptionId = result.data.subscriptionId
-    req.headers["x-merchant-id"] = result.data.merchantId
+    if (!routeAllowed(authData, req)) {
+      return res
+        .status(Errors.FORBIDDEN_ROUTE.status)
+        .json(Errors.FORBIDDEN_ROUTE.body)
+    }
+
+    req.merchantId = authData.merchantId
+    req.subscriptionId = authData.subscriptionId
+    req.headers["x-merchant-id"] = authData.merchantId
 
     return next()
   } catch (e) {

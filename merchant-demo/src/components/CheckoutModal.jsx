@@ -11,6 +11,7 @@ export default function CheckoutModal({ items, onClose, onSuccess }) {
   const [phase, setPhase] = useState("idle") // idle | loading | error
   const [error, setError] = useState(null)
   const primary = items[0].product
+  const providerLabel = PROVIDER_LABELS[primary.provider]
   const quantity = items.reduce((sum, item) => sum + item.quantity, 0)
   const total = items.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
@@ -55,15 +56,15 @@ export default function CheckoutModal({ items, onClose, onSuccess }) {
           </h2>
           <p className="modal-desc">
             {items.length === 1
-              ? primary.description
-              : "Complete checkout for the items currently in your cart."}
+              ? `Confirm this ${providerLabel} payment before continuing to checkout.`
+              : `Confirm these cart items before continuing to ${providerLabel} checkout.`}
           </p>
         </div>
 
         <div className="modal-summary">
           <div className="summary-row">
             <span>Provider</span>
-            <span>{PROVIDER_LABELS[primary.provider]}</span>
+            <span>{providerLabel}</span>
           </div>
           {items.map((item) => (
             <div className="summary-row" key={item.product.id}>
@@ -94,7 +95,7 @@ export default function CheckoutModal({ items, onClose, onSuccess }) {
             onClick={handleConfirm}
             disabled={phase === "loading"}
           >
-            {phase === "loading" ? "Processing…" : "Confirm Payment"}
+            {phase === "loading" ? "Redirecting…" : `Confirm and Pay with ${providerLabel}`}
           </button>
         </div>
       </div>

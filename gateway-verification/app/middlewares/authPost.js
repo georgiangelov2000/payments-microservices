@@ -1,7 +1,6 @@
 import crypto from "crypto"
-import { redis } from "../config/redis.js"
-import { apiAuth } from "../config/auth.js"
 import { Errors } from "../responses/errors.js"
+import { getGatewayAccess, providerAllowed, routeAllowed } from "../services/gatewayAccess.js"
 
 export async function authPost(req, res, next) {
   if (req.method !== "POST") return next()
@@ -10,47 +9,30 @@ export async function authPost(req, res, next) {
   if (!apiKey) {
     return res
       .status(Errors.UNAUTHORIZED.status)
-      .json({ message: Errors.UNAUTHORIZED.message })
+      .json(Errors.UNAUTHORIZED.body)
   }
 
   try {
-    const cacheKey = `api_key:${apiKey}`
-    let authData = await redis.get(cacheKey)
-    authData = authData ? JSON.parse(authData) : null
-    
-    // ----------------------------------------
-    // Cache miss → validate API key
-    // ----------------------------------------
-    if (!authData) {
-      const result = await apiAuth(apiKey)
+    const result = await getGatewayAccess(apiKey)
 
-      if (!result.ok) {
-        await redis.setEx(cacheKey, 60, JSON.stringify({ valid: false }))
-        return res
-          .status(result.status)
-          .json({ message: result.message })
-      }
-
-      authData = result.data
-
-      await redis.setEx(cacheKey, 300, JSON.stringify(authData))
-      await redis.set(
-        `sub:${authData.subscriptionId}:tokens`,
-        authData.tokensLeft
-      )
+    if (!result.ok) {
+      return res
+        .status(Errors.INVALID_API_KEY.status)
+        .json(Errors.INVALID_API_KEY.body)
     }
 
-    // ----------------------------------------
-    // Token decrement (atomic)
-    // ----------------------------------------
-    const tokenKey = `sub:${authData.subscriptionId}:tokens`
-    const remaining = await redis.decr(tokenKey)
+    const authData = result.data
 
-    if (remaining < 0) {
-      await redis.incr(tokenKey)
+    if (!routeAllowed(authData, req)) {
       return res
-        .status(Errors.QUOTA_EXCEEDED.status)
-        .json({ message: Errors.QUOTA_EXCEEDED.message })
+        .status(Errors.FORBIDDEN_ROUTE.status)
+        .json(Errors.FORBIDDEN_ROUTE.body)
+    }
+
+    if (!providerAllowed(authData, req)) {
+      return res
+        .status(Errors.PROVIDER_NOT_ALLOWED.status)
+        .json(Errors.PROVIDER_NOT_ALLOWED.body)
     }
 
     // ----------------------------------------
@@ -68,6 +50,6 @@ export async function authPost(req, res, next) {
     console.error("AUTH POST ERROR", e)
     return res
       .status(Errors.GATEWAY_ERROR.status)
-      .json({ message: Errors.GATEWAY_ERROR.message })
+      .json(Errors.GATEWAY_ERROR.body)
   }
 }

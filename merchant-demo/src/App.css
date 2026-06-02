@@ -243,6 +243,12 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 .btn-buy:hover  { background: var(--accent-hover); }
 .btn-buy:active,
 .btn-cart-add:active { transform: scale(0.98); }
+.btn-buy:disabled,
+.btn-cart-add:disabled {
+  opacity: .65;
+  cursor: wait;
+  transform: none;
+}
 
 /* ── Cart drawer ───────────────────────────── */
 .cart-drawer {
@@ -546,7 +552,7 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
 .status-finished { background: #d1fae5; color: #065f46; }
 .status-failed   { background: #fee2e2; color: #991b1b; }
 
-/* ── Payment URL + simulate ────────────────── */
+/* ── Payment URL ───────────────────────────── */
 .order-actions {
   display: flex;
   align-items: center;
@@ -566,30 +572,6 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; }
   max-width: 240px;
 }
 .payment-link:hover { text-decoration: underline; }
-
-.btn-simulate {
-  flex-shrink: 0;
-  padding: 4px 12px;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  background: none;
-  color: var(--accent);
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .13s, color .13s;
-}
-.btn-simulate:hover:not(:disabled) {
-  background: var(--accent);
-  color: #fff;
-}
-.btn-simulate:disabled { opacity: .5; cursor: not-allowed; }
-
-.sim-error {
-  font-size: 0.75rem;
-  color: #b91c1c;
-  width: 100%;
-}
 
 /* ── Responsive ────────────────────────────── */
 @media (max-width: 640px) {

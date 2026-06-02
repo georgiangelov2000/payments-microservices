@@ -35,6 +35,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'flash' => [
+                'generated_api_key' => fn () => $request->session()->get('generated_api_key'),
+                'test_payment' => fn () => $request->session()->get('test_payment'),
+                'test_payment_error' => fn () => $request->session()->get('test_payment_error'),
+            ],
         ];
     }
 }

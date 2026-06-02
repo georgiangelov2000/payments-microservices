@@ -52,8 +52,11 @@ class Subscription(PaymentsBase):
 
     id = Column(BigInteger, primary_key=True)
     name = Column(String(255), nullable=False, unique=True)
-    price = Column(Numeric(10, 2), nullable=False)
-    tokens = Column(BigInteger, nullable=False)
+    code = Column(String(50), nullable=False, unique=True)
+    monthly_fee = Column(Numeric(10, 2), nullable=False)
+    transaction_fee_percent = Column(Numeric(5, 2), nullable=False, server_default="0")
+    transaction_fee_fixed = Column(Numeric(10, 2), nullable=False, server_default="0")
+    included_transactions = Column(BigInteger, nullable=False, server_default="0")
 
     __table_args__ = (Index("ix_subscriptions_name", "name"),)
 
@@ -114,6 +117,9 @@ class Payment(PaymentsBase):
     merchant_id = Column(BigInteger, nullable=False)
     provider_id = Column(BigInteger, nullable=False)
     order_id = Column(BigInteger, nullable=False, unique=True)
+    provider_reference = Column(String(255))
+    provider_checkout_url = Column(String(2048))
+    provider_status = Column(String(100))
 
     status = Column(SmallInteger, nullable=False, server_default="1")  # 1=pending
 
@@ -127,6 +133,7 @@ class Payment(PaymentsBase):
         Index("ix_payments_order_id", "order_id"),
         Index("ix_payments_merchant_id", "merchant_id"),
         Index("ix_payments_provider_id", "provider_id"),
+        Index("ix_payments_provider_reference", "provider_reference"),
         Index("ix_payments_status", "status"),
         Index("ix_payments_merchant_status", "merchant_id", "status"),
         Index("ix_payments_created_at", "created_at"),
@@ -142,7 +149,8 @@ class UserSubscription(PaymentsBase):
     id = Column(BigInteger, primary_key=True)
     user_id = Column(BigInteger, nullable=False)
     subscription_id = Column(BigInteger, nullable=False)
-    used_tokens = Column(BigInteger, nullable=False, default=0)
+    current_period_transactions = Column(BigInteger, nullable=False, default=0)
+    current_period_volume = Column(Numeric(18, 2), nullable=False, server_default="0")
 
     status = Column(SmallInteger, nullable=False, server_default="1")
 
@@ -182,4 +190,3 @@ class ApiRequest(PaymentsBase):
         Index("ix_api_requests_source", "source"),
         Index("ix_api_requests_user_subscription", "user_id", "subscription_id"),
     )
-

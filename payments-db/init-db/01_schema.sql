@@ -28,11 +28,15 @@ CREATE INDEX ix_users_role   ON users(role);
 CREATE TABLE subscriptions (
     id BIGSERIAL PRIMARY KEY,
     name   VARCHAR(255) NOT NULL UNIQUE,
-    price  NUMERIC(10,2) NOT NULL,
-    tokens BIGINT NOT NULL CHECK (tokens >= 0)
+    code   VARCHAR(50) NOT NULL UNIQUE,
+    monthly_fee NUMERIC(10,2) NOT NULL,
+    transaction_fee_percent NUMERIC(5,2) NOT NULL DEFAULT 0,
+    transaction_fee_fixed NUMERIC(10,2) NOT NULL DEFAULT 0,
+    included_transactions BIGINT NOT NULL DEFAULT 0 CHECK (included_transactions >= 0)
 );
 
 CREATE INDEX ix_subscriptions_name ON subscriptions(name);
+CREATE INDEX ix_subscriptions_code ON subscriptions(code);
 
 -- =========================
 -- MERCHANT API KEYS
@@ -52,6 +56,41 @@ CREATE TABLE merchant_api_keys (
 CREATE INDEX ix_merchant_api_keys_hash        ON merchant_api_keys(hash);
 CREATE INDEX ix_merchant_api_keys_status      ON merchant_api_keys(status);
 CREATE INDEX ix_merchant_api_keys_merchant_id ON merchant_api_keys(merchant_id);
+
+-- =========================
+-- GATEWAY ACCESS PROFILES
+-- Denormalized gateway read model.
+-- =========================
+CREATE TABLE gateway_access_profiles (
+    id BIGSERIAL PRIMARY KEY,
+    api_key_hash VARCHAR(64) NOT NULL UNIQUE,
+    merchant_api_key_id BIGINT NOT NULL,
+    merchant_id BIGINT NOT NULL,
+    merchant_name VARCHAR(255) NOT NULL,
+    merchant_email VARCHAR(255) NOT NULL,
+    merchant_status SMALLINT NOT NULL DEFAULT 1,
+    merchant_role SMALLINT NOT NULL DEFAULT 2,
+    api_key_status SMALLINT NOT NULL DEFAULT 1,
+    subscription_id BIGINT,
+    subscription_name VARCHAR(255),
+    subscription_code VARCHAR(50),
+    subscription_status SMALLINT,
+    permissions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    allowed_routes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    allowed_providers JSONB NOT NULL DEFAULT '[]'::jsonb,
+    rate_limit_per_minute INTEGER NOT NULL DEFAULT 120,
+    cache_version BIGINT NOT NULL DEFAULT 1,
+    synced_at TIMESTAMPTZ,
+    revoked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX ix_gateway_access_profiles_hash ON gateway_access_profiles(api_key_hash);
+CREATE INDEX ix_gateway_access_profiles_merchant_id ON gateway_access_profiles(merchant_id);
+CREATE INDEX ix_gateway_access_profiles_subscription_id ON gateway_access_profiles(subscription_id);
+CREATE INDEX ix_gateway_access_profiles_fast_auth
+    ON gateway_access_profiles(api_key_hash, api_key_status, merchant_status, subscription_status);
 
 -- =========================
 -- PROVIDERS
@@ -82,6 +121,10 @@ CREATE TABLE payments (
     provider_id BIGINT NOT NULL CHECK (provider_id >= 0),
     order_id    BIGINT NOT NULL UNIQUE CHECK (order_id >= 0),
 
+    provider_reference    VARCHAR(255),
+    provider_checkout_url VARCHAR(2048),
+    provider_status       VARCHAR(100),
+
     status SMALLINT NOT NULL DEFAULT 1, -- 1=pending,2=finished,3=failed
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -91,6 +134,7 @@ CREATE TABLE payments (
 CREATE INDEX ix_payments_order_id        ON payments(order_id);
 CREATE INDEX ix_payments_merchant_id     ON payments(merchant_id);
 CREATE INDEX ix_payments_provider_id     ON payments(provider_id);
+CREATE INDEX ix_payments_provider_reference ON payments(provider_reference);
 CREATE INDEX ix_payments_status          ON payments(status);
 CREATE INDEX ix_payments_merchant_status ON payments(merchant_id, status);
 CREATE INDEX ix_payments_created_at      ON payments(created_at);
@@ -103,7 +147,8 @@ CREATE TABLE user_subscriptions (
 
     user_id         BIGINT NOT NULL CHECK (user_id >= 0),
     subscription_id BIGINT NOT NULL CHECK (subscription_id >= 0),
-    used_tokens     BIGINT NOT NULL DEFAULT 0 CHECK (used_tokens >= 0),
+    current_period_transactions BIGINT NOT NULL DEFAULT 0 CHECK (current_period_transactions >= 0),
+    current_period_volume NUMERIC(18,2) NOT NULL DEFAULT 0 CHECK (current_period_volume >= 0),
 
     status SMALLINT NOT NULL DEFAULT 1, -- 1=active,2=inactive
 

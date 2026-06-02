@@ -15,10 +15,15 @@ return new class extends Migration
             Schema::create('subscriptions', function (Blueprint $table) {
                 $table->id();
                 $table->string('name')->unique();
-                $table->decimal('price', 10, 8)->default('0.00000000');
+                $table->string('code', 50)->unique();
+                $table->decimal('monthly_fee', 10, 2)->default('0.00');
+                $table->decimal('transaction_fee_percent', 5, 2)->default('0.00');
+                $table->decimal('transaction_fee_fixed', 10, 2)->default('0.00');
+                $table->unsignedBigInteger('included_transactions')->default(0);
                 $table->timestamps();
 
                 $table->index('name','ix_subscription_plans_name');
+                $table->index('code','ix_subscription_plans_code');
             });   
         }
     }

@@ -12,8 +12,8 @@ class UserSubscription extends Model
         'status',
         'created_at',
         'updated_at',
-        'tokens',
-        'used_tokens'
+        'current_period_transactions',
+        'current_period_volume',
     ];
 
     protected $casts = [
@@ -32,4 +32,3 @@ class UserSubscription extends Model
         return $this->belongsTo(Subscription::class);
     }
 }
-

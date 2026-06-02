@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'payment_gateway' => [
+        'internal_url' => env('PAYMENT_GATEWAY_INTERNAL_URL', 'http://gateway:80'),
+        'public_url' => env('PAYMENT_GATEWAY_PUBLIC_URL', 'http://localhost:8080/api/v1/payments'),
+    ],
+
 ];

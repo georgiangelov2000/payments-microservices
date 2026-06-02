@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react"
-import { showPayment, acceptPayment } from "../api/payments"
+import { showPayment } from "../api/payments"
 
 const STATUS_META = {
   PAYMENT_PENDING:  { label: "Pending",   css: "pending"  },
@@ -18,21 +18,6 @@ function fmtTime(iso) {
 }
 
 function OrderRow({ order, onStatusChange }) {
-  const [simulating, setSimulating] = useState(false)
-  const [simError, setSimError]     = useState(null)
-
-  const handleSimulate = async () => {
-    if (!order.token) return
-    setSimulating(true)
-    setSimError(null)
-    try {
-      await acceptPayment(order.token)
-    } catch (e) {
-      setSimError(e.message)
-      setSimulating(false)
-    }
-  }
-
   const meta    = STATUS_META[order.status] ?? { label: order.status, css: "pending" }
   const pending = order.status === "PAYMENT_PENDING"
 
@@ -58,14 +43,6 @@ function OrderRow({ order, onStatusChange }) {
             >
               ↗ {order.paymentUrl}
             </a>
-            <button
-              className="btn-simulate"
-              onClick={handleSimulate}
-              disabled={simulating}
-            >
-              {simulating ? "Processing…" : "Simulate Payment"}
-            </button>
-            {simError && <span className="sim-error">{simError}</span>}
           </div>
         )}
       </div>

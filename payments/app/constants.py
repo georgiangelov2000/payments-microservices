@@ -14,7 +14,7 @@ PAYMENT_FAILED = 3      # Payment failed or rejected
 # State of a user subscription
 
 SUBSCRIPTION_ACTIVE = 1     # Subscription is valid and usable
-SUBSCRIPTION_INACTIVE = 2   # Subscription expired or exhausted
+SUBSCRIPTION_INACTIVE = 2   # Subscription is inactive, canceled, or disabled
 
 
 # ==================================================

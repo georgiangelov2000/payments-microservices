@@ -62,3 +62,26 @@ async def get_payments(
         request=request,
     )
 
+
+@router.get("/provider-return/stripe")
+@router.get("/provider-return/stripe/")
+async def stripe_return(payment_id: int, session_id: str):
+    return await handler.stripe_return(payment_id=payment_id, session_id=session_id)
+
+
+@router.get("/provider-return/stripe/cancel")
+@router.get("/provider-return/stripe/cancel/")
+async def stripe_cancel(payment_id: int, session_id: str | None = None):
+    return await handler.stripe_cancel(payment_id=payment_id, session_id=session_id)
+
+
+@router.get("/provider-return/paypal")
+@router.get("/provider-return/paypal/")
+async def paypal_return(payment_id: int, token: str):
+    return await handler.paypal_return(payment_id=payment_id, token=token)
+
+
+@router.get("/provider-return/paypal/cancel")
+@router.get("/provider-return/paypal/cancel/")
+async def paypal_cancel(payment_id: int):
+    return await handler.paypal_cancel(payment_id=payment_id)

@@ -93,9 +93,9 @@ export default function Subscriptions({ filters = {} }) {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left">Plan</th>
-                <th className="px-4 py-3 text-left">Usage</th>
+                <th className="px-4 py-3 text-left">Billing Period</th>
                 <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Price</th>
+                <th className="px-4 py-3 text-left">Pricing</th>
               </tr>
             </thead>
 
@@ -112,7 +112,7 @@ export default function Subscriptions({ filters = {} }) {
                     <td className="px-4 py-3 font-medium">{sub.name}</td>
 
                     <td className="px-4 py-3">
-                      {sub.used_tokens} / {sub.tokens}
+                      {sub.current_period_transactions} tx / ${sub.current_period_volume}
                     </td>
 
                     <td className="px-4 py-3">
@@ -128,7 +128,9 @@ export default function Subscriptions({ filters = {} }) {
                       </span>
                     </td>
 
-                    <td className="px-4 py-3">{sub.price}</td>
+                    <td className="px-4 py-3">
+                      ${sub.monthly_fee}/mo + {sub.transaction_fee_percent}% + ${sub.transaction_fee_fixed}
+                    </td>
                   </tr>
                 ))
               )}

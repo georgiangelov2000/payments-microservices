@@ -16,7 +16,8 @@ return new class extends Migration
                 $table->id();
                 $table->unsignedBigInteger('user_id');
                 $table->unsignedBigInteger('subscription_id');
-                $table->unsignedBigInteger('used_tokens')->default(0);
+                $table->unsignedBigInteger('current_period_transactions')->default(0);
+                $table->decimal('current_period_volume', 18, 2)->default('0.00');
                 $table->tinyInteger('status')
                         ->default(1)
                         ->comment('1 = active, 2 = inactive');
@@ -25,6 +26,7 @@ return new class extends Migration
 
                 $table->index("user_id", "ix_user_subscriptions_user_id");
                 $table->index("subscription_id", "ix_user_subscriptions_subscription_id");
+                $table->unique(["user_id", "subscription_id"], "uq_user_subscriptions_user_subscription");
             });
         };
     }

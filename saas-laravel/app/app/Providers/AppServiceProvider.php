@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\MerchantApiKey;
+use App\Models\Provider;
+use App\Models\Subscription;
+use App\Models\User;
+use App\Models\UserSubscription;
+use App\Services\GatewayAccessProfileService;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
@@ -50,6 +56,17 @@ class AppServiceProvider extends ServiceProvider
         Inertia::share([
             'csrf_token' => fn () => csrf_token(),
         ]);        
+
+        MerchantApiKey::saved(fn (MerchantApiKey $apiKey) => app(GatewayAccessProfileService::class)->syncApiKey($apiKey));
+        MerchantApiKey::deleted(fn (MerchantApiKey $apiKey) => app(GatewayAccessProfileService::class)->invalidate($apiKey->hash));
+        User::saved(fn (User $user) => app(GatewayAccessProfileService::class)->syncForMerchant($user->id));
+        UserSubscription::saved(fn (UserSubscription $subscription) => app(GatewayAccessProfileService::class)->syncForMerchant($subscription->user_id));
+        UserSubscription::deleted(fn (UserSubscription $subscription) => app(GatewayAccessProfileService::class)->syncForMerchant($subscription->user_id));
+        Provider::saved(fn () => app(GatewayAccessProfileService::class)->syncAll());
+        Provider::deleted(fn () => app(GatewayAccessProfileService::class)->syncAll());
+        Subscription::saved(fn () => app(GatewayAccessProfileService::class)->syncAll());
+        Subscription::deleted(fn () => app(GatewayAccessProfileService::class)->syncAll());
+
         Vite::prefetch(concurrency: 3);
     }
 }

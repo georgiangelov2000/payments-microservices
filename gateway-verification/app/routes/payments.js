@@ -58,6 +58,23 @@ router.get("/", authGet, (req, res) => {
   )
 })
 
+// ---------------------------------
+// PROVIDER RETURNS (localhost sandbox redirects)
+// GET /api/v1/payments/provider-return/...
+// ---------------------------------
+router.get("/provider-return/*", (req, res) => {
+  proxy.web(
+    req,
+    res,
+    { target: `${env.PAYMENTS_URL}/api/v1/payments` },
+    err => {
+      if (err && !res.headersSent) {
+        return send(res, Errors.PAYMENTS_UNREACHABLE)
+      }
+    }
+  )
+})
+
 
 // ---------------------------------
 // SHOW PAYMENT

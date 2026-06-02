@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PayFlow.io API Documentation</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="/">PayFlow<span>.io</span></a>
+    <button class="nav-toggle" type="button" data-nav-toggle>Menu</button>
+    <div class="nav-links" data-nav-links>
+      <a href="/">Platform</a>
+      <a href="/docs.html">API Docs</a>
+      <a href="/login.html">Sign in</a>
+    </div>
+    <div class="nav-actions"><a class="button primary" href="/register.html">Start sandbox</a></div>
+  </nav>
+
+  <main class="docs-shell">
+    <aside class="docs-menu">
+      <label class="search-box">
+        <span>Search docs</span>
+        <input type="search" placeholder="Search endpoints, SDKs, errors">
+      </label>
+      <a href="#introduction">Introduction</a>
+      <a href="#authentication">Authentication</a>
+      <a href="#create-payment">Create Payment</a>
+      <a href="#payment-status">Payment Status</a>
+      <a href="#webhooks">Webhooks</a>
+      <a href="#refunds">Refunds</a>
+      <a href="#tokenization">Tokenization</a>
+      <a href="#routing">Routing</a>
+      <a href="#errors">Error Handling</a>
+      <a href="#sdks">SDKs</a>
+      <a href="#environments">Environments</a>
+      <a href="#rate-limits">Rate Limits</a>
+    </aside>
+
+    <section class="docs-main">
+      <header class="docs-header" id="introduction">
+        <span class="eyebrow">Developer documentation</span>
+        <h1>Build payments through one orchestration API.</h1>
+        <p>Use PayFlow to create payment requests, send customers to provider checkout, inspect workflow status, and normalize provider responses across processors.</p>
+      </header>
+
+      <article class="doc-section" id="authentication">
+        <h2>Authentication</h2>
+        <p>Send the merchant gateway API key with every request. The gateway hashes the key and checks a Redis-cached access profile.</p>
+        <div class="code-card">
+          <button class="copy-btn" data-copy>Copy</button>
+          <pre><code>X-Api-Key: pgw_test_your_key_here</code></pre>
+        </div>
+      </article>
+
+      <article class="doc-section" id="create-payment">
+        <h2>Create Payment</h2>
+        <p>Create a checkout session or order through the unified gateway endpoint.</p>
+        <div class="endpoint-row"><span>POST</span><code>http://localhost:8080/api/v1/payments</code></div>
+        <div class="tabs" data-tabs>
+          <div class="tab-list">
+            <button class="active" data-tab="curl">cURL</button>
+            <button data-tab="javascript">JavaScript</button>
+            <button data-tab="php">PHP</button>
+            <button data-tab="laravel">Laravel</button>
+            <button data-tab="node">Node.js</button>
+          </div>
+          <div class="code-card active" data-tab-panel="curl">
+            <button class="copy-btn" data-copy>Copy</button>
+            <pre><code>curl -X POST http://localhost:8080/api/v1/payments \
+  -H "X-Api-Key: pgw_test_your_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order_id": 1001,
+    "amount": 1,
+    "price": "49.00",
+    "alias": "stripe"
+  }'</code></pre>
+          </div>
+          <div class="code-card" data-tab-panel="javascript">
+            <button class="copy-btn" data-copy>Copy</button>
+            <pre><code>await fetch("http://localhost:8080/api/v1/payments", {
+  method: "POST",
+  headers: {
+    "X-Api-Key": "pgw_test_your_key_here",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    order_id: 1001,
+    amount: 1,
+    price: "49.00",
+    alias: "stripe"
+  })
+})</code></pre>
+          </div>
+          <div class="code-card" data-tab-panel="php">
+            <button class="copy-btn" data-copy>Copy</button>
+            <pre><code>$payload = json_encode([
+  'order_id' => 1001,
+  'amount' => 1,
+  'price' => '49.00',
+  'alias' => 'paypal',
+]);
+
+$ch = curl_init('http://localhost:8080/api/v1/payments');
+curl_setopt_array($ch, [
+  CURLOPT_POST => true,
+  CURLOPT_HTTPHEADER => [
+    'X-Api-Key: pgw_test_your_key_here',
+    'Content-Type: application/json',
+  ],
+  CURLOPT_POSTFIELDS => $payload,
+  CURLOPT_RETURNTRANSFER => true,
+]);</code></pre>
+          </div>
+          <div class="code-card" data-tab-panel="laravel">
+            <button class="copy-btn" data-copy>Copy</button>
+            <pre><code>Http::withHeaders([
+    'X-Api-Key' => config('services.payflow.key'),
+])->post('http://localhost:8080/api/v1/payments', [
+    'order_id' => 1001,
+    'amount' => 1,
+    'price' => '49.00',
+    'alias' => 'stripe',
+]);</code></pre>
+          </div>
+          <div class="code-card" data-tab-panel="node">
+            <button class="copy-btn" data-copy>Copy</button>
+            <pre><code>import fetch from "node-fetch";
+
+const response = await fetch("http://localhost:8080/api/v1/payments", {
+  method: "POST",
+  headers: {
+    "X-Api-Key": process.env.PAYFLOW_API_KEY,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    order_id: 1001,
+    amount: 1,
+    price: "49.00",
+    alias: "stripe",
+  }),
+});</code></pre>
+          </div>
+        </div>
+      </article>
+
+      <article class="doc-section" id="payment-status">
+        <h2>Payment Status</h2>
+        <p>Use status and tracking endpoints to inspect provider workflow events and normalized payment states.</p>
+        <div class="endpoint-row"><span>GET</span><code>/api/v1/payments/{id}/show</code></div>
+        <div class="endpoint-row"><span>GET</span><code>/api/v1/payments/{id}/tracking</code></div>
+      </article>
+
+      <article class="doc-section" id="webhooks">
+        <h2>Webhooks</h2>
+        <p>Webhook delivery is planned for asynchronous provider and merchant notifications.</p>
+        <div class="code-card">
+          <button class="copy-btn" data-copy>Copy</button>
+          <pre><code>{
+  "type": "payment.finished",
+  "payment_id": 42,
+  "provider": "stripe",
+  "status": "finished",
+  "occurred_at": "2026-06-01T14:07:10Z"
+}</code></pre>
+        </div>
+      </article>
+
+      <article class="doc-section two-col-docs">
+        <div id="refunds">
+          <h2>Refunds</h2>
+          <p>Refund endpoint placeholder for provider-specific refund orchestration.</p>
+          <code>POST /api/v1/refunds</code>
+        </div>
+        <div id="tokenization">
+          <h2>Tokenization</h2>
+          <p>Future-ready vault/token flows can be exposed without merchant-side provider rewrites.</p>
+          <code>POST /api/v1/tokens</code>
+        </div>
+      </article>
+
+      <article class="doc-section" id="routing">
+        <h2>Routing</h2>
+        <p>Routing policies can consider provider availability, merchant configuration, market, currency, cost, and fallback rules.</p>
+        <div class="code-card">
+          <button class="copy-btn" data-copy>Copy</button>
+          <pre><code>{
+  "provider_preference": ["stripe", "paypal"],
+  "fallback_enabled": true,
+  "currency": "USD",
+  "country": "US"
+}</code></pre>
+        </div>
+      </article>
+
+      <article class="doc-section" id="errors">
+        <h2>Error Handling</h2>
+        <div class="error-table">
+          <div><strong>401</strong><span>invalid api key</span></div>
+          <div><strong>403</strong><span>route_not_allowed</span></div>
+          <div><strong>403</strong><span>provider_not_allowed</span></div>
+          <div><strong>502</strong><span>payments_unreachable</span></div>
+          <div><strong>503</strong><span>payments_unavailable</span></div>
+        </div>
+      </article>
+
+      <article class="doc-section two-col-docs">
+        <div id="sdks">
+          <h2>SDKs</h2>
+          <p>SDK examples are placeholders for future generated clients.</p>
+          <code>npm install @payflow/sdk</code>
+        </div>
+        <div id="environments">
+          <h2>Environments</h2>
+          <p>Use localhost and provider sandbox credentials during development.</p>
+          <code>http://localhost:8080</code>
+        </div>
+      </article>
+
+      <article class="doc-section" id="rate-limits">
+        <h2>Rate Limits</h2>
+        <p>Gateway access profiles include `rate_limit_per_minute` for per-merchant enforcement.</p>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

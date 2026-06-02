@@ -14,6 +14,10 @@ class Payment extends Model
         'amount',
         'merchant_id',
         'order_id',
+        'provider_id',
+        'provider_reference',
+        'provider_checkout_url',
+        'provider_status',
         'status',
     ];
 

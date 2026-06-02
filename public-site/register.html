@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create account | PayFlow.io</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="/">PayFlow<span>.io</span></a>
+    <div class="nav-links"><a href="/docs.html">API Docs</a><a href="/login.html">Sign in</a></div>
+  </nav>
+
+  <main class="auth-wrap">
+    <section class="auth-panel wide">
+      <div class="auth-copy">
+        <span class="eyebrow">Merchant onboarding</span>
+        <h1>Start your payment gateway sandbox.</h1>
+        <p>Create a merchant profile, connect to the platform, generate an API key, and test real Stripe or PayPal sandbox checkout locally.</p>
+        <div class="onboarding-steps">
+          <div><span>1</span><strong>Create company profile</strong></div>
+          <div><span>2</span><strong>Generate gateway API key</strong></div>
+          <div><span>3</span><strong>Create sandbox checkout</strong></div>
+        </div>
+      </div>
+
+      <form class="auth-box register-form" data-register-form data-redirect="http://localhost/register" novalidate>
+        <h2>Create merchant account</h2>
+        <div class="form-grid">
+          <label>
+            Company name
+            <input type="text" name="company" placeholder="Acme Commerce" required>
+            <small class="field-error">Company name is required.</small>
+          </label>
+          <label>
+            Full name
+            <input type="text" name="name" placeholder="Georgi Angelov" required>
+            <small class="field-error">Full name is required.</small>
+          </label>
+          <label>
+            Email
+            <input type="email" name="email" placeholder="founder@example.com" required>
+            <small class="field-error">Enter a valid email address.</small>
+          </label>
+          <label>
+            Website URL
+            <input type="url" name="website" placeholder="https://example.com" required>
+            <small class="field-error">Enter a valid website URL.</small>
+          </label>
+          <label>
+            Country
+            <select name="country" required>
+              <option value="">Select country</option>
+              <option>United States</option>
+              <option>Bulgaria</option>
+              <option>United Kingdom</option>
+              <option>Germany</option>
+              <option>France</option>
+            </select>
+            <small class="field-error">Country is required.</small>
+          </label>
+          <label>
+            Business type
+            <select name="business_type">
+              <option>Ecommerce</option>
+              <option>SaaS</option>
+              <option>Marketplace</option>
+              <option>Digital services</option>
+            </select>
+          </label>
+          <label>
+            Estimated monthly volume
+            <select name="volume">
+              <option>Under $10k</option>
+              <option>$10k - $100k</option>
+              <option>$100k - $1M</option>
+              <option>$1M+</option>
+            </select>
+          </label>
+          <label>
+            Preferred providers
+            <select name="providers">
+              <option>Stripe and PayPal</option>
+              <option>Stripe</option>
+              <option>PayPal</option>
+              <option>Not sure yet</option>
+            </select>
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" placeholder="At least 8 characters" minlength="8" required>
+            <small class="field-error">Password must be at least 8 characters.</small>
+          </label>
+          <label>
+            Confirm password
+            <input type="password" name="password_confirmation" placeholder="Repeat password" minlength="8" required>
+            <small class="field-error">Passwords must match.</small>
+          </label>
+        </div>
+        <label class="check terms">
+          <input type="checkbox" name="terms" required>
+          I agree to use sandbox credentials and provider test data only.
+        </label>
+        <small class="field-error terms-error">Please accept the sandbox terms.</small>
+        <button class="button primary full" type="submit" data-loading-text="Creating account...">Create account</button>
+        <div class="form-note">After validation this page opens the Laravel registration flow.</div>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

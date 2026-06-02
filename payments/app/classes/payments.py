@@ -1,5 +1,6 @@
+import json
+
 import httpx
-import os
 from fastapi import HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
@@ -11,7 +12,6 @@ from app.models.payments import (
     Payment as PaymentModel,
     ApiRequest,
     UserSubscription,
-    Subscription,
 )
 from app.models.logs import PaymentLog
 from app.db.sessions import PaymentsSessionLocal, LogsSessionLocal
@@ -21,8 +21,8 @@ from app.enums import (
     PaymentLogEvent,
     LogStatus,
 )
-
-PROVIDER_URL = os.getenv("PROVIDER_URL")
+from app.providers.base import CheckoutRequest
+from app.providers.registry import provider_connector
 
 
 class Payment:
@@ -31,8 +31,8 @@ class Payment:
 
     Responsibilities:
     - Create payment
-    - Update subscription usage
-    - Call provider
+    - Track billing-period payment usage
+    - Create provider checkout/order
     - Write logs to logs DB
     """
 
@@ -74,17 +74,11 @@ class Payment:
                 }
 
             # --------------------------------------------------
-            # Load active subscription
+            # Load active merchant subscription
             # --------------------------------------------------
             sub_row = payments_db.execute(
                 select(
                     UserSubscription.id,
-                    UserSubscription.used_tokens,
-                    Subscription.tokens,
-                )
-                .join(
-                    Subscription,
-                    Subscription.id == UserSubscription.subscription_id,
                 )
                 .where(
                     UserSubscription.user_id == merchant_id,
@@ -96,7 +90,7 @@ class Payment:
             if not sub_row:
                 raise HTTPException(400, "Active subscription not found")
 
-            subscription_id, used_tokens, max_tokens = sub_row
+            subscription_id = sub_row[0]
 
             # --------------------------------------------------
             # Create payment (ORM needed for ID)
@@ -127,21 +121,18 @@ class Payment:
             )
 
             # --------------------------------------------------
-            # Update subscription usage (DIRECT UPDATE)
+            # Track billing-period usage (not an API quota)
             # --------------------------------------------------
-            new_used = used_tokens + 1
-            new_status = (
-                SubscriptionStatus.SUBSCRIPTION_INACTIVE.value
-                if new_used >= max_tokens
-                else SubscriptionStatus.SUBSCRIPTION_ACTIVE.value
-            )
-
             payments_db.execute(
                 UserSubscription.__table__.update()
                 .where(UserSubscription.id == subscription_id)
                 .values(
-                    used_tokens=new_used,
-                    status=new_status,
+                    current_period_transactions=(
+                        UserSubscription.current_period_transactions + 1
+                    ),
+                    current_period_volume=(
+                        UserSubscription.current_period_volume + request.price
+                    ),
                 )
             )
 
@@ -193,28 +184,42 @@ class Payment:
             logs_db.close()
 
         # --------------------------------------------------
-        # Call provider AFTER commit
+        # Create real sandbox checkout/order AFTER commit
         # --------------------------------------------------
         try:
-            async with httpx.AsyncClient(timeout=3.0) as client:
-                resp = await client.post(
-                    f"{PROVIDER_URL}/payment-links",
-                    json={
-                        "payment_id": payment_id,
-                        "merchant_id": merchant_id,
-                        "provider": provider_alias,
-                    },
+            checkout = await provider_connector(provider_alias).create_checkout(
+                CheckoutRequest(
+                    payment_id=payment_id,
+                    merchant_id=merchant_id,
+                    order_id=request.order_id,
+                    amount=request.price,
+                    currency="USD",
+                    description=f"Order #{request.order_id}",
                 )
+            )
+        except HTTPException:
+            await self._mark_failed_if_pending(payment_id)
+            raise
         except httpx.RequestError:
             await self._mark_failed_if_pending(payment_id)
             raise HTTPException(status_code=502, detail="Provider unreachable")
 
-        if resp.status_code != 200:
-            await self._mark_failed_if_pending(payment_id)
-            raise HTTPException(status_code=502, detail="Provider URL generation failed")
-
-        payment_url = resp.json().get("payment_url")
         now = datetime.utcnow().isoformat()
+
+        payments_db = PaymentsSessionLocal()
+        try:
+            payments_db.execute(
+                PaymentModel.__table__.update()
+                .where(PaymentModel.id == payment_id)
+                .values(
+                    provider_reference=checkout.provider_reference,
+                    provider_checkout_url=checkout.payment_url,
+                    provider_status=checkout.raw_status,
+                )
+            )
+            payments_db.commit()
+        finally:
+            payments_db.close()
 
         # --------------------------------------------------
         # UPDATE LOG: append awaiting customer message
@@ -235,7 +240,8 @@ class Payment:
                     ),
                     payload=(
                         f'{{"provider":"{provider_alias}",'
-                        f'"payment_url":"{payment_url}"}}'
+                        f'"provider_reference":"{checkout.provider_reference}",'
+                        f'"payment_url":"{checkout.payment_url}"}}'
                     ),
                 )
             )
@@ -246,8 +252,69 @@ class Payment:
         return {
             "payment_id": payment_id,
             "status": PaymentStatus.PAYMENT_PENDING.name,
-            "payment_url": payment_url,
+            "provider": provider_alias,
+            "provider_reference": checkout.provider_reference,
+            "payment_url": checkout.payment_url,
         }
+
+    async def stripe_return(self, payment_id: int, session_id: str):
+        session = await provider_connector("stripe").retrieve_checkout_session(session_id)
+        paid = session.get("payment_status") == "paid" or session.get("status") == "complete"
+        status = PaymentStatus.PAYMENT_FINISHED if paid else PaymentStatus.PAYMENT_FAILED
+
+        await self._finalize_provider_return(
+            payment_id=payment_id,
+            status=status,
+            provider_status=session.get("payment_status") or session.get("status"),
+            payload=session,
+        )
+
+        return {
+            "payment_id": payment_id,
+            "provider": "stripe",
+            "status": status.name,
+            "provider_status": session.get("payment_status") or session.get("status"),
+        }
+
+    async def stripe_cancel(self, payment_id: int, session_id: str | None = None):
+        await self._finalize_provider_return(
+            payment_id=payment_id,
+            status=PaymentStatus.PAYMENT_FAILED,
+            provider_status="cancelled",
+            payload={"session_id": session_id, "reason": "customer_cancelled"},
+        )
+        return {"payment_id": payment_id, "provider": "stripe", "status": "PAYMENT_FAILED"}
+
+    async def paypal_return(self, payment_id: int, token: str):
+        capture = await provider_connector("paypal").capture_order(token)
+        status = (
+            PaymentStatus.PAYMENT_FINISHED
+            if capture.get("status") == "COMPLETED"
+            else PaymentStatus.PAYMENT_FAILED
+        )
+
+        await self._finalize_provider_return(
+            payment_id=payment_id,
+            status=status,
+            provider_status=capture.get("status"),
+            payload=capture,
+        )
+
+        return {
+            "payment_id": payment_id,
+            "provider": "paypal",
+            "status": status.name,
+            "provider_status": capture.get("status"),
+        }
+
+    async def paypal_cancel(self, payment_id: int):
+        await self._finalize_provider_return(
+            payment_id=payment_id,
+            status=PaymentStatus.PAYMENT_FAILED,
+            provider_status="cancelled",
+            payload={"reason": "customer_cancelled"},
+        )
+        return {"payment_id": payment_id, "provider": "paypal", "status": "PAYMENT_FAILED"}
 
 
     # --------------------------------------------------
@@ -445,3 +512,48 @@ class Payment:
                 payments_db.commit()
         finally:
             payments_db.close()
+
+    async def _finalize_provider_return(
+        self,
+        payment_id: int,
+        status: PaymentStatus,
+        provider_status: str | None,
+        payload: dict,
+    ):
+        payments_db: Session = PaymentsSessionLocal()
+        logs_db: Session = LogsSessionLocal()
+
+        try:
+            payment = payments_db.get(PaymentModel, payment_id)
+            if not payment:
+                raise HTTPException(status_code=404, detail="Payment not found")
+
+            if payment.status not in (
+                PaymentStatus.PAYMENT_FINISHED.value,
+                PaymentStatus.PAYMENT_FAILED.value,
+            ):
+                payment.status = status.value
+                payment.provider_status = provider_status
+                payments_db.commit()
+
+                logs_db.add(
+                    PaymentLog(
+                        payment_id=payment_id,
+                        event_type=PaymentLogEvent.EVENT_PROVIDER_PAYMENT_ACCEPTED.value,
+                        status=(
+                            LogStatus.LOG_SUCCESS.value
+                            if status == PaymentStatus.PAYMENT_FINISHED
+                            else LogStatus.LOG_FAILED.value
+                        ),
+                        message=f"[{datetime.utcnow().isoformat()}] Provider sandbox return processed",
+                        payload=json.dumps(payload),
+                    )
+                )
+                logs_db.commit()
+            else:
+                payment.provider_status = provider_status or payment.provider_status
+                payments_db.commit()
+
+        finally:
+            payments_db.close()
+            logs_db.close()

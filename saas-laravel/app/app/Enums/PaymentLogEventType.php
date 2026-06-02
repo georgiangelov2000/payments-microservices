@@ -19,7 +19,7 @@ enum PaymentLogEventType: int
                 'Provider request sent',
 
             self::EVENT_PROVIDER_PAYMENT_ACCEPTED =>
-                'Provider accepted payment',
+                'Provider status update',
 
             self::EVENT_MERCHANT_NOTIFICATION_SENT =>
                 'Merchant notified',

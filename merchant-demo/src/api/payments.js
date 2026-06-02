@@ -34,10 +34,3 @@ export async function showPayment(paymentId) {
   if (!res.ok) throw new Error(data.detail || data.message || `HTTP ${res.status}`)
   return data
 }
-
-export async function acceptPayment(token) {
-  const res = await fetch(`/simulate/${token}/accept`, { method: "POST" })
-  const data = await parseResponse(res)
-  if (!res.ok) throw new Error(data.detail || data.message || `HTTP ${res.status}`)
-  return data
-}

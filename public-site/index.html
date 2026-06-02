@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PayFlow.io | Unified payment orchestration platform</title>
+  <meta name="description" content="One API for smart payment routing across Stripe, PayPal, and future providers.">
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="/">PayFlow<span>.io</span></a>
+    <button class="nav-toggle" type="button" data-nav-toggle>Menu</button>
+    <div class="nav-links" data-nav-links>
+      <a href="#overview">Platform</a>
+      <a href="#features">Features</a>
+      <a href="#orchestration">Orchestration</a>
+      <a href="/docs.html">Developers</a>
+      <a href="/demo-video.html">Demo</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-actions">
+      <a href="/login.html">Sign in</a>
+      <a class="button primary" href="/register.html">Start sandbox</a>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Unified Payment Orchestration Platform</span>
+        <h1>One API. Multiple Payment Providers.</h1>
+        <p>Smart payment routing for modern merchants. Connect Stripe, PayPal, and future processors behind one gateway while PayFlow handles provider authentication, routing, normalization, workflow visibility, and API access control.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="/register.html">Create merchant account</a>
+          <a class="button" href="/docs.html">Explore API docs</a>
+          <a class="button" href="/demo-video.html">Watch demo</a>
+        </div>
+        <div class="metrics">
+          <div class="metric"><strong>1 API</strong><span>Single merchant integration</span></div>
+          <div class="metric"><strong>Redis-first</strong><span>Optimized gateway reads</span></div>
+          <div class="metric"><strong>Sandbox ready</strong><span>Stripe and PayPal testing</span></div>
+        </div>
+      </div>
+
+      <div class="product-visual" aria-label="Payment orchestration dashboard preview">
+        <div class="visual-top">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <strong>Live routing workspace</strong>
+        </div>
+        <div class="dashboard">
+          <aside class="side">
+            <div class="active">Routing</div>
+            <div>Payments</div>
+            <div>Providers</div>
+            <div>API Keys</div>
+            <div>Analytics</div>
+          </aside>
+          <section class="panel">
+            <div class="route-map">
+              <div class="route-node source">Merchant API</div>
+              <div class="route-line"></div>
+              <div class="route-node gateway">PayFlow Gateway</div>
+              <div class="route-branches">
+                <div class="route-node provider">Stripe</div>
+                <div class="route-node provider">PayPal</div>
+                <div class="route-node provider muted">Fallback</div>
+              </div>
+            </div>
+            <div class="status-row">
+              <div class="status-card"><span class="pill success">Approved</span><h3>$124.00</h3><p>Stripe checkout</p></div>
+              <div class="status-card"><span class="pill warning">Action</span><h3>$49.00</h3><p>PayPal approval</p></div>
+              <div class="status-card"><span class="pill">Ready</span><h3>API key</h3><p>Gateway access</p></div>
+            </div>
+            <div class="workflow">
+              <div><strong>14:06:47</strong><span>Payment request received</span><span>Gateway</span></div>
+              <div><strong>14:06:48</strong><span>Route selected: Stripe primary</span><span>Routing</span></div>
+              <div><strong>14:06:49</strong><span>Customer action required</span><span>Provider</span></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="overview">
+      <div class="split">
+        <div>
+          <span class="eyebrow">Product overview</span>
+          <h2>One gateway layer between merchants and every provider.</h2>
+          <p class="section-lead">PayFlow gives merchants one contract, one API, and one operational view while your platform manages provider-specific implementation details behind the scenes.</p>
+        </div>
+        <div class="overview-list">
+          <div><strong>Merchant onboarding</strong><span>Registration, login, client connection, API key generation, and sandbox checkout.</span></div>
+          <div><strong>Provider abstraction</strong><span>Normalize payment statuses, customer actions, provider references, and errors.</span></div>
+          <div><strong>Operational clarity</strong><span>Summaries, workflow timelines, timing states, and technical payloads when support teams need them.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="features">
+      <span class="eyebrow">Features</span>
+      <h2>Built for payment operations at merchant scale.</h2>
+      <p class="section-lead">Reduce integration complexity without hiding the details operators need to resolve payment issues quickly.</p>
+      <div class="grid">
+        <article class="card"><h3>Unified checkout creation</h3><p>Create provider checkout sessions through one normalized request.</p></article>
+        <article class="card"><h3>Smart access profiles</h3><p>Gateway-ready access data is flattened and cached for fast request authorization.</p></article>
+        <article class="card"><h3>Provider workflow timeline</h3><p>Every provider event is displayed as a separate timestamped step.</p></article>
+        <article class="card"><h3>Fallback routing model</h3><p>Design routing policies for primary, secondary, and future processor paths.</p></article>
+        <article class="card"><h3>Merchant billing</h3><p>Plans use monthly platform fees and transaction-based usage instead of API tokens.</p></article>
+        <article class="card"><h3>API-first DX</h3><p>Clear endpoints, examples, sandbox URLs, and gateway error responses.</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="orchestration">
+      <div class="split">
+        <div>
+          <span class="eyebrow">Payment orchestration</span>
+          <h2>Route, normalize, and observe provider workflows.</h2>
+          <p class="section-lead">The gateway makes provider selection, request handling, and response normalization a platform concern instead of merchant-side code.</p>
+        </div>
+        <div class="logic-board">
+          <div><strong>1. Authenticate</strong><span>Redis gateway profile lookup by hashed API key.</span></div>
+          <div><strong>2. Authorize</strong><span>Route, provider, merchant, and subscription checks.</span></div>
+          <div><strong>3. Route</strong><span>Send the normalized request to Stripe, PayPal, or future providers.</span></div>
+          <div><strong>4. Normalize</strong><span>Return consistent status, URL, provider reference, and workflow state.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="providers">
+      <span class="eyebrow">Supported providers and processors</span>
+      <h2>Start with sandbox providers, scale to a broader network.</h2>
+      <div class="provider-grid">
+        <div class="provider-logo">Stripe<span>Checkout sessions</span></div>
+        <div class="provider-logo">PayPal<span>Orders and capture</span></div>
+        <div class="provider-logo future">Adyen<span>Ready for connector expansion</span></div>
+        <div class="provider-logo future">More PSPs<span>Route by market, cost, or availability</span></div>
+      </div>
+    </section>
+
+    <section class="section" id="architecture">
+      <span class="eyebrow">API-first architecture</span>
+      <h2>Optimized for low-latency gateway traffic.</h2>
+      <p class="section-lead">The gateway reads denormalized access profiles from Redis first, falls back to a single indexed database lookup, and avoids relational joins during normal API execution.</p>
+      <div class="architecture-strip">
+        <div>Merchant</div><span></span><div>Gateway</div><span></span><div>Redis profile</div><span></span><div>Provider connector</div>
+      </div>
+      <pre><code>POST /api/v1/payments
+X-Api-Key: pgw_test_...
+Content-Type: application/json
+
+{
+  "order_id": 1001,
+  "price": "49.00",
+  "amount": 1,
+  "alias": "stripe"
+}</code></pre>
+    </section>
+
+    <section class="section alt" id="security">
+      <span class="eyebrow">Security and compliance posture</span>
+      <h2>Designed to keep sensitive payment concerns controlled.</h2>
+      <div class="grid">
+        <article class="card"><h3>Hashed API keys</h3><p>Gateway auth uses SHA-256 hashes and never stores plaintext API keys.</p></article>
+        <article class="card"><h3>Scoped route access</h3><p>Allowed routes, providers, and permissions are included in gateway profiles.</p></article>
+        <article class="card"><h3>Technical payload separation</h3><p>Merchant summaries stay readable while provider payloads remain available for operators.</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="pricing">
+      <span class="eyebrow">Pricing</span>
+      <h2>Merchant-friendly plans, not API-token accounting.</h2>
+      <div class="pricing-grid">
+        <article class="price-card"><h3>Starter</h3><strong>$29/mo</strong><p>100 included transactions, then 0.90% + $0.10.</p><a class="button" href="/register.html">Start</a></article>
+        <article class="price-card featured"><h3>Growth</h3><strong>$99/mo</strong><p>1000 included transactions, then 0.60% + $0.08.</p><a class="button primary" href="/register.html">Choose Growth</a></article>
+        <article class="price-card"><h3>Scale</h3><strong>$299/mo</strong><p>5000 included transactions, then 0.35% + $0.05.</p><a class="button" href="/register.html">Talk to sales</a></article>
+      </div>
+    </section>
+
+    <section class="developer-cta">
+      <div>
+        <span class="eyebrow">Developers</span>
+        <h2>Build once. Add providers without merchant-side rewrites.</h2>
+        <p>Explore the API documentation, generate a sandbox key, and run the full local Stripe or PayPal checkout flow.</p>
+      </div>
+      <div class="hero-actions">
+        <a class="button primary" href="/docs.html">Open API docs</a>
+        <a class="button" href="/demo-video.html">Watch demo</a>
+        <a class="button" href="/register.html">Create sandbox account</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>PayFlow.io payment orchestration</span>
+    <span><a href="/docs.html">API Docs</a> · <a href="/login.html">Sign in</a> · <a href="/register.html">Register</a></span>
+  </footer>
+</body>
+</html>

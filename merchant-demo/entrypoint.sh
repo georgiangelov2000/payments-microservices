@@ -5,7 +5,9 @@ set -e
 # without baking the secret into the image at build time.
 cat > /usr/share/nginx/html/config.js << EOF
 window.__CONFIG__ = {
-  apiKey: "${MERCHANT_API_KEY}"
+  apiKey: "${MERCHANT_API_KEY}",
+  stripePublishableKey: "${VITE_STRIPE_PUBLISHABLE_KEY}",
+  paypalClientId: "${VITE_PAYPAL_CLIENT_ID}"
 };
 EOF
 

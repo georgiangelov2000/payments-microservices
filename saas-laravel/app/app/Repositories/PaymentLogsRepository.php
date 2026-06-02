@@ -26,8 +26,9 @@ class PaymentLogsRepository
     }
 
     public function byPayment (int $paymentId, $filters = [], $perPage = 15) {
-        return (new PaymentLogsBuilder())
-        ->forPayment($paymentId)
-        ->paginate($perPage);
+        return PaymentLog::query()
+            ->where('payment_id', $paymentId)
+            ->orderBy('created_at')
+            ->paginate($perPage);
     }
 }
