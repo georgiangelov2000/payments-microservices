@@ -53,6 +53,18 @@ services:
       timeout: 5s
       retries: 5
 
+  db-admin:
+    image: adminer:latest
+    container_name: db-admin
+    restart: unless-stopped
+    ports:
+      - "8084:8080"
+    depends_on:
+      payments-db:
+        condition: service_healthy
+      payments-logs-db:
+        condition: service_healthy
+
 # Gateways
   gateway:
     build: ./gateway

@@ -1,14 +1,16 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthApiController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PaymentController;
+declare(strict_types=1);
+
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\ApiRequestController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\Auth\AuthApiController;
 use App\Http\Controllers\ContactFormController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoutingController;
+use App\Http\Controllers\SubscriptionController;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -25,7 +27,7 @@ Route::get('/', function (): RedirectResponse {
  * cross-origin requests from the static site with credentials.
  */
 Route::prefix('auth')->middleware('web')->group(function () {
-    Route::post('/login',    [AuthApiController::class, 'login'])->name('auth.api.login');
+    Route::post('/login', [AuthApiController::class, 'login'])->name('auth.api.login');
     Route::post('/register', [AuthApiController::class, 'register'])->name('auth.api.register');
 });
 

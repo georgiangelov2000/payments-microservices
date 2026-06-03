@@ -1,12 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO;
 
 use App\Models\PaymentLog;
 use App\Support\PaymentWorkflowFormatter;
 
-class PaymentLogsDTO
+final readonly class PaymentLogsDTO
 {
+    /**
+     * @param  list<array{timestamp: string, message: string, event_type: string, status: string, technical_response: array|string|null}>  $workflow_events
+     */
     public function __construct(
         public string $id,
         public string $payment_id,
@@ -15,7 +20,7 @@ class PaymentLogsDTO
         public int $status,
         public string $status_label,
         public ?string $message,
-        public ?string $payload,
+        public array|string|null $payload,
         public array $workflow_events,
         public string $created_at,
     ) {}
@@ -38,12 +43,25 @@ class PaymentLogsDTO
             message: $log->message,
             payload: $log->payload,
             workflow_events: PaymentWorkflowFormatter::eventsFromLog($log),
-            created_at: $log->created_at
+            created_at: $log->created_at?->toISOString() ?? ''
         );
     }
 
     /**
      * Convert DTO to array (API safe)
+     *
+     * @return array{
+     *     id: string,
+     *     payment_id: string,
+     *     event_type: int,
+     *     event_type_label: string,
+     *     status: int,
+     *     status_label: string,
+     *     message: string|null,
+     *     payload: array|string|null,
+     *     workflow_events: list<array{timestamp: string, message: string, event_type: string, status: string, technical_response: array|string|null}>,
+     *     created_at: string
+     * }
      */
     public function toArray(): array
     {

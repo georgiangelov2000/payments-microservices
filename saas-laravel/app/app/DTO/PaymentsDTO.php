@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO;
 
 use App\Models\Payment;
@@ -7,14 +9,19 @@ use App\Support\PaymentWorkflowFormatter;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
-final class PaymentsDTO
+final readonly class PaymentsDTO
 {
+    /**
+     * @param  array{label: string, provider_status: string, next_step: string}  $provider_summary
+     * @param  array{request_started_at: string, last_provider_update_at: string, processing_duration: string, duration_seconds: int|null, state: string, state_label: string}  $timing
+     * @param  list<array{timestamp: string, message: string, event_type: string, status: string, technical_response: array|string|null}>  $workflow_timeline
+     */
     public function __construct(
         public string $id,
         public float $price,
         public float $amount,
         public string $merchant_id,
-        public int $order_id,
+        public int|string $order_id,
         public string $status,
         public string $provider,
         public ?string $provider_status,
@@ -27,6 +34,9 @@ final class PaymentsDTO
         public array $workflow_timeline,
     ) {}
 
+    /**
+     * @param  Collection<int, \App\Models\PaymentLog>|null  $logs
+     */
     public static function fromModel(Payment $payment, ?Collection $logs = null): self
     {
         $logs ??= collect();
@@ -38,7 +48,7 @@ final class PaymentsDTO
             merchant_id: $payment->merchant_id,
             order_id: $payment->order_id,
             status: $payment->status->label(),
-            provider: $payment->provider->name,
+            provider: $payment->provider?->name ?? 'Unknown provider',
             provider_status: $payment->provider_status,
             provider_reference: $payment->provider_reference,
             provider_checkout_url: $payment->provider_checkout_url,
@@ -50,6 +60,25 @@ final class PaymentsDTO
         );
     }
 
+    /**
+     * @return array{
+     *     id: string,
+     *     price: float,
+     *     amount: float,
+     *     merchant_id: string,
+     *     order_id: int|string,
+     *     status: string,
+     *     provider: string,
+     *     provider_status: string|null,
+     *     provider_reference: string|null,
+     *     provider_checkout_url: string|null,
+     *     created_at: string,
+     *     updated_at: string,
+     *     provider_summary: array{label: string, provider_status: string, next_step: string},
+     *     timing: array{request_started_at: string, last_provider_update_at: string, processing_duration: string, duration_seconds: int|null, state: string, state_label: string},
+     *     workflow_timeline: list<array{timestamp: string, message: string, event_type: string, status: string, technical_response: array|string|null}>
+     * }
+     */
     public function toArray(): array
     {
         return [

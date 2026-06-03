@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Controllers;
@@ -18,7 +19,7 @@ final class ApiKeyController extends Controller
     public function index(ApiKeyRequest $request): Response
     {
         $params = $request->safe()->toArray();
-        
+
         return Inertia::render('ApiKeys/Index', [
             'keys' => $this->apiKeyService->fetchAll($params),
         ]);

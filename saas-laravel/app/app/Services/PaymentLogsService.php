@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\DTO\PaymentLogsDTO;
@@ -28,7 +30,7 @@ class PaymentLogsService
     {
         $paginator = $this->repository->byPayment($paymentId, $merchantId);
 
-        if (!$paginator) {
+        if (! $paginator) {
             return null;
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Builders;
 
 use App\Models\UserSubscription;
@@ -9,10 +11,11 @@ class UserSubscriptionsBuilder
 {
     protected Builder $query;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->query = UserSubscription::query()
             ->with('subscription');
-    }    
+    }
 
     public function forMerchant(?string $merchantId): self
     {
@@ -20,9 +23,10 @@ class UserSubscriptionsBuilder
             throw new \InvalidArgumentException('Merchant ID is required.');
         }
         $this->query->where('user_id', $merchantId);
+
         return $this;
     }
-    
+
     public function whereStatus(?string $status): self
     {
         if ($status) {
@@ -46,5 +50,5 @@ class UserSubscriptionsBuilder
     public function getQuery(): Builder
     {
         return $this->query;
-    }    
+    }
 }

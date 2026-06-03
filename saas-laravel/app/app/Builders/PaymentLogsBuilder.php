@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Builders;
 
 use App\Models\PaymentLog;
@@ -14,10 +16,10 @@ class PaymentLogsBuilder
         $this->query = PaymentLog::query();
     }
 
-    public function whereId(?string $id) 
+    public function whereId(?string $id)
     {
         if ($id !== null) {
-            $this->query->where("id", $id); 
+            $this->query->where('id', $id);
         }
 
         return $this;
@@ -53,6 +55,7 @@ class PaymentLogsBuilder
     public function latest(): self
     {
         $this->query->latest();
+
         return $this;
     }
 
@@ -75,5 +78,4 @@ class PaymentLogsBuilder
     {
         return $this->query->find($id);
     }
-
 }

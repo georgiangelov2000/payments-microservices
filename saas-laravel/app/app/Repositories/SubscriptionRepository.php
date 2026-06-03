@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Builders\UserSubscriptionsBuilder;
@@ -9,15 +12,14 @@ final class SubscriptionRepository implements SubscriptionRepositoryInterface
 {
     public function fetchAll(array $params = []): Builder
     {
-        $status = $params["status"] ?? null;
-        $merchantId = $params["merchant_id"] ?? null;
-        $plan = $params["plan"] ?? null;
+        $status = $params['status'] ?? null;
+        $merchantId = $params['merchant_id'] ?? null;
+        $plan = $params['plan'] ?? null;
 
-        return (new UserSubscriptionsBuilder())
+        return (new UserSubscriptionsBuilder)
             ->forMerchant($merchantId)
             ->whereStatus($status)
             ->wherePlan($plan)
             ->getQuery();
     }
-
 }

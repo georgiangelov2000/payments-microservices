@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Requests;
@@ -19,7 +20,7 @@ class UserSubscriptionRequest extends FormRequest
 
         $this->merge([
             'merchant_id' => auth()->id(),
-            'per_page'    => $this->input('per_page', 15),
+            'per_page' => $this->input('per_page', 15),
             'status' => $status
                 ? SubscriptionStatus::fromString($status)->value
                 : null,
@@ -30,9 +31,9 @@ class UserSubscriptionRequest extends FormRequest
     {
         return [
             'merchant_id' => ['required', 'uuid'],
-            'per_page'    => ['integer', 'min:1', 'max:100'],
-            'status'      => ['nullable'],
-            'plan'        => ['nullable', 'string'],
+            'per_page' => ['integer', 'min:1', 'max:100'],
+            'status' => ['nullable'],
+            'plan' => ['nullable', 'string'],
         ];
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -11,27 +13,27 @@ return new class extends Migration
     {
         if (Schema::hasTable('merchant_api_keys')) {
             Schema::table('merchant_api_keys', function (Blueprint $table) {
-                if (!Schema::hasColumn('merchant_api_keys', 'name')) {
+                if (! Schema::hasColumn('merchant_api_keys', 'name')) {
                     $table->string('name')->nullable()->after('merchant_id');
                 }
 
-                if (!Schema::hasColumn('merchant_api_keys', 'environment')) {
+                if (! Schema::hasColumn('merchant_api_keys', 'environment')) {
                     $table->string('environment', 20)->default('test')->after('name');
                 }
 
-                if (!Schema::hasColumn('merchant_api_keys', 'key_prefix')) {
+                if (! Schema::hasColumn('merchant_api_keys', 'key_prefix')) {
                     $table->string('key_prefix', 32)->nullable()->after('hash');
                 }
 
-                if (!Schema::hasColumn('merchant_api_keys', 'scopes')) {
+                if (! Schema::hasColumn('merchant_api_keys', 'scopes')) {
                     $table->json('scopes')->nullable()->after('status');
                 }
 
-                if (!Schema::hasColumn('merchant_api_keys', 'last_rotated_at')) {
+                if (! Schema::hasColumn('merchant_api_keys', 'last_rotated_at')) {
                     $table->timestamp('last_rotated_at')->nullable()->after('scopes');
                 }
 
-                if (!Schema::hasColumn('merchant_api_keys', 'revoked_at')) {
+                if (! Schema::hasColumn('merchant_api_keys', 'revoked_at')) {
                     $table->timestamp('revoked_at')->nullable()->after('last_rotated_at');
                 }
             });
@@ -40,7 +42,7 @@ return new class extends Migration
             $this->createIndexIfMissing('merchant_api_keys', 'ix_merchant_api_keys_key_prefix', ['key_prefix']);
         }
 
-        if (!Schema::hasTable('routing_workflows')) {
+        if (! Schema::hasTable('routing_workflows')) {
             Schema::create('routing_workflows', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->uuid('merchant_id')->nullable()->index();
@@ -59,7 +61,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('routing_workflow_versions')) {
+        if (! Schema::hasTable('routing_workflow_versions')) {
             Schema::create('routing_workflow_versions', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->uuid('workflow_id')->index();
@@ -101,7 +103,7 @@ return new class extends Migration
             ->where('indexname', $index)
             ->exists();
 
-        if (!$exists) {
+        if (! $exists) {
             Schema::table($table, fn (Blueprint $blueprint) => $blueprint->index($columns, $index));
         }
     }

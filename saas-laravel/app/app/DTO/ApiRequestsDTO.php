@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO;
 
 use App\Models\ApiRequest;
 
-final class ApiRequestsDTO
+final readonly class ApiRequestsDTO
 {
     public function __construct(
         public string $id,
@@ -33,6 +35,9 @@ final class ApiRequestsDTO
         );
     }
 
+    /**
+     * @return array{id: string, event_id: string, subscription_id: string, subscription_name: string|null, payment_id: string|null, order_id: int|null, amount: float, source: string, created_at: string}
+     */
     public function toArray(): array
     {
         return [

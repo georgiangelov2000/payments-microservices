@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
@@ -28,6 +31,7 @@ final class ApiKeyRepository implements ApiKeyRepositoryInterface
     public function update(MerchantApiKey $apiKey, array $data): MerchantApiKey
     {
         $apiKey->update($data);
+
         return $apiKey->fresh();
     }
 }

@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO;
 
 use App\Models\MerchantApiKey;
 use Carbon\CarbonInterface;
 
-final class ApiKeysDTO
+final readonly class ApiKeysDTO
 {
     public function __construct(
         public string $id,
@@ -24,12 +26,15 @@ final class ApiKeysDTO
         );
     }
 
+    /**
+     * @return array{id: string, merchant_id: string, status: string, created_at: string}
+     */
     public function toArray(): array
     {
         return [
-            'id'         => $this->id,
-            'merchant_id'=> $this->merchant_id,
-            'status'     => $this->status,
+            'id' => $this->id,
+            'merchant_id' => $this->merchant_id,
+            'status' => $this->status,
             'created_at' => $this->created_at->toISOString(),
         ];
     }

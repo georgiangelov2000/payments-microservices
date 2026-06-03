@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\PaymentLogEventType;
@@ -28,7 +30,9 @@ class PaymentLog extends Model
 
     protected $casts = [
         'event_type' => PaymentLogEventType::class,
-        'status'     => PaymentLogStatus::class,
+        'status' => PaymentLogStatus::class,
+        'payload' => 'array',
+        'created_at' => 'datetime',
     ];
 
     public function payment(): BelongsTo

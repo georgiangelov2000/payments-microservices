@@ -39,9 +39,16 @@ class PaymentRoutingEngine:
     async def plan(self, db: Session, merchant_id: UUID, request: CreatePaymentRequest) -> RoutingPlan:
         environment = request.environment
         available = self._available_providers(db, merchant_id, environment)
+        requested_alias = request.alias.lower() if request.alias else None
 
-        if request.alias:
-            available = [candidate for candidate in available if candidate.alias == request.alias.lower()]
+        if requested_alias and not any(candidate.alias == requested_alias for candidate in available):
+            return RoutingPlan(
+                strategy="unavailable",
+                environment=environment,
+                candidates=[],
+                matched_rule=None,
+                snapshot={"reason": "requested_provider_not_connected", "requested_alias": requested_alias},
+            )
 
         if not available:
             return RoutingPlan(
@@ -68,7 +75,7 @@ class PaymentRoutingEngine:
 
         rule = self._matching_rule(db, merchant_id, environment, request)
         if rule:
-            ordered = self._put_first(filtered, rule.provider_alias)
+            ordered = self._put_first(filtered, requested_alias or rule.provider_alias)
             return self._with_failover(
                 db=db,
                 merchant_id=merchant_id,
@@ -81,22 +88,26 @@ class PaymentRoutingEngine:
 
         config = self._configuration(db, merchant_id, environment)
         if not config or not config.enabled:
-            priority = [request.alias.lower()] if request.alias else ["stripe", "paypal"]
+            priority = [requested_alias] if requested_alias else ["stripe", "paypal"]
             ordered = self._order_by_aliases(filtered, priority)
             return RoutingPlan("priority", environment, ordered, None, {"source": "default"})
 
         if config.strategy == "weighted":
             ordered = self._weighted_order(filtered, self._json(config.weighted_distribution, {}), request)
+            if requested_alias:
+                ordered = self._put_first(ordered, requested_alias)
             return self._with_failover(
                 db, merchant_id, environment, ordered, "weighted", None,
-                {"weights": self._json(config.weighted_distribution, {})},
+                {"weights": self._json(config.weighted_distribution, {}), "requested_alias": requested_alias},
             )
 
         priority_chain = self._json(config.priority_chain, [])
+        if requested_alias:
+            priority_chain = self._unique_aliases([requested_alias, *priority_chain])
         ordered = self._order_by_aliases(filtered, priority_chain)
         return self._with_failover(
             db, merchant_id, environment, ordered, config.strategy or "priority", None,
-            {"priority_chain": priority_chain},
+            {"priority_chain": priority_chain, "requested_alias": requested_alias},
         )
 
     def _configuration(self, db: Session, merchant_id: UUID, environment: str):
@@ -261,6 +272,19 @@ class PaymentRoutingEngine:
 
         ordered.extend(candidate for candidate in candidates if candidate not in ordered)
         return ordered
+
+    def _unique_aliases(self, aliases: list[str]) -> list[str]:
+        seen = set()
+        unique = []
+
+        for alias in aliases:
+            normalized = str(alias).lower()
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            unique.append(normalized)
+
+        return unique
 
     def _json(self, value, default):
         if isinstance(value, (dict, list)):

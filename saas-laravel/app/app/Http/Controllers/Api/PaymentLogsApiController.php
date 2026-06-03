@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\PaymentLogsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Services\PaymentLogsService;
 
 class PaymentLogsApiController extends Controller
 {
@@ -24,7 +26,7 @@ class PaymentLogsApiController extends Controller
     {
         $result = $this->service->show($logId, (string) auth()->id());
 
-        if (!$result) {
+        if (! $result) {
             return response()->json(['message' => 'Not found.'], 404);
         }
 
@@ -35,17 +37,17 @@ class PaymentLogsApiController extends Controller
     {
         $result = $this->service->byPayment($paymentId, (string) auth()->id());
 
-        if (!$result) {
+        if (! $result) {
             return response()->json(['message' => 'Not found.'], 404);
         }
 
         return response()->json([
-            'results'    => $result->items(),
+            'results' => $result->items(),
             'pagination' => [
-                'total'        => $result->total(),
-                'per_page'     => $result->perPage(),
+                'total' => $result->total(),
+                'per_page' => $result->perPage(),
                 'current_page' => $result->currentPage(),
-                'last_page'    => $result->lastPage(),
+                'last_page' => $result->lastPage(),
             ],
         ]);
     }

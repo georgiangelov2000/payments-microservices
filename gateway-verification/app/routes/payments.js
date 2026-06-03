@@ -26,7 +26,7 @@ router.post("/", authPost, async (req, res) => {
   proxy.web(
     req,
     res,
-    { target: `${env.PAYMENTS_URL}/api/v1/payments` },
+    { target: `${env.PAYMENTS_URL}/api/v1/payments`, ignorePath: true },
     async err => {
       if (err) {
         await recordFailure()
@@ -49,7 +49,7 @@ router.get("/", authGet, (req, res) => {
   proxy.web(
     req,
     res,
-    { target: `${env.PAYMENTS_URL}/api/v1/payments` },
+    { target: `${env.PAYMENTS_URL}/api/v1/payments`, ignorePath: true },
     err => {
       if (err && !res.headersSent) {
         return send(res, Errors.PAYMENTS_UNREACHABLE)

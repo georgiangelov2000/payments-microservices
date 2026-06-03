@@ -1,8 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\PaymentLogsApiController;
+declare(strict_types=1);
+
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\PaymentLogsApiController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------

@@ -17,12 +17,12 @@ class StoreRoutingRuleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'environment'    => ['required', Rule::in(['test', 'live'])],
-            'name'           => ['required', 'string', 'max:255'],
+            'environment' => ['required', Rule::in(['test', 'live'])],
+            'name' => ['required', 'string', 'max:255'],
             'provider_alias' => ['required', 'string'],
-            'priority'       => ['required', 'integer', 'min:1', 'max:1000'],
-            'enabled'        => ['required', 'boolean'],
-            'conditions'     => ['array'],
+            'priority' => ['required', 'integer', 'min:1', 'max:1000'],
+            'enabled' => ['required', 'boolean'],
+            'conditions' => ['array'],
         ];
     }
 }

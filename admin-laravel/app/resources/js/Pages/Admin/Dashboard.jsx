@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import ProviderBrand from '@/Components/ProviderBrand';
 import { Users, CreditCard, DollarSign, Key } from 'lucide-react';
 
 function Badge({ value }) {
@@ -216,9 +217,7 @@ export default function Dashboard({ metrics, recentPayments }) {
                                         </td>
                                         <td className="px-6 py-3.5">
                                             {payment.provider ? (
-                                                <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                                                    {payment.provider}
-                                                </span>
+                                                <ProviderBrand alias={payment.provider} variant="compact" />
                                             ) : (
                                                 <span className="text-sm text-slate-400">—</span>
                                             )}

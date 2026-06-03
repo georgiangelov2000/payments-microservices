@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\MerchantAPIKeyStatus;
@@ -15,6 +17,7 @@ use Throwable;
 class GatewayAccessProfileService
 {
     private const CACHE_PREFIX = 'gateway:auth:v1:';
+
     private const CACHE_TTL_SECONDS = 900;
 
     public function syncForMerchant(string $merchantId): void
@@ -47,9 +50,10 @@ class GatewayAccessProfileService
         $apiKey->loadMissing('merchant');
         $merchant = $apiKey->merchant;
 
-        if (!$merchant) {
+        if (! $merchant) {
             $this->invalidate($apiKey->hash);
             GatewayAccessProfile::query()->where('api_key_hash', $apiKey->hash)->delete();
+
             return null;
         }
 
@@ -145,12 +149,12 @@ class GatewayAccessProfileService
 
     private function cacheKey(string $apiKeyHash): string
     {
-        return self::CACHE_PREFIX . $apiKeyHash;
+        return self::CACHE_PREFIX.$apiKeyHash;
     }
 
     private function negativeCacheKey(string $apiKeyHash): string
     {
-        return self::CACHE_PREFIX . 'invalid:' . $apiKeyHash;
+        return self::CACHE_PREFIX.'invalid:'.$apiKeyHash;
     }
 
     private function loadProviders(): array

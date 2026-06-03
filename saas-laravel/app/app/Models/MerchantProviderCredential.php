@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidV7PrimaryKey;
@@ -41,7 +43,7 @@ class MerchantProviderCredential extends Model
 
     public function maskedPublicKey(): ?string
     {
-        if (!$this->public_key) {
+        if (! $this->public_key) {
             return null;
         }
 
@@ -51,7 +53,7 @@ class MerchantProviderCredential extends Model
             return str_repeat('*', $length);
         }
 
-        return substr($this->public_key, 0, 8) . '...' . substr($this->public_key, -4);
+        return substr($this->public_key, 0, 8).'...'.substr($this->public_key, -4);
     }
 
     public function hasSecret(): bool

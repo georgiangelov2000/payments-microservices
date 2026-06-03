@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,24 +13,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-    
-        if(!Schema::hasTable('merchant_api_keys')) {
+
+        if (! Schema::hasTable('merchant_api_keys')) {
             Schema::create('merchant_api_keys', function (Blueprint $table) {
                 $table->uuid('id')->primary();
-                $table->string('hash',64)->unique();
-                
+                $table->string('hash', 64)->unique();
+
                 $table->uuid('merchant_id');
 
                 $table->tinyInteger('status')
-                        ->default(1)
-                        ->comment('1 = active, 2 = inactive');
-                
+                    ->default(1)
+                    ->comment('1 = active, 2 = inactive');
+
                 $table->timestamps();
 
-                $table->index("status", "ix_merchant_api_keys_status");
-                $table->index("hash", "ix_api_keys_hash");
-                $table->index("merchant_id", "ix_api_keys_merchant_id");
-            });            
+                $table->index('status', 'ix_merchant_api_keys_status');
+                $table->index('hash', 'ix_api_keys_hash');
+                $table->index('merchant_id', 'ix_api_keys_merchant_id');
+            });
         }
     }
 

@@ -1,24 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
+use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
+use App\Contracts\ApiRequests\ApiRequestsRepositoryInterface;
+use App\Contracts\Payments\PaymentRepositoryInterface;
+use App\Contracts\Subscriptions\SubscriptionRepositoryInterface;
 use App\Jobs\SyncGatewayAccessProfileJob;
 use App\Models\MerchantApiKey;
 use App\Models\Provider;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Models\UserSubscription;
-use Illuminate\Support\Facades\Vite;
-use Illuminate\Support\ServiceProvider;
-use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
-use App\Contracts\ApiRequests\ApiRequestsRepositoryInterface;
-use App\Contracts\Payments\PaymentRepositoryInterface;
-use App\Contracts\Subscriptions\SubscriptionRepositoryInterface;
 use App\Repositories\ApiKeyRepository;
 use App\Repositories\ApiRequestRepository;
 use App\Repositories\PaymentRepository;
 use App\Repositories\SubscriptionRepository;
-
+use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {

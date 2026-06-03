@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Exports;
 
 use App\Builders\PaymentsBuilder;
-use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
@@ -22,7 +23,7 @@ class PaymentsExport implements FromQuery, WithChunkReading, WithHeadings, WithM
      */
     public function query(): Builder
     {
-        return (new PaymentsBuilder())
+        return (new PaymentsBuilder)
             ->forMerchant($this->merchantId)
             ->whereStatus($this->filters['status'] ?? null)
             ->whereOrder($this->filters['order_id'] ?? null)

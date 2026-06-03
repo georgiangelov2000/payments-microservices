@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Support\Str;
+declare(strict_types=1);
 
 return [
 
@@ -76,7 +76,7 @@ return [
             'search_path' => 'public',
             'sslmode' => 'prefer',
         ],
-        
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

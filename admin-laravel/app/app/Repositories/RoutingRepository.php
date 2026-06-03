@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Contracts\Routing\RoutingRepositoryInterface;
@@ -42,6 +45,7 @@ final class RoutingRepository implements RoutingRepositoryInterface
     public function updateWorkflow(RoutingWorkflow $workflow, array $data): RoutingWorkflow
     {
         $workflow->update($data);
+
         return $workflow->fresh();
     }
 

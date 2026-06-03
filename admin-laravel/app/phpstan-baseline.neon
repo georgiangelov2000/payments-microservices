@@ -1,0 +1,505 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$order_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$provider_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$alias\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$attempt_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$error_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$error_message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$event_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$latency_ms\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payload\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$provider_alias\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Anonymous function should return array\{id\: int, order_id\: mixed, amount\: float, price\: float, status\: mixed, provider_status\: mixed, merchant\: array\{name\: mixed, email\: mixed\}\|null, provider\: mixed, \.\.\.\} but returns array\{id\: int, order_id\: mixed, amount\: float, price\: float, status\: mixed, provider_status\: mixed, merchant\: array\{name\: mixed, email\: mixed\}\|null, provider\: mixed, \.\.\.\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 2
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,App\\Models\\Payment\>\:\:through\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/RoutingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/RoutingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/RoutingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$providerCredentials\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/RoutingController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:providerCredentials\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/RoutingController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/RoutingController.php
+
+		-
+			message: '#^Parameter \#1 \$workflow of method App\\Services\\RoutingWorkflowService\:\:serializeWorkflow\(\) expects App\\Models\\RoutingWorkflow, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Admin/RoutingController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Subscription\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/SubscriptionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Subscription\:\:\$included_transactions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/SubscriptionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Subscription\:\:\$monthly_fee\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/SubscriptionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Subscription\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/SubscriptionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Subscription\:\:\$transaction_fee_fixed\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/SubscriptionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Subscription\:\:\$transaction_fee_percent\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/SubscriptionController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,App\\Models\\Subscription\>\:\:through\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/SubscriptionController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/EnsureAdminUser.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/EnsureAdminUser.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Provider\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Provider\>\:\:\$alias\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Requests/Admin/StoreProviderCredentialRequest.php
+
+		-
+			message: '#^Parameter \#1 \$value of static method Illuminate\\Support\\Str\:\:lower\(\) expects string, Illuminate\\Support\\Stringable given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Requests/Auth/LoginRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$hash\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/MerchantApiKey.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$key_prefix\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/MerchantApiKey.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantProviderCredential\:\:\$public_key\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/MerchantProviderCredential.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantProviderCredential\:\:\$secret_value\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/MerchantProviderCredential.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc tag @use has invalid type Database\\Factories\\UserFactory\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Type Database\\Factories\\UserFactory in generic type Illuminate\\Database\\Eloquent\\Factories\\HasFactory\<Database\\Factories\\UserFactory\> in PHPDoc tag @use is not subtype of template type TFactory of Illuminate\\Database\\Eloquent\\Factories\\Factory of trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$order_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Payment\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$alias\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Payment\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Repositories/DashboardRepository.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$environment\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$last_rotated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$revoked_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$scopes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantApiKey\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantProviderCredential\:\:\$display_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantProviderCredential\:\:\$environment\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantProviderCredential\:\:\$last_validated_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantProviderCredential\:\:\$provider_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\MerchantProviderCredential\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$alias\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: int, provider_id\: mixed, provider_name\: mixed, provider_alias\: mixed, environment\: mixed, display_name\: mixed, public_key\: string\|null, has_secret\: bool, status\: mixed, last_validated_at\: mixed\}, Closure\(App\\Models\\MerchantProviderCredential\)\: array\{id\: int, provider_id\: mixed, provider_name\: mixed, provider_alias\: mixed, environment\: mixed, display_name\: mixed, public_key\: string\|null, has_secret\: bool, status\: mixed, last_validated_at\: mixed\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/MerchantService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/RoutingWorkflowService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/RoutingWorkflowService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: int, version\: int, status\: string, published_at\: string\|null, created_at\: string\|null\}, Closure\(App\\Models\\RoutingWorkflowVersion\)\: array\{id\: int, version\: int, status\: string, published_at\: string\|null, created_at\: string\|null\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/RoutingWorkflowService.php

@@ -9,24 +9,15 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { getProviderMeta, ProviderIcon } from '@/Components/ProviderBrand';
 import toast from 'react-hot-toast';
 import {
     Play, GitBranch, Scale, Zap, CheckCircle2, XCircle,
     Plus, AlertTriangle, FlaskConical,
 } from 'lucide-react';
 
-// ─── Provider metadata ────────────────────────────────────────────────────────
-
-const PROVIDER_META = {
-    stripe: { label: 'Stripe', color: '#6366f1', dot: 'bg-indigo-500', initials: 'S' },
-    paypal: { label: 'PayPal', color: '#3b82f6', dot: 'bg-blue-500',   initials: 'P' },
-    adyen:  { label: 'Adyen',  color: '#0abf53', dot: 'bg-emerald-500',initials: 'A' },
-};
 function pm(alias) {
-    return PROVIDER_META[alias?.toLowerCase()] ?? {
-        label: alias || 'Provider', color: '#64748b',
-        dot: 'bg-slate-500', initials: (alias?.[0] ?? '?').toUpperCase(),
-    };
+    return getProviderMeta(alias);
 }
 
 // ─── Custom node components ───────────────────────────────────────────────────
@@ -58,14 +49,12 @@ function StartNode({ data, selected }) {
 function ProviderNode({ data, selected }) {
     const meta = pm(data.provider_alias);
     return (
-        <NodeShell selected={selected} cls="bg-white border-slate-200 min-w-[210px]" style={{ borderLeft: `4px solid ${meta.color}` }}>
+        <NodeShell selected={selected} cls="bg-white border-slate-200 min-w-[210px]">
             <Handle type="target" position={Position.Top}
                 style={{ background: '#cbd5e1', width: 10, height: 10, border: '2px solid #fff' }} />
             <div className="px-4 py-3">
                 <div className="flex items-center gap-2.5 mb-2.5">
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white shrink-0 ${meta.dot}`}>
-                        {meta.initials}
-                    </span>
+                    <ProviderIcon alias={data.provider_alias} label={data.label} size="md" className="ring-0" />
                     <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Provider</p>
                         <p className="text-sm font-bold text-slate-800 leading-snug">{data.label || meta.label}</p>
@@ -158,7 +147,7 @@ function WeightedNode({ data, selected }) {
                         const m = pm(d.provider_alias);
                         return (
                             <div key={i} className="flex items-center gap-2">
-                                <span className={`h-2 w-2 shrink-0 rounded-full ${m.dot}`} />
+                                <ProviderIcon alias={d.provider_alias} size="xs" className="ring-0 shadow-none" />
                                 <span className="flex-1 text-[11px] text-slate-600">{m.label}</span>
                                 <div className="h-1.5 w-16 rounded-full bg-slate-200">
                                     <div className="h-1.5 rounded-full bg-purple-400 transition-all" style={{ width: `${d.weight}%` }} />
@@ -195,13 +184,10 @@ function FailoverNode({ data, selected }) {
                 {chain.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1">
                         {chain.map((alias, i) => {
-                            const m = pm(alias);
                             return (
                                 <div key={i} className="flex items-center gap-1">
                                     {i > 0 && <span className="text-orange-400 text-xs">→</span>}
-                                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white ${m.dot}`}>
-                                        {m.initials}
-                                    </span>
+                                    <ProviderIcon alias={alias} size="xs" className="ring-0 shadow-none" />
                                 </div>
                             );
                         })}
@@ -326,7 +312,7 @@ function ConfigPanel({ node, providers, onUpdate, onDelete }) {
                     <>
                         <Field label="Provider">
                             <select value={d.provider_alias || ''} onChange={e => set('provider_alias', e.target.value)}
-                                className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none">
+                                className="w-full min-w-0 rounded-lg border border-slate-200 py-1.5 pl-3 pr-10 text-sm focus:border-indigo-400 focus:outline-none">
                                 <option value="">Select provider…</option>
                                 {providers.map(p => <option key={p.alias} value={p.alias}>{p.name}</option>)}
                             </select>
@@ -408,13 +394,13 @@ function ConditionEditor({ conditions, onChange }) {
             <div className="space-y-2">
                 {conditions.map((c, i) => (
                     <div key={i} className="rounded-lg border border-slate-200 bg-slate-50 p-2 space-y-1.5">
-                        <div className="flex gap-1.5">
+                        <div className="flex flex-wrap gap-1.5">
                             <select value={c.field} onChange={e => update(i, 'field', e.target.value)}
-                                className="flex-1 rounded border border-slate-200 px-1.5 py-1 text-xs focus:outline-none">
+                                className="min-w-28 flex-1 rounded border border-slate-200 py-1 pl-1.5 pr-8 text-xs focus:outline-none">
                                 {COND_FIELDS.map(f => <option key={f} value={f}>{f}</option>)}
                             </select>
                             <select value={c.operator} onChange={e => update(i, 'operator', e.target.value)}
-                                className="w-12 rounded border border-slate-200 px-1 py-1 text-xs focus:outline-none">
+                                className="w-16 rounded border border-slate-200 py-1 pl-1.5 pr-7 text-xs focus:outline-none">
                                 {OPERATORS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
@@ -456,9 +442,9 @@ function WeightedEditor({ distribution, providers, onChange }) {
             </div>
             <div className="space-y-1.5">
                 {distribution.map((d, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
+                    <div key={i} className="flex flex-wrap items-center gap-1.5">
                         <select value={d.provider_alias || ''} onChange={e => update(i, 'provider_alias', e.target.value)}
-                            className="flex-1 rounded border border-slate-200 px-1.5 py-1 text-xs focus:outline-none">
+                            className="min-w-28 flex-1 rounded border border-slate-200 py-1 pl-1.5 pr-8 text-xs focus:outline-none">
                             <option value="">Provider…</option>
                             {providers.map(p => <option key={p.alias} value={p.alias}>{p.name}</option>)}
                         </select>
@@ -493,10 +479,10 @@ function FailoverEditor({ chain, providers, onChange }) {
             </div>
             <div className="space-y-1.5">
                 {chain.map((alias, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
+                    <div key={i} className="flex flex-wrap items-center gap-1.5">
                         <span className="text-xs text-slate-400 w-4 shrink-0">{i + 1}.</span>
                         <select value={alias} onChange={e => update(i, e.target.value)}
-                            className="flex-1 rounded border border-slate-200 px-1.5 py-1 text-xs focus:outline-none">
+                            className="min-w-28 flex-1 rounded border border-slate-200 py-1 pl-1.5 pr-8 text-xs focus:outline-none">
                             {providers.map(p => <option key={p.alias} value={p.alias}>{p.name}</option>)}
                         </select>
                         <button onClick={() => remove(i)} className="rounded p-0.5 text-slate-300 hover:text-red-500 transition-colors"><XCircle size={14} strokeWidth={2} /></button>

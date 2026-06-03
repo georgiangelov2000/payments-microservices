@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\PaymentStatus;
@@ -48,5 +50,10 @@ class Payment extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(PaymentLog::class, 'payment_id');
-    }    
+    }
+
+    public function routingAttempts(): HasMany
+    {
+        return $this->hasMany(PaymentRoutingAttempt::class, 'payment_id');
+    }
 }

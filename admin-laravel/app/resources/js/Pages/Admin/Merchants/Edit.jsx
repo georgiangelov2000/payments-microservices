@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import ProviderBrand from '@/Components/ProviderBrand';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
     AlertTriangle, CheckCircle2, XCircle, Clock, Circle, Plus,
@@ -37,12 +38,12 @@ function Field({ label, hint, error, required, children }) {
     );
 }
 
-function TextInput({ error, ...props }) {
+function TextInput({ error, className = '', ...props }) {
     return (
         <input
             className={`w-full rounded-xl border px-3 py-2.5 text-sm text-slate-900 shadow-sm placeholder-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 error ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-400' : 'border-slate-300 focus:border-indigo-500'
-            }`}
+            } ${className}`}
             {...props}
         />
     );
@@ -170,6 +171,37 @@ const PROVIDER_STATUS_META = {
     },
 };
 
+const PROVIDER_FIELD_HELP = {
+    stripe: {
+        publicLabel: 'Publishable key',
+        publicPlaceholder: 'pk_test_...',
+        publicHint: 'Safe browser key from Stripe test mode.',
+        secretLabel: 'Secret key',
+        secretPlaceholder: 'sk_test_...',
+        secretHint: 'Server key used to create Stripe Checkout sessions.',
+    },
+    paypal: {
+        publicLabel: 'Client ID',
+        publicPlaceholder: 'PayPal sandbox client ID',
+        publicHint: 'Client ID from your PayPal REST app.',
+        secretLabel: 'Client secret',
+        secretPlaceholder: 'PayPal sandbox client secret',
+        secretHint: 'Secret used to request PayPal access tokens.',
+    },
+    default: {
+        publicLabel: 'Public key',
+        publicPlaceholder: 'Provider public key or client ID',
+        publicHint: 'The provider identifier safe to reference in client-side setup.',
+        secretLabel: 'Secret key',
+        secretPlaceholder: 'Provider secret key',
+        secretHint: 'Stored securely and used only by the backend.',
+    },
+};
+
+function providerFieldHelp(provider) {
+    return PROVIDER_FIELD_HELP[provider?.alias] ?? PROVIDER_FIELD_HELP.default;
+}
+
 // Custom provider status selector with descriptions
 function ProviderStatusSelect({ value, onChange, disabled }) {
     const [open, setOpen] = useState(false);
@@ -234,15 +266,36 @@ function StatChip({ label, value, color = 'text-slate-900' }) {
 function ProviderRow({ credential }) {
     const [status, setStatus] = useState(credential.status);
     const [saving, setSaving] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const fieldHelp = providerFieldHelp({ alias: credential.provider_alias });
+
+    const form = useForm({
+        display_name: credential.display_name || '',
+        public_key: '',
+        secret_value: '',
+        status: credential.status,
+    });
 
     const handleChange = (newStatus) => {
         setStatus(newStatus);
+        form.setData('status', newStatus);
         setSaving(true);
         router.put(
             route('admin.merchant-provider-credentials.update', credential.id),
             { status: newStatus },
             { preserveScroll: true, onFinish: () => setSaving(false) }
         );
+    };
+
+    const submit = (e) => {
+        e.preventDefault();
+        form.put(route('admin.merchant-provider-credentials.update', credential.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                form.reset('public_key', 'secret_value');
+                setEditing(false);
+            },
+        });
     };
 
     const meta = PROVIDER_STATUS_META[status] ?? PROVIDER_STATUS_META.pending;
@@ -252,11 +305,9 @@ function ProviderRow({ credential }) {
             <div className="flex flex-wrap items-start justify-between gap-3">
                 {/* Left: provider info */}
                 <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 text-sm font-bold">
-                        {credential.provider_name?.[0] ?? '?'}
-                    </div>
+                    <ProviderBrand alias={credential.provider_alias} label={credential.provider_name} size="md" variant="icon" />
                     <div>
-                        <p className="text-sm font-semibold text-slate-900">{credential.provider_name}</p>
+                        <ProviderBrand alias={credential.provider_alias} label={credential.provider_name} variant="compact" className="bg-white" />
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                             <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium capitalize ${credential.environment === 'live' ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-slate-200 bg-white text-slate-600'}`}>
                                 {credential.environment}
@@ -274,6 +325,13 @@ function ProviderRow({ credential }) {
                     {credential.last_validated_at && (
                         <span className="text-xs text-slate-400">Validated {credential.last_validated_at}</span>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => setEditing((value) => !value)}
+                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                    >
+                        {editing ? 'Close editor' : 'Edit credentials'}
+                    </button>
                 </div>
             </div>
 
@@ -286,18 +344,79 @@ function ProviderRow({ credential }) {
             {/* Credential details */}
             <div className="mt-3 grid grid-cols-2 gap-3 border-t border-slate-200 pt-3">
                 <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">Public key</p>
+                    <p className="text-xs font-medium text-slate-500 mb-1">{fieldHelp.publicLabel}</p>
                     <code className="text-xs text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-1 block truncate">
                         {credential.public_key || '—'}
                     </code>
                 </div>
                 <div>
-                    <p className="text-xs font-medium text-slate-500 mb-1">Secret</p>
+                    <p className="text-xs font-medium text-slate-500 mb-1">{fieldHelp.secretLabel}</p>
                     <code className="text-xs text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-1 block">
                         {credential.has_secret ? '••••••••••••' : 'Not stored'}
                     </code>
                 </div>
             </div>
+
+            {editing && (
+                <form onSubmit={submit} className="mt-4 rounded-xl border border-indigo-100 bg-white p-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Field label="Display name" hint="Optional label shown only in PayFlow." error={form.errors.display_name}>
+                            <TextInput
+                                value={form.data.display_name}
+                                onChange={(e) => form.setData('display_name', e.target.value)}
+                                placeholder={`${credential.provider_name} sandbox`}
+                                error={form.errors.display_name}
+                            />
+                        </Field>
+                        <Field label="Status" error={form.errors.status}>
+                            <ProviderStatusSelect
+                                value={form.data.status}
+                                onChange={(value) => {
+                                    form.setData('status', value);
+                                    setStatus(value);
+                                }}
+                                disabled={form.processing}
+                            />
+                        </Field>
+                        <Field label={fieldHelp.publicLabel} hint={`${fieldHelp.publicHint} Leave blank to keep the saved value.`} error={form.errors.public_key}>
+                            <TextInput
+                                value={form.data.public_key}
+                                onChange={(e) => form.setData('public_key', e.target.value)}
+                                placeholder={fieldHelp.publicPlaceholder}
+                                error={form.errors.public_key}
+                                className="font-mono"
+                            />
+                        </Field>
+                        <Field label={fieldHelp.secretLabel} hint={`${fieldHelp.secretHint} Leave blank to keep the saved value.`} error={form.errors.secret_value}>
+                            <TextInput
+                                type="password"
+                                value={form.data.secret_value}
+                                onChange={(e) => form.setData('secret_value', e.target.value)}
+                                placeholder={fieldHelp.secretPlaceholder}
+                                error={form.errors.secret_value}
+                                className="font-mono"
+                            />
+                        </Field>
+                    </div>
+
+                    <div className="mt-4 flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setEditing(false)}
+                            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={form.processing}
+                            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+                        >
+                            {form.processing ? 'Saving...' : 'Save credentials'}
+                        </button>
+                    </div>
+                </form>
+            )}
         </div>
     );
 }
@@ -315,6 +434,8 @@ function AddProviderForm({ merchantId, availableProviders, onSuccess }) {
         secret_value: '',
         status:       'pending',
     });
+    const selectedProvider = availableProviders.find((provider) => provider.id === form.data.provider_id) ?? availableProviders[0];
+    const fieldHelp = providerFieldHelp(selectedProvider);
 
     const submit = (e) => {
         e.preventDefault();
@@ -328,13 +449,21 @@ function AddProviderForm({ merchantId, availableProviders, onSuccess }) {
     };
 
     return (
-        <form onSubmit={submit} className="rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-5 space-y-4">
-            <h4 className="text-sm font-semibold text-slate-800">Add a payment provider</h4>
+        <form onSubmit={submit} className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-5 shadow-sm space-y-4">
+            <div>
+                <h4 className="text-sm font-semibold text-slate-900">Add payment provider credentials</h4>
+                <p className="mt-1 text-xs text-slate-500">Connect this merchant to a processor account for routing and checkout creation.</p>
+            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <Field label="Provider" required>
+            <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Provider" required error={form.errors.provider_id}>
+                    {selectedProvider && (
+                        <div className="mb-2">
+                            <ProviderBrand alias={selectedProvider.alias} label={selectedProvider.name} />
+                        </div>
+                    )}
                     <select
-                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        className={`w-full min-w-0 rounded-xl border py-2.5 pl-3 pr-10 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${form.errors.provider_id ? 'border-red-300 bg-red-50' : 'border-slate-300 bg-white'}`}
                         value={form.data.provider_id}
                         onChange={(e) => form.setData('provider_id', e.target.value)}
                     >
@@ -357,19 +486,19 @@ function AddProviderForm({ merchantId, availableProviders, onSuccess }) {
                 </Field>
             </div>
 
-            <Field label="Display Name" hint="A human-friendly label for this credential (optional).">
-                <TextInput placeholder="e.g. Stripe Production" value={form.data.display_name}
-                    onChange={(e) => form.setData('display_name', e.target.value)} />
+            <Field label="Display name" hint="Optional label for admins, such as Stripe sandbox or PayPal EU." error={form.errors.display_name}>
+                <TextInput placeholder={`${selectedProvider?.name ?? 'Provider'} sandbox`} value={form.data.display_name}
+                    onChange={(e) => form.setData('display_name', e.target.value)} error={form.errors.display_name} />
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-                <Field label="Public Key" error={form.errors.public_key}>
-                    <TextInput placeholder="pk_..." value={form.data.public_key}
+            <div className="grid gap-4 md:grid-cols-2">
+                <Field label={fieldHelp.publicLabel} hint={fieldHelp.publicHint} error={form.errors.public_key}>
+                    <TextInput placeholder={fieldHelp.publicPlaceholder} value={form.data.public_key}
                         onChange={(e) => form.setData('public_key', e.target.value)}
                         error={form.errors.public_key} className="font-mono" />
                 </Field>
-                <Field label="Secret Key" hint="Stored encrypted. Never displayed again after saving." error={form.errors.secret_value}>
-                    <TextInput type="password" placeholder="sk_..." value={form.data.secret_value}
+                <Field label={fieldHelp.secretLabel} hint={`${fieldHelp.secretHint} Stored securely and never displayed again.`} error={form.errors.secret_value}>
+                    <TextInput type="password" placeholder={fieldHelp.secretPlaceholder} value={form.data.secret_value}
                         onChange={(e) => form.setData('secret_value', e.target.value)}
                         error={form.errors.secret_value} className="font-mono" />
                 </Field>

@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Enums;
 
 enum UserStatus: int
@@ -10,7 +13,7 @@ enum UserStatus: int
 
     public function label(): string
     {
-        return match($this) {
+        return match ($this) {
             self::PENDING => 'pending',
             self::ACTIVE => 'active',
             self::SUSPENDED => 'suspended',
@@ -20,7 +23,7 @@ enum UserStatus: int
 
     public static function fromLabel(string $label): self
     {
-        return match($label) {
+        return match ($label) {
             'active' => self::ACTIVE,
             'suspended' => self::SUSPENDED,
             'inactive' => self::INACTIVE,

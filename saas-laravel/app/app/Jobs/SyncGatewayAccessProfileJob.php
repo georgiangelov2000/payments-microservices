@@ -31,13 +31,14 @@ class SyncGatewayAccessProfileJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $backoff = 5;
 
     /**
-     * @param  string       $type         One of: sync_api_key | invalidate_key | sync_merchant | sync_all
-     * @param  string|null  $merchantId   Required for 'sync_merchant'
-     * @param  string|null  $apiKeyId     Primary-key of MerchantApiKey; required for 'sync_api_key'
-     * @param  string|null  $apiKeyHash   Plain hash string; required for 'invalidate_key'
+     * @param  string  $type  One of: sync_api_key | invalidate_key | sync_merchant | sync_all
+     * @param  string|null  $merchantId  Required for 'sync_merchant'
+     * @param  string|null  $apiKeyId  Primary-key of MerchantApiKey; required for 'sync_api_key'
+     * @param  string|null  $apiKeyHash  Plain hash string; required for 'invalidate_key'
      */
     public function __construct(
         private readonly string $type,

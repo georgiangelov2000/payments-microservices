@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRoutingRuleRequest;
@@ -20,21 +22,21 @@ class RoutingController extends Controller
 
     public function index(Request $request): Response
     {
-        $merchant    = Auth::user();
+        $merchant = Auth::user();
         $environment = $request->query('environment', 'test');
-        $providers   = $this->routingService->getAvailableProviders($merchant->id, $environment);
+        $providers = $this->routingService->getAvailableProviders($merchant->id, $environment);
         $configuration = $this->routingService->getOrCreateConfiguration($merchant->id, $environment);
 
         return Inertia::render('Routing/Index', [
-            'environment'   => $environment,
-            'providers'     => $providers,
+            'environment' => $environment,
+            'providers' => $providers,
             'configuration' => $configuration,
-            'rules'         => ProviderRoutingRule::query()
+            'rules' => ProviderRoutingRule::query()
                 ->where('merchant_id', $merchant->id)
                 ->where('environment', $environment)
                 ->orderBy('priority')
                 ->get(),
-            'health'        => ProviderHealthStatus::query()
+            'health' => ProviderHealthStatus::query()
                 ->where('merchant_id', $merchant->id)
                 ->where('environment', $environment)
                 ->get()
@@ -44,12 +46,12 @@ class RoutingController extends Controller
 
     public function update(UpdateRoutingRequest $request): RedirectResponse
     {
-        $merchant  = Auth::user();
+        $merchant = Auth::user();
         $validated = $request->validated();
 
-        $allowed                         = $this->routingService->getAvailableProviders($merchant->id, $validated['environment'])->pluck('alias')->all();
-        $validated['priority_chain']     = $this->routingService->filterAliases($validated['priority_chain'] ?? [], $allowed);
-        $validated['failover_chain']     = $this->routingService->filterAliases($validated['failover_chain'] ?? [], $allowed);
+        $allowed = $this->routingService->getAvailableProviders($merchant->id, $validated['environment'])->pluck('alias')->all();
+        $validated['priority_chain'] = $this->routingService->filterAliases($validated['priority_chain'] ?? [], $allowed);
+        $validated['failover_chain'] = $this->routingService->filterAliases($validated['failover_chain'] ?? [], $allowed);
         $validated['weighted_distribution'] = array_intersect_key(
             $validated['weighted_distribution'] ?? [],
             array_flip($allowed)
@@ -71,7 +73,7 @@ class RoutingController extends Controller
 
     public function storeRule(StoreRoutingRuleRequest $request): RedirectResponse
     {
-        $merchant  = Auth::user();
+        $merchant = Auth::user();
         $validated = $request->validated();
 
         $allowed = $this->routingService->getAvailableProviders($merchant->id, $validated['environment'])->pluck('alias')->all();
@@ -80,7 +82,7 @@ class RoutingController extends Controller
         $rule = ProviderRoutingRule::query()->create([
             ...$validated,
             'merchant_id' => $merchant->id,
-            'conditions'  => $validated['conditions'] ?? [],
+            'conditions' => $validated['conditions'] ?? [],
         ]);
 
         $this->routingService->recordAudit($merchant->id, $merchant->id, 'merchant.created_routing_rule', $rule, null);

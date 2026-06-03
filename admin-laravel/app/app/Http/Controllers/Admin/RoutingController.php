@@ -1,14 +1,15 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreWorkflowRequest;
 use App\Http\Requests\Admin\UpdateWorkflowRequest;
 use App\Models\Provider;
 use App\Models\RoutingWorkflow;
 use App\Models\RoutingWorkflowVersion;
-use App\Models\User;
 use App\Repositories\MerchantRepository;
 use App\Repositories\RoutingRepository;
 use App\Services\RoutingWorkflowService;
@@ -64,31 +65,31 @@ class RoutingController extends Controller
                 ->whereIn('status', ['active', 'validated', 'pending'])
                 ->get()
                 ->map(fn ($cred) => [
-                    'id'          => $cred->provider->id,
-                    'name'        => $cred->provider->name,
-                    'alias'       => $cred->provider->alias,
+                    'id' => $cred->provider->id,
+                    'name' => $cred->provider->name,
+                    'alias' => $cred->provider->alias,
                     'environment' => $cred->environment,
-                    'status'      => $cred->status,
+                    'status' => $cred->status,
                 ])->values()->all()
             : [];
 
         return Inertia::render('Admin/Routing/Builder', [
-            'workflow'          => [
-                'id'               => $workflow->id,
-                'name'             => $workflow->name,
-                'environment'      => $workflow->environment,
-                'status'           => $workflow->status,
-                'current_version'  => $workflow->current_version,
-                'nodes'            => $workflow->nodes ?? [],
-                'edges'            => $workflow->edges ?? [],
+            'workflow' => [
+                'id' => $workflow->id,
+                'name' => $workflow->name,
+                'environment' => $workflow->environment,
+                'status' => $workflow->status,
+                'current_version' => $workflow->current_version,
+                'nodes' => $workflow->nodes ?? [],
+                'edges' => $workflow->edges ?? [],
                 'validation_errors' => $workflow->validation_errors ?? [],
-                'merchant'         => $merchant ? ['id' => $merchant->id, 'name' => $merchant->name] : null,
-                'versions'         => $workflow->versions()
+                'merchant' => $merchant ? ['id' => $merchant->id, 'name' => $merchant->name] : null,
+                'versions' => $workflow->versions()
                     ->orderByDesc('version')
                     ->get(['id', 'version', 'status', 'published_at', 'created_at'])
                     ->toArray(),
             ],
-            'providers'         => Provider::query()->orderBy('name')->get(['id', 'name', 'alias'])->toArray(),
+            'providers' => Provider::query()->orderBy('name')->get(['id', 'name', 'alias'])->toArray(),
             'merchantProviders' => $merchantProviders,
         ]);
     }
@@ -96,12 +97,14 @@ class RoutingController extends Controller
     public function storeWorkflow(StoreWorkflowRequest $request): RedirectResponse
     {
         $this->routingService->createWorkflow($request->validated());
+
         return back()->with('success', 'Routing workflow created.');
     }
 
     public function updateWorkflow(UpdateWorkflowRequest $request, RoutingWorkflow $workflow): RedirectResponse
     {
         $this->routingService->updateWorkflow($workflow, $request->validated());
+
         return back()->with('success', 'Routing workflow saved.');
     }
 
@@ -112,24 +115,26 @@ class RoutingController extends Controller
         } catch (\DomainException $e) {
             return back()->withErrors(['workflow' => $e->getMessage()]);
         }
+
         return back()->with('success', 'Routing workflow published.');
     }
 
     public function rollbackWorkflow(RoutingWorkflow $workflow, RoutingWorkflowVersion $version): RedirectResponse
     {
         $this->routingService->rollbackWorkflow($workflow, $version);
+
         return back()->with('success', 'Workflow rolled back as a new draft.');
     }
 
     public function simulateWorkflow(Request $request, RoutingWorkflow $workflow): JsonResponse
     {
         $data = $request->validate([
-            'input'         => ['required', 'array'],
+            'input' => ['required', 'array'],
             'input.country' => ['nullable', 'string'],
-            'input.currency'=> ['nullable', 'string'],
-            'input.amount'  => ['nullable', 'numeric'],
+            'input.currency' => ['nullable', 'string'],
+            'input.amount' => ['nullable', 'numeric'],
             'input.payment_method' => ['nullable', 'string'],
-            'input.recurring'      => ['nullable', 'boolean'],
+            'input.recurring' => ['nullable', 'boolean'],
         ]);
 
         $result = $this->routingService->simulate(

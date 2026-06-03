@@ -1,13 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support;
 
 use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
-class PaymentWorkflowFormatter
+final class PaymentWorkflowFormatter
 {
+    /**
+     * @param  iterable<int, object>  $logs
+     * @return list<array{timestamp: string, message: string, event_type: string, status: string, technical_response: array|string|null}>
+     */
     public static function timelineFromLogs(iterable $logs): array
     {
         $events = [];
@@ -16,12 +22,15 @@ class PaymentWorkflowFormatter
             $events = array_merge($events, self::eventsFromLog($log));
         }
 
-        usort($events, fn (array $a, array $b) => strcmp($a['timestamp'] ?? '', $b['timestamp'] ?? ''));
+        usort($events, fn (array $a, array $b): int => strcmp($a['timestamp'] ?? '', $b['timestamp'] ?? ''));
 
         return $events;
     }
 
-    public static function eventsFromLog($log): array
+    /**
+     * @return list<array{timestamp: string, message: string, event_type: string, status: string, technical_response: array|string|null}>
+     */
+    public static function eventsFromLog(object $log): array
     {
         $message = trim((string) ($log->message ?? ''));
         $fallbackTimestamp = self::formatTimestamp($log->created_at ?? null);
@@ -36,7 +45,7 @@ class PaymentWorkflowFormatter
             ];
         }
 
-        return array_map(function (array $event) use ($log, $payload) {
+        return array_map(function (array $event) use ($log, $payload): array {
             return [
                 'timestamp' => $event['timestamp'],
                 'message' => self::cleanMessage($event['message']),
@@ -47,6 +56,10 @@ class PaymentWorkflowFormatter
         }, $events);
     }
 
+    /**
+     * @param  Collection<int, object>  $logs
+     * @return array{label: string, provider_status: string, next_step: string}
+     */
     public static function summaryForPayment(Payment $payment, Collection $logs): array
     {
         $provider = $payment->provider?->name ?? 'Provider';
@@ -69,14 +82,18 @@ class PaymentWorkflowFormatter
         ];
     }
 
+    /**
+     * @param  Collection<int, object>  $logs
+     * @return array{request_started_at: string, last_provider_update_at: string, processing_duration: string, duration_seconds: int|null, state: string, state_label: string}
+     */
     public static function timingForPayment(Payment $payment, Collection $logs): array
     {
         $startedAt = self::asCarbon($payment->created_at);
         $timeline = self::timelineFromLogs($logs);
         $lastEventAt = collect($timeline)
-            ->map(fn (array $event) => self::asCarbon($event['timestamp'] ?? null))
+            ->map(fn (array $event): ?Carbon => self::asCarbon($event['timestamp'] ?? null))
             ->filter()
-            ->sortBy(fn (Carbon $timestamp) => $timestamp->getTimestamp())
+            ->sortBy(fn (Carbon $timestamp): int => $timestamp->getTimestamp())
             ->last();
         $lastProviderUpdate = $lastEventAt ?: self::asCarbon($payment->updated_at);
         $endAt = $payment->status->label() === 'pending' ? Carbon::now() : $lastProviderUpdate;
@@ -93,6 +110,9 @@ class PaymentWorkflowFormatter
         ];
     }
 
+    /**
+     * @return list<array{timestamp: string, message: string}>
+     */
     private static function splitTimestampedMessage(string $message, string $fallbackTimestamp, string $fallbackMessage): array
     {
         if ($message === '') {
@@ -134,9 +154,13 @@ class PaymentWorkflowFormatter
         return $message !== '' ? $message : 'Provider response received without a readable summary';
     }
 
-    private static function decodePayload(?string $payload): array|string|null
+    private static function decodePayload(array|string|null $payload): array|string|null
     {
-        if (!filled($payload)) {
+        if (is_array($payload)) {
+            return $payload;
+        }
+
+        if (! filled($payload)) {
             return null;
         }
 
@@ -145,11 +169,14 @@ class PaymentWorkflowFormatter
         return json_last_error() === JSON_ERROR_NONE ? $decoded : $payload;
     }
 
+    /**
+     * @param  Collection<int, object>  $logs
+     */
     private static function latestReadablePayload(Collection $logs): array|string|null
     {
         return $logs
             ->sortByDesc('created_at')
-            ->map(fn ($log) => self::decodePayload($log->payload ?? null))
+            ->map(fn (object $log): array|string|null => self::decodePayload($log->payload ?? null))
             ->first(fn ($payload) => filled($payload));
     }
 
@@ -166,7 +193,7 @@ class PaymentWorkflowFormatter
         }
 
         return filled($providerStatus)
-            ? 'Payment failed: ' . ucfirst($providerStatus)
+            ? 'Payment failed: '.ucfirst($providerStatus)
             : 'Provider response received without a readable summary';
     }
 
@@ -175,7 +202,7 @@ class PaymentWorkflowFormatter
         $message = self::payloadValue($payload, ['message', 'status', 'payment_status']);
 
         if (filled($message)) {
-            return 'Waiting for provider update: ' . ucfirst(str_replace('_', ' ', (string) $message));
+            return 'Waiting for provider update: '.ucfirst(str_replace('_', ' ', (string) $message));
         }
 
         return filled($providerStatus)
@@ -194,13 +221,16 @@ class PaymentWorkflowFormatter
         };
     }
 
+    /**
+     * @param  list<string>  $keys
+     */
     private static function payloadValue(array|string|null $payload, array $keys): mixed
     {
         if (is_string($payload)) {
             return null;
         }
 
-        if (!is_array($payload)) {
+        if (! is_array($payload)) {
             return null;
         }
 
@@ -214,6 +244,9 @@ class PaymentWorkflowFormatter
         return null;
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     */
     private static function findKey(array $payload, string $key): mixed
     {
         foreach ($payload as $payloadKey => $value) {
@@ -234,7 +267,7 @@ class PaymentWorkflowFormatter
 
     private static function asCarbon(mixed $value): ?Carbon
     {
-        if (!$value) {
+        if (! $value) {
             return null;
         }
 
@@ -267,14 +300,14 @@ class PaymentWorkflowFormatter
         }
 
         if ($seconds < 3600) {
-            return intdiv($seconds, 60) . 'm ' . ($seconds % 60) . 's';
+            return intdiv($seconds, 60).'m '.($seconds % 60).'s';
         }
 
         if ($seconds < 86400) {
-            return intdiv($seconds, 3600) . 'h ' . intdiv($seconds % 3600, 60) . 'm';
+            return intdiv($seconds, 3600).'h '.intdiv($seconds % 3600, 60).'m';
         }
 
-        return intdiv($seconds, 86400) . 'd ' . intdiv($seconds % 86400, 3600) . 'h';
+        return intdiv($seconds, 86400).'d '.intdiv($seconds % 86400, 3600).'h';
     }
 
     private static function stateLabel(string $status): string

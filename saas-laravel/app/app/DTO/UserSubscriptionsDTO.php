@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\DTO;
 
 use App\Models\UserSubscription;
 
-final class UserSubscriptionsDTO
+final readonly class UserSubscriptionsDTO
 {
     public function __construct(
         public string $id,
@@ -33,6 +35,9 @@ final class UserSubscriptionsDTO
         );
     }
 
+    /**
+     * @return array{id: string, name: string, monthly_fee: float, transaction_fee_percent: float, transaction_fee_fixed: float, included_transactions: int, current_period_transactions: int, current_period_volume: float, status: string}
+     */
     public function toArray(): array
     {
         return [

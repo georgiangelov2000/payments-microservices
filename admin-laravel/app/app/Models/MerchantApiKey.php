@@ -1,18 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Enums\MerchantAPIKeyStatus;
 use App\Models\Concerns\HasUuidV7PrimaryKey;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Enums\MerchantAPIKeyStatus;
 
 class MerchantApiKey extends Model
 {
     use HasUuidV7PrimaryKey;
 
     protected $table = 'merchant_api_keys';
-    
+
     protected $fillable = [
         'hash',
         'key_prefix',
@@ -30,8 +32,8 @@ class MerchantApiKey extends Model
         'scopes' => 'array',
         'last_rotated_at' => 'datetime',
         'revoked_at' => 'datetime',
-        'created_at' => "datetime",
-        "updated_at" => "datetime"
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function merchant(): BelongsTo
@@ -41,6 +43,6 @@ class MerchantApiKey extends Model
 
     public function maskedKey(): string
     {
-        return ($this->key_prefix ?: substr($this->hash, 0, 10)) . '...';
+        return ($this->key_prefix ?: substr($this->hash, 0, 10)).'...';
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -29,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Any unauthenticated request that normally would go to /login is
         // instead sent to the static marketing site login page.
         $middleware->redirectGuestsTo(
-            fn () => config('services.static_site.url') . '/login.html'
+            fn () => config('services.static_site.url').'/login.html'
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -5,6 +5,7 @@ import {
     Play, GitBranch, Scale, RefreshCcw, XCircle, LayoutGrid,
     Globe, ArrowRight, FlaskConical, CreditCard,
 } from 'lucide-react';
+import { ProviderIcon } from '@/Components/ProviderBrand';
 import AdminLayout from '@/Layouts/AdminLayout';
 
 // ─── Colour helpers ───────────────────────────────────────────────────────────
@@ -33,23 +34,6 @@ function Badge({ value, size = 'md' }) {
     return (
         <span className={`inline-flex items-center rounded-full border font-medium capitalize ${sz} ${map[value] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
             {value || 'unknown'}
-        </span>
-    );
-}
-
-// ─── Provider icon (coloured initials circle) ─────────────────────────────────
-
-const PROVIDER_COLORS = {
-    stripe: { bg: 'bg-indigo-600', text: 'text-white', label: 'S' },
-    paypal: { bg: 'bg-blue-500',   text: 'text-white', label: 'P' },
-};
-
-function ProviderIcon({ alias, size = 'md' }) {
-    const cfg   = PROVIDER_COLORS[alias?.toLowerCase()] ?? { bg: 'bg-slate-500', text: 'text-white', label: (alias?.[0] ?? '?').toUpperCase() };
-    const dim   = size === 'lg' ? 'h-10 w-10 text-base' : 'h-7 w-7 text-xs';
-    return (
-        <span className={`inline-flex items-center justify-center rounded-full font-bold shrink-0 ${cfg.bg} ${cfg.text} ${dim}`}>
-            {cfg.label}
         </span>
     );
 }

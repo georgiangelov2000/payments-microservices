@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services;
 
 use App\Contracts\Payments\PaymentRepositoryInterface;
-use Illuminate\Pagination\LengthAwarePaginator;
 use App\DTO\PaymentsDTO;
 use App\Models\PaymentLog;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 final class PaymentService
 {
@@ -14,10 +15,11 @@ final class PaymentService
         private readonly PaymentRepositoryInterface $paymentRepository
     ) {}
 
-    public function fetchAll(array $params = []): LengthAwarePaginator {
+    public function fetchAll(array $params = []): LengthAwarePaginator
+    {
         $payments = $this->paymentRepository->fetchAll($params)
             ->latest('id')
-            ->paginate($params["per_page"]);
+            ->paginate($params['per_page']);
 
         $paymentIds = $payments->getCollection()->pluck('id');
 
@@ -35,8 +37,7 @@ final class PaymentService
                 )->toArray()
             )
         );
-        
+
         return $payments;
     }
-
 }

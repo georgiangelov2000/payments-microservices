@@ -73,14 +73,14 @@ final class RoutingService
         ?array $before,
     ): void {
         RoutingAuditLog::query()->create([
-            'actor_id'     => $actorId,
-            'merchant_id'  => $merchantId,
-            'actor_type'   => 'merchant',
-            'action'       => $action,
+            'actor_id' => $actorId,
+            'merchant_id' => $merchantId,
+            'actor_type' => 'merchant',
+            'action' => $action,
             'subject_type' => $subject::class,
-            'subject_id'   => $subject->id ?? null,
-            'before'       => $before,
-            'after'        => method_exists($subject, 'fresh') ? $subject->fresh()?->toArray() : null,
+            'subject_id' => $subject->id ?? null,
+            'before' => $before,
+            'after' => method_exists($subject, 'fresh') ? $subject->fresh()?->toArray() : null,
         ]);
     }
 
@@ -91,17 +91,17 @@ final class RoutingService
     public function getOrCreateConfiguration(string $merchantId, string $environment): ProviderRoutingConfiguration
     {
         $providers = $this->getAvailableProviders($merchantId, $environment);
-        $aliases   = $providers->pluck('alias')->values()->all();
+        $aliases = $providers->pluck('alias')->values()->all();
 
         return ProviderRoutingConfiguration::query()->firstOrCreate(
             ['merchant_id' => $merchantId, 'environment' => $environment],
             [
-                'strategy'              => 'priority',
-                'enabled'               => true,
-                'priority_chain'        => $aliases,
-                'failover_chain'        => $aliases,
+                'strategy' => 'priority',
+                'enabled' => true,
+                'priority_chain' => $aliases,
+                'failover_chain' => $aliases,
                 'weighted_distribution' => $this->defaultWeights($aliases),
-                'metadata'              => [],
+                'metadata' => [],
             ]
         );
     }

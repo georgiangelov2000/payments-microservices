@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums;
 
 enum MerchantAPIKeyStatus: int
 {
-    case ACTIVE   = 1;
+    case ACTIVE = 1;
     case INACTIVE = 2;
 
     public function label(): string
@@ -15,9 +17,9 @@ enum MerchantAPIKeyStatus: int
     public static function fromString(string $status): self
     {
         return match (strtolower($status)) {
-            'active'   => self::ACTIVE,
+            'active' => self::ACTIVE,
             'inactive' => self::INACTIVE,
-            default    => throw new \InvalidArgumentException("Invalid API key status: {$status}"),
+            default => throw new \InvalidArgumentException("Invalid API key status: {$status}"),
         };
     }
 }

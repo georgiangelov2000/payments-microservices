@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -8,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('gateway_access_profiles')) {
+        if (! Schema::hasTable('gateway_access_profiles')) {
             Schema::create('gateway_access_profiles', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->string('api_key_hash', 64)->unique();

@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
@@ -35,9 +38,9 @@ final class ApiKeyService
 
         $this->apiKeyRepository->create([
             'merchant_id' => $data['merchant_id'],
-            'name' => $data['name'] ?: ucfirst($data['environment']) . ' gateway key',
+            'name' => $data['name'] ?: ucfirst($data['environment']).' gateway key',
             'environment' => $data['environment'],
-            'hash' => hash('sha256', $plain),
+            'hash' => $this->hashPlainKey($plain),
             'key_prefix' => substr($plain, 0, 14),
             'status' => MerchantAPIKeyStatus::ACTIVE->value,
             'scopes' => array_values($data['scopes'] ?? ['payments:create', 'payments:read']),
@@ -52,7 +55,7 @@ final class ApiKeyService
         $plain = $this->generatePlainKey($apiKey->environment ?: 'test');
 
         $this->apiKeyRepository->update($apiKey, [
-            'hash' => hash('sha256', $plain),
+            'hash' => $this->hashPlainKey($plain),
             'key_prefix' => substr($plain, 0, 14),
             'status' => MerchantAPIKeyStatus::ACTIVE->value,
             'last_rotated_at' => now(),
@@ -107,6 +110,16 @@ final class ApiKeyService
     private function generatePlainKey(string $environment): string
     {
         $prefix = in_array($environment, ['live', 'production'], true) ? 'pk_live_' : 'pk_test_';
-        return $prefix . Str::random(48);
+
+        return $prefix.Str::random(48);
+    }
+
+    private function hashPlainKey(string $plain): string
+    {
+        $secret = config('services.gateway.hmac_secret');
+
+        return $secret
+            ? hash_hmac('sha256', $plain, $secret)
+            : hash('sha256', $plain);
     }
 }

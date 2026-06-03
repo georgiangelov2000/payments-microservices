@@ -1,7 +1,8 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
+import ProviderBrand from '@/Components/ProviderBrand';
 import { Plus, Search, X, Pencil, UserPlus } from 'lucide-react';
 
 const providerStatuses = ['pending', 'active', 'validated', 'disabled'];
@@ -57,7 +58,7 @@ function ProviderCredentialsList({ credentials, onStatusChange }) {
         <div className="flex flex-col gap-1.5">
             {visible.map((cred) => (
                 <div key={cred.id} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5">
-                    <span className="text-xs font-medium text-slate-700 truncate max-w-[80px]">{cred.provider_name}</span>
+                    <ProviderBrand alias={cred.provider_alias} label={cred.provider_name} variant="compact" className="max-w-[130px]" />
                     <Badge value={cred.environment} size="sm" />
                     <Badge value={cred.status} size="sm" />
                 </div>
@@ -71,10 +72,11 @@ function ProviderCredentialsList({ credentials, onStatusChange }) {
     );
 }
 
-export default function MerchantsIndex({ merchants, availableProviders }) {
+export default function MerchantsIndex({ merchants, availableProviders, filters = {} }) {
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [assignMerchantId, setAssignMerchantId] = useState(merchants.data[0]?.id || '');
-    const [search, setSearch] = useState('');
+    const [search, setSearch] = useState(filters.search || '');
+    const [status, setStatus] = useState(filters.status || '');
 
     const providerForm = useForm({
         merchant_id:  assignMerchantId,
@@ -108,12 +110,20 @@ export default function MerchantsIndex({ merchants, availableProviders }) {
         router.put(route('admin.merchant-provider-credentials.update', cred.id), { status }, { preserveScroll: true });
     };
 
-    const filtered = useMemo(() => {
-        const q = search.toLowerCase().trim();
-        return q
-            ? merchants.data.filter((m) => m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q))
-            : merchants.data;
-    }, [search, merchants.data]);
+    useEffect(() => {
+        const timeout = window.setTimeout(() => {
+            router.get(route('admin.merchants.index'), {
+                search: search.trim() || undefined,
+                status: status || undefined,
+            }, {
+                preserveScroll: true,
+                preserveState: true,
+                replace: true,
+            });
+        }, 300);
+
+        return () => window.clearTimeout(timeout);
+    }, [search, status]);
 
     const activeMerchants = merchants.data.filter((m) => m.status === 'active').length;
 
@@ -155,7 +165,7 @@ export default function MerchantsIndex({ merchants, availableProviders }) {
                 {/* Toolbar */}
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                     <h2 className="text-base font-semibold text-slate-900">All Merchants</h2>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         <div className="relative">
                             <Search size={14} strokeWidth={2} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
@@ -166,6 +176,17 @@ export default function MerchantsIndex({ merchants, availableProviders }) {
                                 className="w-56 rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-1.5 text-sm placeholder-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                             />
                         </div>
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="min-w-40 rounded-lg border border-slate-200 bg-white py-1.5 pl-3 pr-10 text-sm text-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        >
+                            <option value="">All statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
                         <button
                             onClick={() => openAssign(null)}
                             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
@@ -188,7 +209,7 @@ export default function MerchantsIndex({ merchants, availableProviders }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {filtered.length === 0 ? (
+                            {merchants.data.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-5 py-16 text-center">
                                         <p className="text-sm text-slate-400">
@@ -201,7 +222,7 @@ export default function MerchantsIndex({ merchants, availableProviders }) {
                                         )}
                                     </td>
                                 </tr>
-                            ) : filtered.map((merchant) => (
+                            ) : merchants.data.map((merchant) => (
                                 <tr key={merchant.id} className="align-top hover:bg-slate-50/50 transition-colors">
                                     <td className="px-5 py-4">
                                         <span className="block font-medium text-slate-900">{merchant.name}</span>
@@ -257,24 +278,24 @@ export default function MerchantsIndex({ merchants, availableProviders }) {
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Merchant</label>
                         <select
-                            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            className="w-full min-w-0 rounded-xl border border-slate-300 py-2 pl-3 pr-10 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                             value={providerForm.data.merchant_id}
                             onChange={(e) => providerForm.setData('merchant_id', e.target.value)}
                         >
                             {merchants.data.map((m) => <option key={m.id} value={m.id}>{m.name} — {m.email}</option>)}
                         </select>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Provider</label>
-                            <select className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            <select className="w-full min-w-0 rounded-xl border border-slate-300 py-2 pl-3 pr-10 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                 value={providerForm.data.provider_id} onChange={(e) => providerForm.setData('provider_id', e.target.value)}>
                                 {availableProviders.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Environment</label>
-                            <select className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            <select className="w-full min-w-0 rounded-xl border border-slate-300 py-2 pl-3 pr-10 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                                 value={providerForm.data.environment} onChange={(e) => providerForm.setData('environment', e.target.value)}>
                                 <option value="test">Test</option>
                                 <option value="live">Live</option>
@@ -301,7 +322,7 @@ export default function MerchantsIndex({ merchants, availableProviders }) {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Initial Status</label>
-                        <select className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        <select className="w-full min-w-0 rounded-xl border border-slate-300 py-2 pl-3 pr-10 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                             value={providerForm.data.status} onChange={(e) => providerForm.setData('status', e.target.value)}>
                             {providerStatuses.map((s) => <option key={s} value={s}>{s}</option>)}
                         </select>

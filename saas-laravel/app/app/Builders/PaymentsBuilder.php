@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Builders;
 
 use App\Models\Payment;
@@ -21,14 +23,16 @@ class PaymentsBuilder
             throw new \InvalidArgumentException('Merchant ID is required.');
         }
         $this->query->where('merchant_id', $merchantId);
+
         return $this;
     }
 
     public function whereId(?string $id): self
     {
-        if($id) {
-            $this->query->where('id' ,$id);
+        if ($id) {
+            $this->query->where('id', $id);
         }
+
         return $this;
     }
 
@@ -59,16 +63,19 @@ class PaymentsBuilder
         return $this->query;
     }
 
-    public function whereOrder(int|string|null $orderId) {
+    public function whereOrder(int|string|null $orderId)
+    {
         if ($orderId) {
             $this->query->where('order_id', $orderId);
         }
-        return $this;        
-    }    
+
+        return $this;
+    }
 
     public function latest(): self
     {
         $this->query->latest();
+
         return $this;
     }
 }

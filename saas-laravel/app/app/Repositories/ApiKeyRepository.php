@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Builders\ApiKeysBuilder;
@@ -8,17 +10,16 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ApiKeyRepository implements ApiKeyRepositoryInterface
 {
+    public function __construct() {}
 
-   public function __construct() {}
-   
     public function fetchAll(array $params = []): Builder
     {
-        $merchantId = $params["merchant_id"] ?? null;
-        $status = $params["status"] ?? null;
-        
-        return (new ApiKeysBuilder())
-        ->forMerchant($merchantId)
-        ->whereStatus($status)
-        ->getQuery();
+        $merchantId = $params['merchant_id'] ?? null;
+        $status = $params['status'] ?? null;
+
+        return (new ApiKeysBuilder)
+            ->forMerchant($merchantId)
+            ->whereStatus($status)
+            ->getQuery();
     }
 }

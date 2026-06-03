@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import ProviderBrand from '@/Components/ProviderBrand';
 import { CheckCircle2, AlertTriangle, XCircle, Save, Plus, Trash2 } from 'lucide-react';
 
 function aliases(providers) {
@@ -100,7 +101,7 @@ export default function RoutingIndex({ environment, providers, configuration, ru
                         return (
                             <div key={provider.id} className="rounded-lg border bg-white p-4 shadow-sm">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="font-semibold">{provider.name}</h2>
+                                    <ProviderBrand alias={provider.alias} label={provider.name} status={status} />
                                     <span className={[
                                         'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium capitalize',
                                         status === 'healthy'  ? 'bg-green-100 text-green-700'  :
@@ -162,6 +163,11 @@ export default function RoutingIndex({ environment, providers, configuration, ru
 
                         <label className="block">
                             <span className="text-sm font-medium">Provider priority order</span>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {configForm.data.priority_chain.map((alias) => (
+                                    <ProviderBrand key={alias} alias={alias} label={providerLabel(providers, alias)} variant="compact" />
+                                ))}
+                            </div>
                             <input
                                 value={configForm.data.priority_chain.join(', ')}
                                 onChange={(event) => configForm.setData('priority_chain', event.target.value.split(',').map((item) => item.trim()).filter(Boolean))}
@@ -171,6 +177,14 @@ export default function RoutingIndex({ environment, providers, configuration, ru
 
                         <label className="block lg:col-span-2">
                             <span className="text-sm font-medium">Failover chain</span>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                {configForm.data.failover_chain.map((alias, index) => (
+                                    <div key={`${alias}-${index}`} className="flex items-center gap-2">
+                                        {index > 0 && <span className="text-xs text-gray-400">→</span>}
+                                        <ProviderBrand alias={alias} label={providerLabel(providers, alias)} variant="compact" />
+                                    </div>
+                                ))}
+                            </div>
                             <input
                                 value={configForm.data.failover_chain.join(', ')}
                                 onChange={(event) => configForm.setData('failover_chain', event.target.value.split(',').map((item) => item.trim()).filter(Boolean))}
@@ -184,7 +198,7 @@ export default function RoutingIndex({ environment, providers, configuration, ru
                         <div className="grid gap-4 p-4 md:grid-cols-2">
                             {providerAliases.map((alias) => (
                                 <label key={alias} className="block">
-                                    <span className="text-sm text-gray-600">{providerLabel(providers, alias)}</span>
+                                    <ProviderBrand alias={alias} label={providerLabel(providers, alias)} variant="compact" />
                                     <input
                                         type="number"
                                         min="0"
@@ -214,6 +228,7 @@ export default function RoutingIndex({ environment, providers, configuration, ru
                             <select value={ruleForm.data.provider_alias} onChange={(e) => ruleForm.setData('provider_alias', e.target.value)} className="w-full rounded border-gray-300 text-sm">
                                 {providerAliases.map((alias) => <option key={alias} value={alias}>{providerLabel(providers, alias)}</option>)}
                             </select>
+                            <ProviderBrand alias={ruleForm.data.provider_alias} label={providerLabel(providers, ruleForm.data.provider_alias)} variant="compact" />
                             <input type="number" value={ruleForm.data.priority} onChange={(e) => ruleForm.setData('priority', Number(e.target.value))} className="w-full rounded border-gray-300 text-sm" />
                             {['country', 'currency', 'payment_method', 'card_type', 'min_amount', 'max_amount'].map((field) => (
                                 <input
@@ -260,7 +275,9 @@ export default function RoutingIndex({ environment, providers, configuration, ru
                                         <tr key={rule.id}>
                                             <td className="px-4 py-3">{rule.priority}</td>
                                             <td className="px-4 py-3 font-medium">{rule.name}</td>
-                                            <td className="px-4 py-3">{providerLabel(providers, rule.provider_alias)}</td>
+                                            <td className="px-4 py-3">
+                                                <ProviderBrand alias={rule.provider_alias} label={providerLabel(providers, rule.provider_alias)} variant="compact" />
+                                            </td>
                                             <td className="px-4 py-3 font-mono text-xs">{JSON.stringify(rule.conditions || {})}</td>
                                             <td className="px-4 py-3 text-right">
                                                 <button

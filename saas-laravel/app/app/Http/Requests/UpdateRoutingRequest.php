@@ -17,15 +17,15 @@ class UpdateRoutingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'environment'              => ['required', Rule::in(['test', 'live'])],
-            'enabled'                  => ['required', 'boolean'],
-            'strategy'                 => ['required', Rule::in(['priority', 'weighted'])],
-            'priority_chain'           => ['array'],
-            'priority_chain.*'         => ['string'],
-            'failover_chain'           => ['array'],
-            'failover_chain.*'         => ['string'],
-            'weighted_distribution'    => ['array'],
-            'weighted_distribution.*'  => ['integer', 'min:0', 'max:100'],
+            'environment' => ['required', Rule::in(['test', 'live'])],
+            'enabled' => ['required', 'boolean'],
+            'strategy' => ['required', Rule::in(['priority', 'weighted'])],
+            'priority_chain' => ['array'],
+            'priority_chain.*' => ['string'],
+            'failover_chain' => ['array'],
+            'failover_chain.*' => ['string'],
+            'weighted_distribution' => ['array'],
+            'weighted_distribution.*' => ['integer', 'min:0', 'max:100'],
         ];
     }
 }

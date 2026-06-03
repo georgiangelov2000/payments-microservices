@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -23,11 +25,11 @@ class ExportRequest extends FormRequest
     {
         return [
             'merchant_id' => ['required', 'uuid'],
-            'order_id'    => ['nullable', 'integer'],
-            'status'      => ['nullable', Rule::in(['pending', 'finished', 'failed'])],
-            'from'        => ['nullable', 'date'],
-            'to'          => ['nullable', 'date'],
-            'format'      => ['required', Rule::in(['csv', 'xlsx', 'json'])],
+            'order_id' => ['nullable', 'integer'],
+            'status' => ['nullable', Rule::in(['pending', 'finished', 'failed'])],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+            'format' => ['required', Rule::in(['csv', 'xlsx', 'json'])],
         ];
     }
 }

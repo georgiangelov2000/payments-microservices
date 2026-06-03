@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
+import ProviderBrand from '@/Components/ProviderBrand'
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react'
 import toast from 'react-hot-toast'
 import React from 'react'
@@ -250,7 +251,7 @@ export default function Payments({ payments, filters = {} }) {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        {payment.provider}
+                        <ProviderBrand alias={payment.provider} label={payment.provider} variant="compact" />
                       </td>
                       <td className="px-4 py-3">
                         <button
@@ -271,7 +272,10 @@ export default function Payments({ payments, filters = {} }) {
                           <div className="border-l-4 border-indigo-500 pl-4">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <div>
-                                <h3 className="font-semibold text-gray-900">Payment Timeline</h3>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="font-semibold text-gray-900">Payment Timeline</h3>
+                                  <ProviderBrand alias={payment.provider} label={payment.provider} variant="compact" />
+                                </div>
                                 <p className="text-xs text-gray-500">
                                   Provider workflow events are shown chronologically.
                                 </p>

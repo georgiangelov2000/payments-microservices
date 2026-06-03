@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'admin'),

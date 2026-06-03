@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Provider;
@@ -120,30 +123,38 @@ final class RoutingWorkflowService
     public function simulate(array $nodes, array $edges, array $input): array
     {
         $nodeMap = collect($nodes)->keyBy('id')->all();
-        $adj     = [];
+        $adj = [];
         foreach ($edges as $e) {
             $adj[$e['source']][] = ['target' => $e['target'], 'handle' => $e['sourceHandle'] ?? null];
         }
 
         $start = collect($nodes)->firstWhere('type', 'start');
-        if (!$start) {
+        if (! $start) {
             return ['outcome' => 'error', 'error' => 'No start node found', 'path' => []];
         }
 
-        $path    = [];
+        $path = [];
         $current = $start;
-        $steps   = 0;
+        $steps = 0;
 
         while ($current && $steps++ < 30) {
-            $type    = $current['type'] ?? 'unknown';
-            $data    = $current['data'] ?? [];
-            $id      = $current['id'];
+            $type = $current['type'] ?? 'unknown';
+            $data = $current['data'] ?? [];
+            $id = $current['id'];
             $outgoing = $adj[$id] ?? [];
 
             $step = ['node_id' => $id, 'type' => $type, 'label' => $data['label'] ?? $type, 'decision' => null];
 
-            if ($type === 'success') { $step['decision'] = 'Payment routed successfully'; $path[] = $step; break; }
-            if ($type === 'failure') { $step['decision'] = 'Payment routing failed';       $path[] = $step; break; }
+            if ($type === 'success') {
+                $step['decision'] = 'Payment routed successfully';
+                $path[] = $step;
+                break;
+            }
+            if ($type === 'failure') {
+                $step['decision'] = 'Payment routing failed';
+                $path[] = $step;
+                break;
+            }
 
             if ($type === 'provider') {
                 $alias = $data['provider_alias'] ?? 'unknown';
@@ -152,38 +163,42 @@ final class RoutingWorkflowService
                 $path[] = $step;
                 $next = collect($outgoing)->firstWhere('handle', 'success') ?? $outgoing[0] ?? null;
                 $current = $next ? ($nodeMap[$next['target']] ?? null) : null;
+
                 continue;
             }
 
             if ($type === 'condition') {
                 $matches = $this->evaluateConditions($data['conditions'] ?? [], $input);
-                $handle  = $matches ? 'yes' : 'no';
+                $handle = $matches ? 'yes' : 'no';
                 $step['decision'] = $matches ? '✓ Condition matched → yes' : '✗ No match → no';
                 $path[] = $step;
                 $next = collect($outgoing)->firstWhere('handle', $handle) ?? $outgoing[0] ?? null;
                 $current = $next ? ($nodeMap[$next['target']] ?? null) : null;
+
                 continue;
             }
 
             if ($type === 'weighted') {
-                $dist     = $data['distribution'] ?? [];
+                $dist = $data['distribution'] ?? [];
                 $provider = $this->pickWeighted($dist, $input);
                 $step['decision'] = "Weighted selection → {$provider}";
                 $step['provider'] = $provider;
                 $path[] = $step;
                 $next = $outgoing[0] ?? null;
                 $current = $next ? ($nodeMap[$next['target']] ?? null) : null;
+
                 continue;
             }
 
             if ($type === 'failover') {
                 $chain = $data['chain'] ?? [];
                 $primary = $chain[0] ?? 'unknown';
-                $step['decision'] = 'Failover primary: ' . $primary . (count($chain) > 1 ? ' → ' . implode(' → ', array_slice($chain, 1)) : '');
+                $step['decision'] = 'Failover primary: '.$primary.(count($chain) > 1 ? ' → '.implode(' → ', array_slice($chain, 1)) : '');
                 $step['provider'] = $primary;
                 $path[] = $step;
                 $next = $outgoing[0] ?? null;
                 $current = $next ? ($nodeMap[$next['target']] ?? null) : null;
+
                 continue;
             }
 
@@ -193,7 +208,7 @@ final class RoutingWorkflowService
             $current = $next ? ($nodeMap[$next['target']] ?? null) : null;
         }
 
-        $last    = end($path) ?: [];
+        $last = end($path) ?: [];
         $outcome = $last['type'] ?? 'incomplete';
 
         return ['outcome' => $outcome, 'path' => $path];
@@ -202,30 +217,31 @@ final class RoutingWorkflowService
     private function evaluateConditions(array $conditions, array $input): bool
     {
         foreach ($conditions as $cond) {
-            $field    = $cond['field'] ?? null;
+            $field = $cond['field'] ?? null;
             $operator = $cond['operator'] ?? 'eq';
             $expected = $cond['value'] ?? null;
-            $actual   = $input[$field] ?? null;
+            $actual = $input[$field] ?? null;
 
-            if (!$field || $expected === null || $expected === '') {
+            if (! $field || $expected === null || $expected === '') {
                 continue;
             }
 
             $match = match ($operator) {
-                'eq'  => strtolower((string) $actual) === strtolower((string) $expected),
+                'eq' => strtolower((string) $actual) === strtolower((string) $expected),
                 'neq' => strtolower((string) $actual) !== strtolower((string) $expected),
-                'in'  => in_array(strtolower((string) $actual), array_map('strtolower', (array) $expected), true),
-                'gt'  => (float) $actual > (float) $expected,
-                'lt'  => (float) $actual < (float) $expected,
+                'in' => in_array(strtolower((string) $actual), array_map('strtolower', (array) $expected), true),
+                'gt' => (float) $actual > (float) $expected,
+                'lt' => (float) $actual < (float) $expected,
                 'gte' => (float) $actual >= (float) $expected,
                 'lte' => (float) $actual <= (float) $expected,
                 default => false,
             };
 
-            if (!$match) {
+            if (! $match) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -234,8 +250,8 @@ final class RoutingWorkflowService
         if (empty($dist)) {
             return 'unknown';
         }
-        $token  = ($input['amount'] ?? '') . ':' . ($input['country'] ?? '');
-        $hash   = abs(crc32($token));
+        $token = ($input['amount'] ?? '').':'.($input['country'] ?? '');
+        $hash = abs(crc32($token));
         $bucket = $hash % 100;
         $cursor = 0;
         foreach ($dist as $entry) {
@@ -244,12 +260,13 @@ final class RoutingWorkflowService
                 return $entry['provider_alias'] ?? 'unknown';
             }
         }
+
         return $dist[0]['provider_alias'] ?? 'unknown';
     }
 
     public function validateWorkflow(array $nodes, array $edges): array
     {
-        $errors  = [];
+        $errors = [];
         $nodeIds = collect($nodes)->pluck('id')->all();
 
         // Require a start node
@@ -271,7 +288,7 @@ final class RoutingWorkflowService
             if (($node['type'] ?? '') !== 'provider') {
                 continue;
             }
-            $data  = $node['data'] ?? $node;
+            $data = $node['data'] ?? $node;
             $alias = $data['provider_alias'] ?? null;
             $label = $data['label'] ?? 'Provider';
             if (blank($alias)) {
@@ -281,7 +298,7 @@ final class RoutingWorkflowService
 
         // Edges must reference real nodes
         foreach ($edges as $edge) {
-            if (!in_array($edge['source'], $nodeIds, true) || !in_array($edge['target'], $nodeIds, true)) {
+            if (! in_array($edge['source'], $nodeIds, true) || ! in_array($edge['target'], $nodeIds, true)) {
                 $errors[] = 'Every workflow edge must reference existing nodes.';
                 break;
             }
@@ -292,10 +309,10 @@ final class RoutingWorkflowService
             if (($node['type'] ?? '') !== 'weighted') {
                 continue;
             }
-            $data  = $node['data'] ?? $node;
+            $data = $node['data'] ?? $node;
             $label = $data['label'] ?? 'Weighted';
-            $dist  = $data['distribution'] ?? [];
-            if (!empty($dist)) {
+            $dist = $data['distribution'] ?? [];
+            if (! empty($dist)) {
                 $total = (int) array_sum(array_column($dist, 'weight'));
                 if ($total !== 100) {
                     $errors[] = "Weighted node '{$label}' distribution must sum to 100% (currently {$total}%).";
@@ -341,19 +358,19 @@ final class RoutingWorkflowService
             $raw = $node['data'] ?? $node;
 
             return [
-                'id'       => $node['id'] ?? ('node-' . ($index + 1)),
-                'type'     => $node['type'] ?? 'provider',
+                'id' => $node['id'] ?? ('node-'.($index + 1)),
+                'type' => $node['type'] ?? 'provider',
                 // Preserve canvas position so the builder can restore layout.
                 'position' => $node['position'] ?? ['x' => ($index % 3) * 240 + 60, 'y' => intdiv($index, 3) * 200 + 80],
-                'data'     => [
-                    'label'          => $raw['label'] ?? 'Provider',
+                'data' => [
+                    'label' => $raw['label'] ?? 'Provider',
                     'provider_alias' => $raw['provider_alias'] ?? null,
-                    'enabled'        => (bool) ($raw['enabled'] ?? true),
-                    'weight'         => max(0, min(100, (int) ($raw['weight'] ?? 0))),
-                    'priority'       => max(1, (int) ($raw['priority'] ?? ($index + 1))),
-                    'conditions'     => $raw['conditions'] ?? [],
-                    'distribution'   => $raw['distribution'] ?? [],
-                    'chain'          => $raw['chain'] ?? [],
+                    'enabled' => (bool) ($raw['enabled'] ?? true),
+                    'weight' => max(0, min(100, (int) ($raw['weight'] ?? 0))),
+                    'priority' => max(1, (int) ($raw['priority'] ?? ($index + 1))),
+                    'conditions' => $raw['conditions'] ?? [],
+                    'distribution' => $raw['distribution'] ?? [],
+                    'chain' => $raw['chain'] ?? [],
                 ],
             ];
         })->values()->all();
@@ -362,15 +379,15 @@ final class RoutingWorkflowService
     private function normalizeEdges(array $edges): array
     {
         return collect($edges)->map(fn (array $edge, int $index) => [
-            'id'           => $edge['id'] ?? ('edge-' . ($index + 1)),
-            'source'       => $edge['source'] ?? null,
-            'target'       => $edge['target'] ?? null,
+            'id' => $edge['id'] ?? ('edge-'.($index + 1)),
+            'source' => $edge['source'] ?? null,
+            'target' => $edge['target'] ?? null,
             'sourceHandle' => $edge['sourceHandle'] ?? null,
-            'label'        => $edge['label'] ?? null,
-            'style'        => $edge['style'] ?? [],
-            'markerEnd'    => $edge['markerEnd'] ?? null,
+            'label' => $edge['label'] ?? null,
+            'style' => $edge['style'] ?? [],
+            'markerEnd' => $edge['markerEnd'] ?? null,
             // Business-logic alias used by buildFailoverChain
-            'condition'    => $edge['condition'] ?? $edge['sourceHandle'] ?? 'default',
+            'condition' => $edge['condition'] ?? $edge['sourceHandle'] ?? 'default',
         ])->values()->all();
     }
 
@@ -396,7 +413,7 @@ final class RoutingWorkflowService
             ->sortBy(fn ($n) => (int) ($n['data']['priority'] ?? 99))
             ->values();
 
-        $priorityChain        = $providers->map(fn ($n) => $n['data']['provider_alias'] ?? null)->filter()->values()->all();
+        $priorityChain = $providers->map(fn ($n) => $n['data']['provider_alias'] ?? null)->filter()->values()->all();
         $weightedDistribution = $providers
             ->filter(fn ($n) => (int) ($n['data']['weight'] ?? 0) > 0)
             ->mapWithKeys(fn ($n) => [$n['data']['provider_alias'] => (int) $n['data']['weight']])
@@ -408,15 +425,15 @@ final class RoutingWorkflowService
         ProviderRoutingConfiguration::query()->updateOrCreate(
             ['merchant_id' => $workflow->merchant_id, 'environment' => $workflow->environment],
             [
-                'strategy'              => ($hasWeighted || $weightedDistribution !== []) ? 'weighted' : 'priority',
-                'enabled'               => true,
-                'priority_chain'        => $priorityChain,
-                'failover_chain'        => $this->buildFailoverChain($nodes, $edges, $priorityChain),
+                'strategy' => ($hasWeighted || $weightedDistribution !== []) ? 'weighted' : 'priority',
+                'enabled' => true,
+                'priority_chain' => $priorityChain,
+                'failover_chain' => $this->buildFailoverChain($nodes, $edges, $priorityChain),
                 'weighted_distribution' => $weightedDistribution,
-                'metadata'              => [
-                    'workflow_id'      => $workflow->id,
+                'metadata' => [
+                    'workflow_id' => $workflow->id,
                     'workflow_version' => $workflow->current_version,
-                    'conditions'       => $providers->mapWithKeys(fn ($n) => [$n['data']['provider_alias'] => $n['data']['conditions'] ?? []])->all(),
+                    'conditions' => $providers->mapWithKeys(fn ($n) => [$n['data']['provider_alias'] => $n['data']['conditions'] ?? []])->all(),
                 ],
             ]
         );

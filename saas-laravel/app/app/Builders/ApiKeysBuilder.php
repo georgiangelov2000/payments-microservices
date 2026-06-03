@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Builders;
 
 use App\Models\MerchantApiKey;
@@ -29,6 +31,7 @@ class ApiKeysBuilder
             throw new \InvalidArgumentException('Merchant ID is required.');
         }
         $this->query->where('merchant_id', $merchantId);
+
         return $this;
     }
 
@@ -40,6 +43,7 @@ class ApiKeysBuilder
     public function latest(): self
     {
         $this->query->latest();
+
         return $this;
     }
 
@@ -47,5 +51,4 @@ class ApiKeysBuilder
     {
         return $this->query;
     }
-
 }

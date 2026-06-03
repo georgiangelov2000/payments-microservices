@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Models\Concerns\HasUuidV7PrimaryKey;
@@ -17,6 +19,7 @@ class Subscription extends Model
         'transaction_fee_fixed',
         'included_transactions',
     ];
+
     public $timestamps = false;
 
     public function user()

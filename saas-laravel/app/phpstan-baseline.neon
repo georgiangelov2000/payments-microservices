@@ -1,0 +1,319 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Relation ''subscription'' is not found in App\\Models\\UserSubscription model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Builders/UserSubscriptionsBuilder.php
+
+		-
+			message: '#^Parameter \$id of class App\\DTO\\ApiKeysDTO constructor expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/DTO/ApiKeysDTO.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/DTO/ApiRequestsDTO.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$order_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/DTO/ApiRequestsDTO.php
+
+		-
+			message: '#^Parameter \$id of class App\\DTO\\ApiRequestsDTO constructor expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/DTO/ApiRequestsDTO.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PaymentLog\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/DTO/PaymentLogsDTO.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PaymentLog\:\:\$event_type\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/DTO/PaymentLogsDTO.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PaymentLog\:\:\$message\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/DTO/PaymentLogsDTO.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PaymentLog\:\:\$payload\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/DTO/PaymentLogsDTO.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PaymentLog\:\:\$payment_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/DTO/PaymentLogsDTO.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PaymentLog\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/DTO/PaymentLogsDTO.php
+
+		-
+			message: '#^Parameter \$id of class App\\DTO\\PaymentLogsDTO constructor expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/DTO/PaymentLogsDTO.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/DTO/PaymentsDTO.php
+
+		-
+			message: '#^Parameter \#2 \$logs of static method App\\Support\\PaymentWorkflowFormatter\:\:summaryForPayment\(\) expects Illuminate\\Support\\Collection\<int, object\>, Illuminate\\Support\\Collection\<int, App\\Models\\PaymentLog\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/DTO/PaymentsDTO.php
+
+		-
+			message: '#^Parameter \#2 \$logs of static method App\\Support\\PaymentWorkflowFormatter\:\:timingForPayment\(\) expects Illuminate\\Support\\Collection\<int, object\>, Illuminate\\Support\\Collection\<int, App\\Models\\PaymentLog\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/DTO/PaymentsDTO.php
+
+		-
+			message: '#^Parameter \$id of class App\\DTO\\PaymentsDTO constructor expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/DTO/PaymentsDTO.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/DTO/PaymentsDTO.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\UserSubscription\:\:\$subscription\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/DTO/UserSubscriptionsDTO.php
+
+		-
+			message: '#^Parameter \$id of class App\\DTO\\UserSubscriptionsDTO constructor expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/DTO/UserSubscriptionsDTO.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/ConfirmablePasswordController.php
+
+		-
+			message: '#^Parameter \#1 \$user of class Illuminate\\Auth\\Events\\Verified constructor expects Illuminate\\Contracts\\Auth\\MustVerifyEmail, App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Auth/VerifyEmailController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$order_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$provider\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\PaymentController\:\:export\(\) never returns Illuminate\\Http\\JsonResponse so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$email_verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: '#^Parameter \#1 \$actorId of method App\\Services\\RoutingService\:\:recordAudit\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/RoutingController.php
+
+		-
+			message: '#^Parameter \#1 \$merchantId of method App\\Services\\RoutingService\:\:getAvailableProviders\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Http/Controllers/RoutingController.php
+
+		-
+			message: '#^Parameter \#1 \$merchantId of method App\\Services\\RoutingService\:\:getOrCreateConfiguration\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/RoutingController.php
+
+		-
+			message: '#^Parameter \#2 \$merchantId of method App\\Services\\RoutingService\:\:recordAudit\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Http/Controllers/RoutingController.php
+
+		-
+			message: '#^Parameter \#1 \$value of static method Illuminate\\Support\\Str\:\:lower\(\) expects string, Illuminate\\Support\\Stringable given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Requests/Auth/LoginRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\>\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/PaymentsExportJob.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Parameter \$apiKeyId of job class App\\Jobs\\SyncGatewayAccessProfileJob constructor expects string\|null in App\\Jobs\\SyncGatewayAccessProfileJob\:\:dispatch\(\), int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Providers/AppServiceProvider.php
+
+		-
+			message: '#^Parameter \$merchantId of job class App\\Jobs\\SyncGatewayAccessProfileJob constructor expects string\|null in App\\Jobs\\SyncGatewayAccessProfileJob\:\:dispatch\(\), int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Providers/AppServiceProvider.php
+
+		-
+			message: '#^Parameter \#1 \$apiKey of static method App\\DTO\\ApiKeysDTO\:\:fromModel\(\) expects App\\Models\\MerchantApiKey, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/ApiKeyService.php
+
+		-
+			message: '#^Parameter \#1 \$request of static method App\\DTO\\ApiRequestsDTO\:\:fromModel\(\) expects App\\Models\\ApiRequest, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/ApiRequestService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\UserSubscription\:\:\$subscription\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/GatewayAccessProfileService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/GatewayAccessProfileService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/GatewayAccessProfileService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/GatewayAccessProfileService.php
+
+		-
+			message: '#^Relation ''subscription'' is not found in App\\Models\\UserSubscription model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/GatewayAccessProfileService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/GatewayAccessProfileService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/PaymentService.php
+
+		-
+			message: '#^Parameter \#1 \$collection of method Illuminate\\Pagination\\AbstractPaginator\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:setCollection\(\) expects Illuminate\\Support\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>, Illuminate\\Support\\Collection\<int, array\{id\: string, price\: float, amount\: float, merchant_id\: string, order_id\: int\|string, status\: string, provider\: string, provider_status\: string\|null, \.\.\.\}\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/PaymentService.php
+
+		-
+			message: '#^Parameter \#1 \$payment of static method App\\DTO\\PaymentsDTO\:\:fromModel\(\) expects App\\Models\\Payment, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/PaymentService.php
+
+		-
+			message: '#^Parameter \#1 \$userSubscription of static method App\\DTO\\UserSubscriptionsDTO\:\:fromModel\(\) expects App\\Models\\UserSubscription, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Support/PaymentWorkflowFormatter.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Support/PaymentWorkflowFormatter.php

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models\Concerns;
 
 use Illuminate\Support\Str;
@@ -15,7 +17,7 @@ trait HasUuidV7PrimaryKey
     protected static function bootHasUuidV7PrimaryKey(): void
     {
         static::creating(function ($model): void {
-            if (!$model->getKey()) {
+            if (! $model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid7();
             }
         });

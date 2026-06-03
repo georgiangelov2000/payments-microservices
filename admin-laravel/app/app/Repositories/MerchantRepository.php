@@ -1,23 +1,33 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Contracts\Merchants\MerchantRepositoryInterface;
 use App\Enums\Role;
-use App\Models\MerchantProviderCredential;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 final class MerchantRepository implements MerchantRepositoryInterface
 {
-    public function paginate(int $perPage = 15): LengthAwarePaginator
+    public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         return User::query()
             ->where('role', Role::MERCHANT->value)
+            ->when($filters['search'] ?? null, function ($query, string $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'ilike', "%{$search}%")
+                        ->orWhere('email', 'ilike', "%{$search}%");
+                });
+            })
+            ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', \App\Enums\UserStatus::fromLabel($status)->value))
             ->with(['providerCredentials.provider:id,name,alias'])
             ->withCount(['payments', 'apiKeys', 'subscriptions'])
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function allForSelect(): Collection
@@ -42,6 +52,7 @@ final class MerchantRepository implements MerchantRepositoryInterface
     public function update(User $merchant, array $data): User
     {
         $merchant->update($data);
+
         return $merchant->fresh();
     }
 }

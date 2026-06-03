@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -8,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('provider_routing_configurations')) {
+        if (! Schema::hasTable('provider_routing_configurations')) {
             Schema::create('provider_routing_configurations', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->uuid('merchant_id')->index();
@@ -25,7 +27,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('provider_routing_rules')) {
+        if (! Schema::hasTable('provider_routing_rules')) {
             Schema::create('provider_routing_rules', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->uuid('merchant_id')->index();
@@ -41,7 +43,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('provider_health_statuses')) {
+        if (! Schema::hasTable('provider_health_statuses')) {
             Schema::create('provider_health_statuses', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->uuid('provider_id')->nullable()->index();
@@ -65,7 +67,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('payment_routing_attempts')) {
+        if (! Schema::hasTable('payment_routing_attempts')) {
             Schema::create('payment_routing_attempts', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->uuid('payment_id')->nullable()->index();
@@ -88,7 +90,7 @@ return new class extends Migration
             });
         }
 
-        if (!Schema::hasTable('routing_audit_logs')) {
+        if (! Schema::hasTable('routing_audit_logs')) {
             Schema::create('routing_audit_logs', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->uuid('actor_id')->nullable()->index();
@@ -104,16 +106,16 @@ return new class extends Migration
         }
 
         Schema::table('payments', function (Blueprint $table) {
-            if (!Schema::hasColumn('payments', 'environment')) {
+            if (! Schema::hasColumn('payments', 'environment')) {
                 $table->string('environment', 20)->default('test')->after('provider_status')->index();
             }
-            if (!Schema::hasColumn('payments', 'routing_strategy')) {
+            if (! Schema::hasColumn('payments', 'routing_strategy')) {
                 $table->string('routing_strategy', 30)->nullable()->after('environment')->index();
             }
-            if (!Schema::hasColumn('payments', 'idempotency_key')) {
+            if (! Schema::hasColumn('payments', 'idempotency_key')) {
                 $table->string('idempotency_key', 255)->nullable()->after('routing_strategy')->index();
             }
-            if (!Schema::hasColumn('payments', 'routing_metadata')) {
+            if (! Schema::hasColumn('payments', 'routing_metadata')) {
                 $table->jsonb('routing_metadata')->nullable()->after('idempotency_key');
             }
         });

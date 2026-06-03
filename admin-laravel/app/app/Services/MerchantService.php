@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Contracts\Merchants\MerchantRepositoryInterface;
@@ -15,9 +18,9 @@ final class MerchantService
         private readonly MerchantRepositoryInterface $merchantRepository,
     ) {}
 
-    public function list(): LengthAwarePaginator
+    public function list(array $filters = []): LengthAwarePaginator
     {
-        return $this->merchantRepository->paginate()->through(
+        return $this->merchantRepository->paginate(filters: $filters)->through(
             fn (User $merchant) => $this->serialize($merchant)
         );
     }
@@ -60,12 +63,28 @@ final class MerchantService
         );
     }
 
-    public function updateProviderCredential(MerchantProviderCredential $credential, string $status): MerchantProviderCredential
+    public function updateProviderCredential(MerchantProviderCredential $credential, array $data): MerchantProviderCredential
     {
-        $credential->update([
+        $status = $data['status'];
+        $updates = [
             'status' => $status,
             'last_validated_at' => in_array($status, ['active', 'validated'], true) ? now() : $credential->last_validated_at,
-        ]);
+        ];
+
+        if (array_key_exists('display_name', $data)) {
+            $updates['display_name'] = $data['display_name'] ?: null;
+        }
+
+        if (filled($data['public_key'] ?? null)) {
+            $updates['public_key'] = $data['public_key'];
+        }
+
+        if (filled($data['secret_value'] ?? null)) {
+            $updates['secret_value'] = $data['secret_value'];
+            $updates['last_rotated_at'] = now();
+        }
+
+        $credential->update($updates);
 
         return $credential->fresh();
     }
@@ -97,14 +116,14 @@ final class MerchantService
             )->all(),
             'api_keys' => ($merchant->relationLoaded('apiKeys') ? $merchant->apiKeys : collect())->map(
                 fn ($key) => [
-                    'id'              => $key->id,
-                    'name'            => $key->name,
-                    'key_prefix'      => $key->key_prefix,
-                    'environment'     => $key->environment,
-                    'status'          => $key->status?->label() ?? $key->status,
-                    'scopes'          => $key->scopes ?? [],
+                    'id' => $key->id,
+                    'name' => $key->name,
+                    'key_prefix' => $key->key_prefix,
+                    'environment' => $key->environment,
+                    'status' => $key->status?->label() ?? $key->status,
+                    'scopes' => $key->scopes ?? [],
                     'last_rotated_at' => $key->last_rotated_at?->toDateTimeString(),
-                    'revoked_at'      => $key->revoked_at?->toDateTimeString(),
+                    'revoked_at' => $key->revoked_at?->toDateTimeString(),
                 ]
             )->all(),
         ];

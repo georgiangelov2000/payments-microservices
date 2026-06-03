@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Http\Controllers;
@@ -11,8 +12,8 @@ use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Inertia\Inertia;
 use Inertia\Response;
-use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Excel as ExcelFormat;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -25,9 +26,9 @@ final class PaymentController extends Controller
     public function index(PaymentRequest $request): Response
     {
         $params = $request->safe()->toArray();
-        
+
         return Inertia::render('Payments/Index', [
-            'payments' => $this->paymentService->fetchAll($params)
+            'payments' => $this->paymentService->fetchAll($params),
         ]);
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Builders\PaymentLogsBuilder;
@@ -10,7 +12,7 @@ class PaymentLogsRepository
 {
     public function get(array $filters = [], int $perPage = 15)
     {
-        return (new PaymentLogsBuilder())
+        return (new PaymentLogsBuilder)
             ->latest()
             ->forPayment($filters['payment_id'] ?? null)
             ->whereStatus($filters['status'] ?? null)
@@ -20,9 +22,9 @@ class PaymentLogsRepository
 
     public function show(string $id, string $merchantId): ?PaymentLog
     {
-        $log = (new PaymentLogsBuilder())->whereId($id)->first();
+        $log = (new PaymentLogsBuilder)->whereId($id)->first();
 
-        if (!$log) {
+        if (! $log) {
             return null;
         }
 
@@ -43,7 +45,7 @@ class PaymentLogsRepository
             ->where('merchant_id', $merchantId)
             ->exists();
 
-        if (!$owned) {
+        if (! $owned) {
             return null;
         }
 

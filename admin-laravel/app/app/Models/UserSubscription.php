@@ -1,6 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
+
 use App\Enums\SubscriptionStatus;
 use App\Models\Concerns\HasUuidV7PrimaryKey;
 use Illuminate\Database\Eloquent\Model;

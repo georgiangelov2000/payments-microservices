@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if(!Schema::hasTable('user_subscriptions')) {
+        if (! Schema::hasTable('user_subscriptions')) {
             Schema::create('user_subscriptions', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->uuid('user_id');
@@ -19,16 +21,15 @@ return new class extends Migration
                 $table->unsignedBigInteger('current_period_transactions')->default(0);
                 $table->decimal('current_period_volume', 18, 2)->default('0.00');
                 $table->tinyInteger('status')
-                        ->default(1)
-                        ->comment('1 = active, 2 = inactive');
+                    ->default(1)
+                    ->comment('1 = active, 2 = inactive');
                 $table->timestamps();
 
-
-                $table->index("user_id", "ix_user_subscriptions_user_id");
-                $table->index("subscription_id", "ix_user_subscriptions_subscription_id");
-                $table->unique(["user_id", "subscription_id"], "uq_user_subscriptions_user_subscription");
+                $table->index('user_id', 'ix_user_subscriptions_user_id');
+                $table->index('subscription_id', 'ix_user_subscriptions_subscription_id');
+                $table->unique(['user_id', 'subscription_id'], 'uq_user_subscriptions_user_subscription');
             });
-        };
+        }
     }
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if(!Schema::hasTable('subscriptions')) {
+        if (! Schema::hasTable('subscriptions')) {
             Schema::create('subscriptions', function (Blueprint $table) {
                 $table->uuid('id')->primary();
                 $table->string('name')->unique();
@@ -22,9 +24,9 @@ return new class extends Migration
                 $table->unsignedBigInteger('included_transactions')->default(0);
                 $table->timestamps();
 
-                $table->index('name','ix_subscription_plans_name');
-                $table->index('code','ix_subscription_plans_code');
-            });   
+                $table->index('name', 'ix_subscription_plans_name');
+                $table->index('code', 'ix_subscription_plans_code');
+            });
         }
     }
 

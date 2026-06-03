@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -22,6 +24,10 @@ return new class extends Migration
 
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         if ($this->columnType('users', 'id') === 'uuid') {
             return;
         }
@@ -133,11 +139,11 @@ return new class extends Migration
             $logs->statement("DROP INDEX IF EXISTS {$index}");
         }
 
-        if (!Schema::connection('pgsql_logs')->hasColumn('payment_logs', 'uuid_id')) {
+        if (! Schema::connection('pgsql_logs')->hasColumn('payment_logs', 'uuid_id')) {
             Schema::connection('pgsql_logs')->table('payment_logs', fn ($table) => $table->uuid('uuid_id')->nullable());
         }
 
-        if (!Schema::connection('pgsql_logs')->hasColumn('payment_logs', 'payment_uuid')) {
+        if (! Schema::connection('pgsql_logs')->hasColumn('payment_logs', 'payment_uuid')) {
             Schema::connection('pgsql_logs')->table('payment_logs', fn ($table) => $table->uuid('payment_uuid')->nullable());
         }
 
@@ -177,7 +183,7 @@ return new class extends Migration
 
     private function addUuidColumn(string $table, string $column): void
     {
-        if (!Schema::hasColumn($table, $column)) {
+        if (! Schema::hasColumn($table, $column)) {
             Schema::table($table, fn ($schema) => $schema->uuid($column)->nullable());
         }
     }
@@ -250,7 +256,7 @@ return new class extends Migration
         DB::statement('CREATE INDEX ix_api_requests_user_subscription ON api_requests(user_id, subscription_id)');
     }
 
-    private function columnType(string $table, string $column, string $connection = null): ?string
+    private function columnType(string $table, string $column, ?string $connection = null): ?string
     {
         $query = DB::connection($connection)->selectOne(
             'select data_type from information_schema.columns where table_schema = current_schema() and table_name = ? and column_name = ?',

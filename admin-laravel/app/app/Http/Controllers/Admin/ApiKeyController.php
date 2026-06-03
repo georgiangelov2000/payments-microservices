@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -30,24 +33,28 @@ class ApiKeyController extends Controller
     public function store(StoreApiKeyRequest $request): RedirectResponse
     {
         $result = $this->apiKeyService->create($request->validated());
+
         return back()->with('generated_api_key', $result['plain_key']);
     }
 
     public function update(UpdateApiKeyRequest $request, MerchantApiKey $apiKey): RedirectResponse
     {
         $this->apiKeyService->update($apiKey, $request->validated());
+
         return back()->with('success', 'API key updated.');
     }
 
     public function rotate(MerchantApiKey $apiKey): RedirectResponse
     {
         $plain = $this->apiKeyService->rotate($apiKey);
+
         return back()->with('generated_api_key', $plain);
     }
 
     public function revoke(MerchantApiKey $apiKey): RedirectResponse
     {
         $this->apiKeyService->revoke($apiKey);
+
         return back()->with('success', 'API key revoked.');
     }
 }
