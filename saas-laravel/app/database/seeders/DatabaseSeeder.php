@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Provider;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -21,5 +22,20 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        foreach ($this->providers() as $provider) {
+            Provider::query()->updateOrCreate(
+                ['alias' => $provider['alias']],
+                $provider
+            );
+        }
+    }
+
+    private function providers(): array
+    {
+        return [
+            ['name' => 'Stripe', 'alias' => 'stripe', 'url' => 'https://stripe.com'],
+            ['name' => 'PayPal', 'alias' => 'paypal', 'url' => 'https://paypal.com'],
+        ];
     }
 }

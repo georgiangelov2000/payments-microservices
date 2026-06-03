@@ -4,21 +4,30 @@ from decimal import Decimal, ROUND_HALF_UP
 import httpx
 from fastapi import HTTPException
 
-from app.providers.base import CheckoutRequest, CheckoutSession
+from app.providers.base import CheckoutRequest, CheckoutSession, ProviderCredentials
 
 
 class StripeConnector:
-    def __init__(self):
-        self.secret_key = os.getenv("STRIPE_SECRET_KEY")
+    alias = "stripe"
+
+    def __init__(self, credentials: ProviderCredentials | None = None):
+        self._credentials = credentials
         self.return_base_url = os.getenv(
             "PAYMENT_RETURN_BASE_URL",
             "http://localhost:8080/api/v1/payments",
         ).rstrip("/")
 
-    async def create_checkout(self, request: CheckoutRequest) -> CheckoutSession:
-        if not self.secret_key:
-            raise HTTPException(500, "Stripe secret key is not configured")
+    def _secret_key(self) -> str:
+        if self._credentials and self._credentials.secret_key:
+            return self._credentials.secret_key
+        raise HTTPException(
+            status_code=500,
+            detail="Stripe credentials are not configured for this merchant. "
+                   "Please connect your Stripe account in the dashboard.",
+        )
 
+    async def create_checkout(self, request: CheckoutRequest) -> CheckoutSession:
+        secret_key = self._secret_key()
         unit_amount = int(
             (Decimal(request.amount) * Decimal("100")).quantize(
                 Decimal("1"),
@@ -52,7 +61,8 @@ class StripeConnector:
             response = await client.post(
                 "https://api.stripe.com/v1/checkout/sessions",
                 data=data,
-                auth=(self.secret_key, ""),
+                headers={"Idempotency-Key": request.idempotency_key},
+                auth=(secret_key, ""),
             )
 
         if response.status_code >= 400:
@@ -69,13 +79,12 @@ class StripeConnector:
         )
 
     async def retrieve_checkout_session(self, session_id: str) -> dict:
-        if not self.secret_key:
-            raise HTTPException(500, "Stripe secret key is not configured")
+        secret_key = self._secret_key()
 
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(
                 f"https://api.stripe.com/v1/checkout/sessions/{session_id}",
-                auth=(self.secret_key, ""),
+                auth=(secret_key, ""),
             )
 
         if response.status_code >= 400:
@@ -85,4 +94,3 @@ class StripeConnector:
             })
 
         return response.json()
-

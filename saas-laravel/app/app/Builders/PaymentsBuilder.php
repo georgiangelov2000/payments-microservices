@@ -41,7 +41,7 @@ class PaymentsBuilder
         return $this;
     }
 
-    public function wheredDateRange(?string $from, ?string $to): self
+    public function whereDateRange(?string $from, ?string $to): self
     {
         if ($from) {
             $this->query->whereDate('created_at', '>=', $from);

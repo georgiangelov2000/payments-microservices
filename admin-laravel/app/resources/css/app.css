@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .table-th { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 bg-slate-50; }
+  .table-td { @apply px-4 py-3 text-sm text-slate-700; }
+  .table-tr { @apply border-b border-slate-100 hover:bg-slate-50/50 transition-colors; }
+  .form-section { @apply space-y-5; }
+  .form-row { @apply grid gap-4 sm:grid-cols-2; }
+  .form-row-3 { @apply grid gap-4 sm:grid-cols-3; }
+}

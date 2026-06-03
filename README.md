@@ -49,13 +49,50 @@ Content-Type: application/json
 
 Use `"paypal"` for PayPal.
 
-## Useful URLs
+## Local System Links
 
-- SaaS app: `http://localhost`
-- SaaS onboarding: `http://localhost/onboarding`
-- TechShop demo: `http://localhost:3001`
-- Payment API: `http://localhost:8080/api/v1/payments`
-- RabbitMQ management: `http://localhost:15672`
+| System | URL | Notes |
+| --- | --- | --- |
+| Public marketing site | `http://localhost:8082` | Static landing/login/register frontend. |
+| SaaS merchant app | `http://localhost` | Merchant dashboard, payments, API keys, subscriptions, routing config. |
+| SaaS merchant onboarding | `http://localhost/onboarding` | Merchant setup flow. |
+| SaaS routing management | `http://localhost/routing` | Merchant payment routing rules, priority, failover, weights, and health. |
+| Admin panel | `http://localhost:8083/login` | Separate Laravel admin app in its own container. |
+| Admin routing dashboard | `http://localhost:8083/routing` | Global routing health, attempts, configs, and audit logs. |
+| TechShop merchant demo | `http://localhost:3001` | Demo storefront using the payment gateway. |
+| Public payment API | `http://localhost:8080/api/v1/payments` | Gateway endpoint for creating payments. |
+| Payment service health | `http://localhost:8080/api/v1/payments/ping` | Public gateway health path for payment service reachability. |
+| RabbitMQ management | `http://localhost:15672` | Local RabbitMQ console. |
+
+## Default Local Credentials
+
+### Admin Panel
+
+Use these seeded local credentials for the separate admin app:
+
+```text
+URL:      http://localhost:8083/login
+Email:    admin@example.com
+Password: admin-password
+```
+
+These values are defined in `admin-laravel/app/.env.example` and can be changed through:
+
+```text
+ADMIN_EMAIL
+ADMIN_PASSWORD
+ADMIN_NAME
+```
+
+### RabbitMQ
+
+RabbitMQ uses the default local management credentials unless changed:
+
+```text
+URL:      http://localhost:15672
+Username: guest
+Password: guest
+```
 
 ## Rebuild
 

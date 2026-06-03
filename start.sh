@@ -86,5 +86,19 @@ else
 fi
 
 echo ""
+echo "================ ADMIN LARAVEL ================"
+
+if docker compose ps --services --status running | grep -q "^admin-laravel$"; then
+  docker compose exec admin-laravel composer install --no-interaction
+  docker compose exec admin-laravel php artisan key:generate --no-interaction
+  docker compose exec admin-laravel php artisan db:seed --no-interaction
+  docker compose exec admin-laravel npm install
+  docker compose exec admin-laravel npm run build
+  docker compose exec admin-laravel php artisan optimize:clear
+else
+  echo "Service admin-laravel not running, skipping..."
+fi
+
+echo ""
 echo "DONE: clean rebuild, reference providers/plans seeded."
-echo "Next: register in SaaS, generate a gateway API key, and paste it into merchant-demo/.env if you want the TechShop to use it."
+echo "Next: SaaS runs on http://localhost and admin runs on http://localhost:8083."

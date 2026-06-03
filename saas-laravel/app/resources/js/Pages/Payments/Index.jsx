@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react'
 import toast from 'react-hot-toast'
 import React from 'react'
+import { Download, SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp, CreditCard } from 'lucide-react'
 
 const formatDateTime = (value) => {
   if (!value) return 'Not available'
@@ -120,14 +121,15 @@ export default function Payments({ payments, filters = {} }) {
         <h1 className="text-2xl font-semibold">Payments</h1>
 
         {/* EXPORT */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {['csv', 'xlsx', 'json'].map(f => (
             <button
               key={f}
               onClick={() => exportPayments(f)}
-              className="rounded bg-indigo-600 text-white px-4 py-2 text-sm hover:bg-indigo-700"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 text-white px-3 py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
-              Export {f.toUpperCase()}
+              <Download size={14} strokeWidth={2} />
+              {f.toUpperCase()}
             </button>
           ))}
         </div>
@@ -174,15 +176,17 @@ export default function Payments({ payments, filters = {} }) {
             <button
               type="submit"
               disabled={processing}
-              className="w-full rounded bg-indigo-600 text-white py-2 text-sm hover:bg-indigo-700"
+              className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
+              <SlidersHorizontal size={14} strokeWidth={2} />
               Filter
             </button>
             <button
               type="button"
               onClick={resetFilters}
-              className="w-full rounded border py-2 text-sm hover:bg-gray-100"
+              className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
             >
+              <RotateCcw size={14} strokeWidth={2} />
               Reset
             </button>
           </div>
@@ -208,8 +212,11 @@ export default function Payments({ payments, filters = {} }) {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-10 text-center text-gray-500">
-                    No payments found.
+                  <td colSpan={9} className="px-6 py-14 text-center">
+                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                      <CreditCard size={32} strokeWidth={1.25} />
+                      <span className="text-sm font-medium">No payments found</span>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -248,9 +255,12 @@ export default function Payments({ payments, filters = {} }) {
                       <td className="px-4 py-3">
                         <button
                           onClick={() => toggleWorkflow(payment.id)}
-                          className="text-indigo-600 text-xs hover:underline"
+                          className="inline-flex items-center gap-1 text-indigo-600 text-xs font-medium hover:text-indigo-800 transition-colors"
                         >
-                          {openWorkflow === payment.id ? 'Hide Provider Workflow' : 'View Provider Workflow'}
+                          {openWorkflow === payment.id
+                            ? <><ChevronUp size={13} strokeWidth={2} />Hide Workflow</>
+                            : <><ChevronDown size={13} strokeWidth={2} />View Workflow</>
+                          }
                         </button>
                       </td>
                     </tr>

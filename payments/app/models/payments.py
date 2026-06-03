@@ -1,10 +1,12 @@
 from sqlalchemy import (
     Column,
     BigInteger,
+    Boolean,
     SmallInteger,
     String,
     DateTime,
     Numeric,
+    Text,
     UniqueConstraint,
     Index,
     func,
@@ -149,6 +151,10 @@ class Payment(PaymentsBase):
     provider_reference = Column(String(255))
     provider_checkout_url = Column(String(2048))
     provider_status = Column(String(100))
+    environment = Column(String(20), nullable=False, server_default="test")
+    routing_strategy = Column(String(30))
+    idempotency_key = Column(String(255))
+    routing_metadata = Column(String)
 
     status = Column(SmallInteger, nullable=False, server_default="1")  # 1=pending
 
@@ -166,6 +172,124 @@ class Payment(PaymentsBase):
         Index("ix_payments_status", "status"),
         Index("ix_payments_merchant_status", "merchant_id", "status"),
         Index("ix_payments_created_at", "created_at"),
+        Index("ix_payments_environment", "environment"),
+        Index("ix_payments_routing_strategy", "routing_strategy"),
+        Index("ix_payments_idempotency_key", "idempotency_key"),
+    )
+
+
+class ProviderRoutingConfiguration(PaymentsBase):
+    __tablename__ = "provider_routing_configurations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    merchant_id = Column(UUID(as_uuid=True), nullable=False)
+    environment = Column(String(20), nullable=False, server_default="test")
+    strategy = Column(String(30), nullable=False, server_default="priority")
+    enabled = Column(Boolean, nullable=False, server_default="true")
+    priority_chain = Column(Text, nullable=False, server_default="[]")
+    failover_chain = Column(Text, nullable=False, server_default="[]")
+    weighted_distribution = Column(Text, nullable=False, server_default="{}")
+    metadata_json = Column("metadata", Text, nullable=False, server_default="{}")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("merchant_id", "environment", name="provider_routing_config_unique"),
+        Index("ix_provider_routing_configurations_merchant_id", "merchant_id"),
+        Index("ix_provider_routing_configurations_environment", "environment"),
+        Index("ix_provider_routing_configurations_strategy", "strategy"),
+        Index("ix_provider_routing_configurations_enabled", "enabled"),
+    )
+
+
+class ProviderRoutingRule(PaymentsBase):
+    __tablename__ = "provider_routing_rules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    merchant_id = Column(UUID(as_uuid=True), nullable=False)
+    name = Column(String(255), nullable=False)
+    environment = Column(String(20), nullable=False, server_default="test")
+    provider_alias = Column(String(255), nullable=False)
+    priority = Column(SmallInteger, nullable=False, server_default="100")
+    enabled = Column(Boolean, nullable=False, server_default="true")
+    conditions = Column(Text, nullable=False, server_default="{}")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        Index("ix_provider_routing_rules_merchant_id", "merchant_id"),
+        Index("ix_provider_routing_rules_environment", "environment"),
+        Index("ix_provider_routing_rules_provider_alias", "provider_alias"),
+        Index("ix_provider_routing_rules_priority", "priority"),
+        Index("ix_provider_routing_rules_enabled", "enabled"),
+        Index("provider_routing_rules_lookup", "merchant_id", "environment", "enabled", "priority"),
+    )
+
+
+class ProviderHealthStatus(PaymentsBase):
+    __tablename__ = "provider_health_statuses"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    provider_id = Column(UUID(as_uuid=True))
+    merchant_id = Column(UUID(as_uuid=True))
+    provider_alias = Column(String(255), nullable=False)
+    environment = Column(String(20), nullable=False, server_default="test")
+    status = Column(String(30), nullable=False, server_default="healthy")
+    consecutive_failures = Column(BigInteger, nullable=False, server_default="0")
+    timeout_count = Column(BigInteger, nullable=False, server_default="0")
+    failure_rate = Column(Numeric(5, 2), nullable=False, server_default="0")
+    disabled_until = Column(DateTime(timezone=True))
+    last_success_at = Column(DateTime(timezone=True))
+    last_failure_at = Column(DateTime(timezone=True))
+    last_checked_at = Column(DateTime(timezone=True))
+    last_error = Column(Text)
+    metadata_json = Column("metadata", Text, nullable=False, server_default="{}")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("merchant_id", "provider_alias", "environment", name="provider_health_scope_unique"),
+        Index("ix_provider_health_statuses_provider_id", "provider_id"),
+        Index("ix_provider_health_statuses_merchant_id", "merchant_id"),
+        Index("ix_provider_health_statuses_provider_alias", "provider_alias"),
+        Index("ix_provider_health_statuses_environment", "environment"),
+        Index("ix_provider_health_statuses_status", "status"),
+        Index("ix_provider_health_statuses_disabled_until", "disabled_until"),
+        Index("provider_health_status_lookup", "provider_alias", "environment", "status"),
+    )
+
+
+class PaymentRoutingAttempt(PaymentsBase):
+    __tablename__ = "payment_routing_attempts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    payment_id = Column(UUID(as_uuid=True))
+    merchant_id = Column(UUID(as_uuid=True), nullable=False)
+    provider_id = Column(UUID(as_uuid=True))
+    provider_alias = Column(String(255), nullable=False)
+    environment = Column(String(20), nullable=False, server_default="test")
+    strategy = Column(String(30), nullable=False)
+    attempt_number = Column(SmallInteger, nullable=False, server_default="1")
+    status = Column(String(30), nullable=False)
+    idempotency_key = Column(String(255))
+    latency_ms = Column(BigInteger)
+    error_code = Column(Text)
+    error_message = Column(Text)
+    routing_snapshot = Column(Text, nullable=False, server_default="{}")
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    __table_args__ = (
+        Index("ix_payment_routing_attempts_payment_id", "payment_id"),
+        Index("ix_payment_routing_attempts_merchant_id", "merchant_id"),
+        Index("ix_payment_routing_attempts_provider_id", "provider_id"),
+        Index("ix_payment_routing_attempts_provider_alias", "provider_alias"),
+        Index("ix_payment_routing_attempts_environment", "environment"),
+        Index("ix_payment_routing_attempts_strategy", "strategy"),
+        Index("ix_payment_routing_attempts_status", "status"),
+        Index("ix_payment_routing_attempts_idempotency_key", "idempotency_key"),
+        Index("payment_routing_attempts_merchant_time", "merchant_id", "environment", "created_at"),
+        Index("payment_routing_attempts_provider_status", "provider_alias", "status", "created_at"),
     )
 
 

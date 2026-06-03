@@ -1,6 +1,6 @@
-import { useForm, Head, Link, usePage } from '@inertiajs/react'
+import { useForm, Head, Link, usePage, router } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
-import { router } from '@inertiajs/react'
+import { Plus, SlidersHorizontal, RotateCcw, Key } from 'lucide-react'
 
 export default function ApiKeys({ keys, filters = {} }) {
   const { flash } = usePage().props
@@ -40,9 +40,10 @@ export default function ApiKeys({ keys, filters = {} }) {
           <button
             type="button"
             onClick={generateKey}
-            className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shadow-sm"
           >
-            Generate API key
+            <Plus size={15} strokeWidth={2.5} />
+            Generate API Key
           </button>
         </div>
 
@@ -82,16 +83,18 @@ export default function ApiKeys({ keys, filters = {} }) {
             <button
               type="submit"
               disabled={processing}
-              className="w-full rounded bg-indigo-600 text-white py-2 text-sm hover:bg-indigo-700"
+              className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
+              <SlidersHorizontal size={14} strokeWidth={2} />
               Filter
             </button>
 
             <button
               type="button"
               onClick={resetFilters}
-              className="w-full rounded border py-2 text-sm hover:bg-gray-100"
+              className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
             >
+              <RotateCcw size={14} strokeWidth={2} />
               Reset
             </button>
           </div>
@@ -124,8 +127,11 @@ export default function ApiKeys({ keys, filters = {} }) {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan="2" className="px-4 py-6 text-center text-gray-500">
-                    No API keys found.
+                  <td colSpan="2" className="px-4 py-14 text-center">
+                    <div className="flex flex-col items-center gap-2 text-slate-400">
+                      <Key size={32} strokeWidth={1.25} />
+                      <span className="text-sm font-medium">No API keys found</span>
+                    </div>
                   </td>
                 </tr>
               ) : (

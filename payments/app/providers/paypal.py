@@ -4,24 +4,50 @@ from decimal import Decimal
 import httpx
 from fastapi import HTTPException
 
-from app.providers.base import CheckoutRequest, CheckoutSession
+from app.providers.base import CheckoutRequest, CheckoutSession, ProviderCredentials
 
 
 class PayPalConnector:
-    def __init__(self):
-        self.client_id = os.getenv("PAYPAL_CLIENT_ID")
-        self.client_secret = os.getenv("PAYPAL_CLIENT_SECRET")
-        self.base_url = os.getenv(
-            "PAYPAL_API_BASE_URL",
-            "https://api-m.sandbox.paypal.com",
-        ).rstrip("/")
+    alias = "paypal"
+
+    _DEFAULT_SANDBOX_URL = "https://api-m.sandbox.paypal.com"
+    _DEFAULT_LIVE_URL = "https://api-m.paypal.com"
+
+    def __init__(self, credentials: ProviderCredentials | None = None):
+        self._credentials = credentials
         self.return_base_url = os.getenv(
             "PAYMENT_RETURN_BASE_URL",
             "http://localhost:8080/api/v1/payments",
         ).rstrip("/")
 
+    def _client_id(self) -> str:
+        if self._credentials and self._credentials.client_id:
+            return self._credentials.client_id
+        raise HTTPException(
+            status_code=500,
+            detail="PayPal credentials are not configured for this merchant. "
+                   "Please connect your PayPal account in the dashboard.",
+        )
+
+    def _client_secret(self) -> str:
+        if self._credentials and self._credentials.client_secret:
+            return self._credentials.client_secret
+        raise HTTPException(
+            status_code=500,
+            detail="PayPal credentials are not configured for this merchant. "
+                   "Please connect your PayPal account in the dashboard.",
+        )
+
+    def _base_url(self, environment: str) -> str:
+        if self._credentials and self._credentials.base_url:
+            return self._credentials.base_url.rstrip("/")
+        if environment == "live":
+            return self._DEFAULT_LIVE_URL
+        return self._DEFAULT_SANDBOX_URL
+
     async def create_checkout(self, request: CheckoutRequest) -> CheckoutSession:
-        access_token = await self._access_token()
+        base_url = self._base_url(request.environment)
+        access_token = await self._access_token(base_url)
         value = Decimal(request.amount).quantize(Decimal("0.01"))
         return_url = (
             f"{self.return_base_url}/provider-return/paypal"
@@ -55,11 +81,12 @@ class PayPalConnector:
 
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(
-                f"{self.base_url}/v2/checkout/orders",
+                f"{base_url}/v2/checkout/orders",
                 headers={
                     "Authorization": f"Bearer {access_token}",
                     "Content-Type": "application/json",
                     "Prefer": "return=representation",
+                    "PayPal-Request-Id": request.idempotency_key,
                 },
                 json=payload,
             )
@@ -89,12 +116,13 @@ class PayPalConnector:
             raw_status=body.get("status", "CREATED"),
         )
 
-    async def capture_order(self, order_id: str) -> dict:
-        access_token = await self._access_token()
+    async def capture_order(self, order_id: str, environment: str = "test") -> dict:
+        base_url = self._base_url(environment)
+        access_token = await self._access_token(base_url)
 
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(
-                f"{self.base_url}/v2/checkout/orders/{order_id}/capture",
+                f"{base_url}/v2/checkout/orders/{order_id}/capture",
                 headers={
                     "Authorization": f"Bearer {access_token}",
                     "Content-Type": "application/json",
@@ -110,15 +138,15 @@ class PayPalConnector:
 
         return response.json()
 
-    async def _access_token(self) -> str:
-        if not self.client_id or not self.client_secret:
-            raise HTTPException(500, "PayPal client ID or secret is not configured")
+    async def _access_token(self, base_url: str) -> str:
+        client_id = self._client_id()
+        client_secret = self._client_secret()
 
         async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.post(
-                f"{self.base_url}/v1/oauth2/token",
+                f"{base_url}/v1/oauth2/token",
                 data={"grant_type": "client_credentials"},
-                auth=(self.client_id, self.client_secret),
+                auth=(client_id, client_secret),
             )
 
         if response.status_code >= 400:
@@ -128,4 +156,3 @@ class PayPalConnector:
             })
 
         return response.json()["access_token"]
-

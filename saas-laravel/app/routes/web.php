@@ -8,6 +8,7 @@ use App\Http\Controllers\ApiRequestController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\ContactFormController;
+use App\Http\Controllers\RoutingController;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +68,13 @@ Route::middleware('auth')->group(function () {
     /* API Requests */
     Route::prefix('api-requests')->name('api-requests.')->group(function () {
         Route::get('/', [ApiRequestController::class, 'index'])->name('index');
+    });
+
+    Route::prefix('routing')->name('routing.')->group(function () {
+        Route::get('/', [RoutingController::class, 'index'])->name('index');
+        Route::put('/', [RoutingController::class, 'update'])->name('update');
+        Route::post('/rules', [RoutingController::class, 'storeRule'])->name('rules.store');
+        Route::delete('/rules/{rule}', [RoutingController::class, 'destroyRule'])->name('rules.destroy');
     });
 
 });

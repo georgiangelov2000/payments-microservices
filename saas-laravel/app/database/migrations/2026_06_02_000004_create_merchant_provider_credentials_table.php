@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('merchant_provider_credentials')) {
+            return;
+        }
+
         Schema::create('merchant_provider_credentials', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('merchant_id')->index();

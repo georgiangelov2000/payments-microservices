@@ -1,0 +1,20 @@
+# Local environment
+app/.env
+app/.env.testing
+
+# Dependencies and generated assets
+app/vendor/
+app/node_modules/
+app/public/build/
+app/public/hot
+
+# Runtime files
+app/storage/logs/*.log
+app/storage/framework/sessions/*
+app/storage/framework/cache/*
+app/storage/framework/views/*
+app/bootstrap/cache/*.php
+
+# Keep directory placeholders
+!app/**/.gitignore
+!app/.env.example

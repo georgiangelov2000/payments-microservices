@@ -27,7 +27,7 @@ final readonly class PaymentRepository implements PaymentRepositoryInterface
             ->forMerchant($merchantId)
             ->whereOrder($orderId)
             ->whereStatus($status)
-            ->wheredDateRange($from, $to)
+            ->whereDateRange($from, $to)
             ->getQuery();
     }
 

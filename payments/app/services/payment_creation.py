@@ -1,0 +1,490 @@
+import json
+import time
+from datetime import datetime
+from uuid import UUID
+
+import httpx
+from fastapi import HTTPException
+from sqlalchemy import select
+
+from app.db.context import logs_session, payments_session
+from app.enums import LogStatus, PaymentLogEvent, PaymentStatus, SubscriptionStatus
+from app.models.logs import PaymentLog
+from app.models.payments import (
+    ApiRequest,
+    Payment as PaymentModel,
+    PaymentRoutingAttempt,
+    UserSubscription,
+)
+from app.providers.base import CheckoutRequest
+from app.providers.credential_resolver import CredentialResolver
+from app.providers.registry import provider_connector
+from app.routing import PaymentRoutingEngine
+from app.schemas.payments import CreatePaymentRequest
+
+
+class PaymentCreationService:
+    def __init__(self):
+        self.routing_engine = PaymentRoutingEngine()
+        self.credential_resolver = CredentialResolver()
+
+    async def create(self, request: CreatePaymentRequest, merchant_id: str) -> dict:
+        merchant_uuid = UUID(str(merchant_id))
+
+        with payments_session() as payments_db, logs_session() as logs_db:
+            # --------------------------------------------------
+            # Idempotency check
+            # --------------------------------------------------
+            existing = payments_db.execute(
+                select(PaymentModel.id, PaymentModel.status, PaymentModel.provider_checkout_url)
+                .where(PaymentModel.order_id == request.order_id)
+            ).first()
+
+            if existing:
+                payment_id, status, checkout_url = existing
+                return {
+                    "message": "payment already exists",
+                    "payment_id": str(payment_id),
+                    "status": PaymentStatus(status).name,
+                    "payment_url": checkout_url,
+                }
+
+            routing_plan = await self.routing_engine.plan(payments_db, merchant_uuid, request)
+
+            if not routing_plan.candidates:
+                raise HTTPException(
+                    status_code=503,
+                    detail={
+                        "message": "No healthy payment provider is available for this transaction",
+                        "routing": routing_plan.snapshot,
+                    },
+                )
+
+            primary_provider = routing_plan.candidates[0]
+            idempotency_key = (
+                request.idempotency_key
+                or f"{merchant_uuid}:{request.event_id}:{request.order_id}"
+            )
+
+            # --------------------------------------------------
+            # Load active merchant subscription
+            # --------------------------------------------------
+            sub_row = payments_db.execute(
+                select(UserSubscription.id)
+                .where(
+                    UserSubscription.user_id == merchant_uuid,
+                    UserSubscription.subscription_id == request.subscription_id,
+                    UserSubscription.status == SubscriptionStatus.SUBSCRIPTION_ACTIVE.value,
+                )
+            ).first()
+
+            if not sub_row:
+                raise HTTPException(400, "Active subscription not found")
+
+            subscription_id = sub_row[0]
+
+            # --------------------------------------------------
+            # Create payment record
+            # --------------------------------------------------
+            payment = PaymentModel(
+                order_id=request.order_id,
+                amount=request.amount,
+                price=request.price,
+                provider_id=primary_provider.id,
+                merchant_id=merchant_uuid,
+                status=PaymentStatus.PAYMENT_PENDING.value,
+                environment=routing_plan.environment,
+                routing_strategy=routing_plan.strategy,
+                idempotency_key=idempotency_key,
+                routing_metadata=json.dumps({
+                    "matched_rule": routing_plan.matched_rule,
+                    "candidate_order": [c.alias for c in routing_plan.candidates],
+                    "snapshot": routing_plan.snapshot,
+                }),
+            )
+
+            payments_db.add(payment)
+            payments_db.flush()
+            payment_id = payment.id
+
+            # --------------------------------------------------
+            # LOG: payment created
+            # --------------------------------------------------
+            logs_db.add(
+                PaymentLog(
+                    payment_id=payment_id,
+                    event_type=PaymentLogEvent.EVENT_PAYMENT_CREATED.value,
+                    status=LogStatus.LOG_SUCCESS.value,
+                    message=(
+                        f"[{datetime.utcnow().isoformat()}] Payment created with "
+                        f"{routing_plan.strategy} routing"
+                    ),
+                    payload=json.dumps(routing_plan.snapshot),
+                )
+            )
+
+            # --------------------------------------------------
+            # Track billing-period usage
+            # --------------------------------------------------
+            payments_db.execute(
+                UserSubscription.__table__.update()
+                .where(UserSubscription.id == subscription_id)
+                .values(
+                    current_period_transactions=(
+                        UserSubscription.current_period_transactions + 1
+                    ),
+                    current_period_volume=(
+                        UserSubscription.current_period_volume + request.price
+                    ),
+                )
+            )
+
+            # --------------------------------------------------
+            # API request audit
+            # --------------------------------------------------
+            payments_db.add(
+                ApiRequest(
+                    event_id=request.event_id,
+                    user_id=merchant_uuid,
+                    subscription_id=request.subscription_id,
+                    payment_id=payment_id,
+                    amount=request.amount,
+                    source="payments:create",
+                )
+            )
+
+            # --------------------------------------------------
+            # Atomic commit
+            # --------------------------------------------------
+            payments_db.commit()
+            logs_db.commit()
+
+        # --------------------------------------------------
+        # Provider failover loop (runs outside the initial session)
+        # --------------------------------------------------
+        checkout = None
+        provider_alias = None
+        provider_id = None
+
+        for attempt_number, candidate in enumerate(routing_plan.candidates, start=1):
+            provider_alias = candidate.alias
+            provider_id = candidate.id
+            attempt_idempotency_key = f"{idempotency_key}:{provider_alias}"
+            started = time.monotonic()
+
+            # --------------------------------------------------
+            # Circuit breaker: re-check provider health before calling
+            # --------------------------------------------------
+            with payments_session() as payments_db:
+                is_healthy = await self.routing_engine.health.is_available(
+                    payments_db, merchant_uuid, routing_plan.environment, provider_alias
+                )
+
+            if not is_healthy:
+                await self._record_routing_attempt(
+                    payment_id=payment_id,
+                    merchant_id=merchant_uuid,
+                    provider_id=provider_id,
+                    provider_alias=provider_alias,
+                    environment=routing_plan.environment,
+                    strategy=routing_plan.strategy,
+                    attempt_number=attempt_number,
+                    status="skipped",
+                    idempotency_key=attempt_idempotency_key,
+                    latency_ms=0,
+                    error_code="circuit_open",
+                    error_message="Provider is quarantined by health monitor",
+                    routing_snapshot=routing_plan.snapshot,
+                )
+                continue
+
+            # --------------------------------------------------
+            # Resolve per-merchant credentials for this provider
+            # --------------------------------------------------
+            try:
+                with payments_session() as payments_db:
+                    credentials = self.credential_resolver.resolve(
+                        payments_db, merchant_uuid, provider_alias, routing_plan.environment
+                    )
+            except HTTPException as exc:
+                await self._record_routing_attempt(
+                    payment_id=payment_id,
+                    merchant_id=merchant_uuid,
+                    provider_id=provider_id,
+                    provider_alias=provider_alias,
+                    environment=routing_plan.environment,
+                    strategy=routing_plan.strategy,
+                    attempt_number=attempt_number,
+                    status="skipped",
+                    idempotency_key=attempt_idempotency_key,
+                    latency_ms=0,
+                    error_code="missing_credentials",
+                    error_message=str(exc.detail),
+                    routing_snapshot=routing_plan.snapshot,
+                )
+                continue
+
+            self._record_provider_request_log(
+                payment_id=payment_id,
+                provider_alias=provider_alias,
+                attempt_number=attempt_number,
+                routing_snapshot=routing_plan.snapshot,
+            )
+
+            with payments_session() as payments_db:
+                payments_db.execute(
+                    PaymentModel.__table__.update()
+                    .where(PaymentModel.id == payment_id)
+                    .values(provider_id=provider_id)
+                )
+                payments_db.commit()
+
+            try:
+                checkout = await provider_connector(provider_alias, credentials).create_checkout(
+                    CheckoutRequest(
+                        payment_id=str(payment_id),
+                        merchant_id=str(merchant_uuid),
+                        order_id=request.order_id,
+                        amount=request.price,
+                        currency=request.currency,
+                        description=f"Order #{request.order_id}",
+                        idempotency_key=attempt_idempotency_key,
+                        environment=routing_plan.environment,
+                        credentials=credentials,
+                    )
+                )
+            except HTTPException as exc:
+                await self._record_routing_attempt(
+                    payment_id=payment_id,
+                    merchant_id=merchant_uuid,
+                    provider_id=provider_id,
+                    provider_alias=provider_alias,
+                    environment=routing_plan.environment,
+                    strategy=routing_plan.strategy,
+                    attempt_number=attempt_number,
+                    status="failed",
+                    idempotency_key=attempt_idempotency_key,
+                    latency_ms=int((time.monotonic() - started) * 1000),
+                    error_code=str(exc.status_code),
+                    error_message=str(exc.detail),
+                    routing_snapshot=routing_plan.snapshot,
+                )
+                await self._record_provider_failure(
+                    merchant_uuid,
+                    provider_id,
+                    routing_plan.environment,
+                    provider_alias,
+                    str(exc.detail),
+                    timed_out=False,
+                )
+                continue
+            except httpx.TimeoutException as exc:
+                await self._record_routing_attempt(
+                    payment_id, merchant_uuid, provider_id, provider_alias,
+                    routing_plan.environment, routing_plan.strategy, attempt_number,
+                    "timeout", attempt_idempotency_key,
+                    int((time.monotonic() - started) * 1000),
+                    "timeout", str(exc), routing_plan.snapshot,
+                )
+                await self._record_provider_failure(
+                    merchant_uuid, provider_id, routing_plan.environment,
+                    provider_alias, str(exc), timed_out=True,
+                )
+                continue
+            except httpx.RequestError as exc:
+                await self._record_routing_attempt(
+                    payment_id, merchant_uuid, provider_id, provider_alias,
+                    routing_plan.environment, routing_plan.strategy, attempt_number,
+                    "failed", attempt_idempotency_key,
+                    int((time.monotonic() - started) * 1000),
+                    "network_error", str(exc), routing_plan.snapshot,
+                )
+                await self._record_provider_failure(
+                    merchant_uuid, provider_id, routing_plan.environment,
+                    provider_alias, str(exc), timed_out=False,
+                )
+                continue
+
+            await self._record_routing_attempt(
+                payment_id=payment_id,
+                merchant_id=merchant_uuid,
+                provider_id=provider_id,
+                provider_alias=provider_alias,
+                environment=routing_plan.environment,
+                strategy=routing_plan.strategy,
+                attempt_number=attempt_number,
+                status="succeeded",
+                idempotency_key=attempt_idempotency_key,
+                latency_ms=int((time.monotonic() - started) * 1000),
+                error_code=None,
+                error_message=None,
+                routing_snapshot=routing_plan.snapshot,
+            )
+            await self._record_provider_success(
+                merchant_uuid, provider_id, routing_plan.environment, provider_alias
+            )
+            break
+
+        if checkout is None or provider_alias is None:
+            await self._mark_failed_if_pending(payment_id)
+            raise HTTPException(
+                status_code=502,
+                detail={
+                    "message": "All routed payment providers failed or had no credentials configured",
+                    "attempted_providers": [c.alias for c in routing_plan.candidates],
+                },
+            )
+
+        now = datetime.utcnow().isoformat()
+
+        with payments_session() as payments_db:
+            payments_db.execute(
+                PaymentModel.__table__.update()
+                .where(PaymentModel.id == payment_id)
+                .values(
+                    provider_reference=checkout.provider_reference,
+                    provider_checkout_url=checkout.payment_url,
+                    provider_status=checkout.raw_status,
+                    provider_id=provider_id,
+                )
+            )
+            payments_db.commit()
+
+        with logs_session() as logs_db:
+            logs_db.execute(
+                PaymentLog.__table__.update()
+                .where(
+                    PaymentLog.payment_id == payment_id,
+                    PaymentLog.event_type == PaymentLogEvent.EVENT_PROVIDER_REQUEST_SENT.value,
+                )
+                .values(
+                    message=(
+                        PaymentLog.message
+                        + "\n"
+                        + f"[{now}] Payment is pending and waiting for customer action."
+                    ),
+                    payload=json.dumps({
+                        "provider": provider_alias,
+                        "provider_reference": checkout.provider_reference,
+                        "payment_url": checkout.payment_url,
+                        "routing_strategy": routing_plan.strategy,
+                    }),
+                )
+            )
+            logs_db.commit()
+
+        return {
+            "payment_id": str(payment_id),
+            "status": PaymentStatus.PAYMENT_PENDING.name,
+            "provider": provider_alias,
+            "routing_strategy": routing_plan.strategy,
+            "routing_candidates": [c.alias for c in routing_plan.candidates],
+            "provider_reference": checkout.provider_reference,
+            "payment_url": checkout.payment_url,
+        }
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _record_provider_request_log(
+        self,
+        payment_id,
+        provider_alias: str,
+        attempt_number: int,
+        routing_snapshot: dict,
+    ) -> None:
+        with logs_session() as logs_db:
+            logs_db.add(
+                PaymentLog(
+                    payment_id=payment_id,
+                    event_type=PaymentLogEvent.EVENT_PROVIDER_REQUEST_SENT.value,
+                    status=LogStatus.LOG_SUCCESS.value,
+                    message=(
+                        f"[{datetime.utcnow().isoformat()}] Provider checkout request sent "
+                        f"to {provider_alias} (attempt {attempt_number})"
+                    ),
+                    payload=json.dumps({
+                        "provider": provider_alias,
+                        "attempt": attempt_number,
+                        "routing": routing_snapshot,
+                    }),
+                )
+            )
+            logs_db.commit()
+
+    async def _record_provider_success(
+        self,
+        merchant_id,
+        provider_id,
+        environment: str,
+        provider_alias: str,
+    ) -> None:
+        with payments_session() as payments_db:
+            await self.routing_engine.health.record_success(
+                payments_db, merchant_id, provider_id, environment, provider_alias
+            )
+            payments_db.commit()
+
+    async def _record_provider_failure(
+        self,
+        merchant_id,
+        provider_id,
+        environment: str,
+        provider_alias: str,
+        error: str,
+        timed_out: bool,
+    ) -> None:
+        with payments_session() as payments_db:
+            await self.routing_engine.health.record_failure(
+                payments_db, merchant_id, provider_id, environment, provider_alias,
+                error, timed_out,
+            )
+            payments_db.commit()
+
+    async def _record_routing_attempt(
+        self,
+        payment_id,
+        merchant_id,
+        provider_id,
+        provider_alias: str,
+        environment: str,
+        strategy: str,
+        attempt_number: int,
+        status: str,
+        idempotency_key: str,
+        latency_ms: int,
+        error_code: str | None,
+        error_message: str | None,
+        routing_snapshot: dict,
+    ) -> None:
+        with payments_session() as payments_db:
+            payments_db.add(
+                PaymentRoutingAttempt(
+                    payment_id=payment_id,
+                    merchant_id=merchant_id,
+                    provider_id=provider_id,
+                    provider_alias=provider_alias,
+                    environment=environment,
+                    strategy=strategy,
+                    attempt_number=attempt_number,
+                    status=status,
+                    idempotency_key=idempotency_key,
+                    latency_ms=latency_ms,
+                    error_code=error_code,
+                    error_message=error_message[:4000] if error_message else None,
+                    routing_snapshot=json.dumps(routing_snapshot),
+                )
+            )
+            payments_db.commit()
+
+    async def _mark_failed_if_pending(self, payment_id) -> None:
+        payment_uuid = payment_id if isinstance(payment_id, UUID) else UUID(str(payment_id))
+        with payments_session() as payments_db:
+            payments_db.execute(
+                PaymentModel.__table__.update()
+                .where(PaymentModel.id == payment_uuid)
+                .where(PaymentModel.status == PaymentStatus.PAYMENT_PENDING.value)
+                .values(status=PaymentStatus.PAYMENT_FAILED.value)
+            )
+            payments_db.commit()

@@ -6,6 +6,8 @@ merchant-demo/.env
 gateway-verification/.env
 saas-laravel/app/.env
 saas-laravel/app/.env.testing
+admin-laravel/app/.env
+admin-laravel/app/.env.testing
 
 # Keep .env.example files (they contain safe placeholder values)
 !**/.env.example
@@ -21,3 +23,10 @@ saas-laravel/app/storage/logs/*.log
 saas-laravel/app/storage/framework/sessions/*
 saas-laravel/app/storage/framework/cache/*
 saas-laravel/app/storage/framework/views/*
+admin-laravel/app/vendor/
+admin-laravel/app/public/build/
+admin-laravel/app/public/hot
+admin-laravel/app/storage/logs/*.log
+admin-laravel/app/storage/framework/sessions/*
+admin-laravel/app/storage/framework/cache/*
+admin-laravel/app/storage/framework/views/*
