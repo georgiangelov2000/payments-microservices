@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\ApiKeyController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MerchantController;
@@ -34,6 +35,7 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::put('/api-keys/{apiKey}', [ApiKeyController::class, 'update'])->name('admin.api-keys.update');
     Route::post('/api-keys/{apiKey}/rotate', [ApiKeyController::class, 'rotate'])->name('admin.api-keys.rotate');
     Route::post('/api-keys/{apiKey}/revoke', [ApiKeyController::class, 'revoke'])->name('admin.api-keys.revoke');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
     Route::get('/routing', [RoutingController::class, 'index'])->name('admin.routing.index');
     Route::post('/routing/workflows', [RoutingController::class, 'storeWorkflow'])->name('admin.routing.workflows.store');
     Route::get('/routing/workflows/{workflow}/builder', [RoutingController::class, 'builder'])->name('admin.routing.workflows.builder');

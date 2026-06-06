@@ -1,6 +1,7 @@
 import json
 import time
 from datetime import datetime
+from typing import cast
 from uuid import UUID
 
 import httpx
@@ -9,26 +10,33 @@ from sqlalchemy import select
 
 from app.db.context import logs_session, payments_session
 from app.enums import LogStatus, PaymentLogEvent, PaymentStatus, SubscriptionStatus
+from app.json_types import JsonObject
 from app.models.logs import PaymentLog
 from app.models.payments import (
     ApiRequest,
-    Payment as PaymentModel,
     PaymentRoutingAttempt,
     UserSubscription,
+)
+from app.models.payments import (
+    Payment as PaymentModel,
 )
 from app.providers.base import CheckoutRequest
 from app.providers.credential_resolver import CredentialResolver
 from app.providers.registry import provider_connector
 from app.routing import PaymentRoutingEngine
-from app.schemas.payments import CreatePaymentRequest
+from app.schemas.payments import CreatePaymentRequest, PaymentCreateResponse
+from app.services.sandbox_simulation import SandboxSimulationService
 
 
 class PaymentCreationService:
-    def __init__(self):
+    def __init__(self) -> None:
         self.routing_engine = PaymentRoutingEngine()
         self.credential_resolver = CredentialResolver()
+        self.sandbox = SandboxSimulationService()
 
-    async def create(self, request: CreatePaymentRequest, merchant_id: str) -> dict:
+    async def create(
+        self, request: CreatePaymentRequest, merchant_id: str
+    ) -> PaymentCreateResponse:
         merchant_uuid = UUID(str(merchant_id))
 
         with payments_session() as payments_db, logs_session() as logs_db:
@@ -36,18 +44,19 @@ class PaymentCreationService:
             # Idempotency check
             # --------------------------------------------------
             existing = payments_db.execute(
-                select(PaymentModel.id, PaymentModel.status, PaymentModel.provider_checkout_url)
-                .where(PaymentModel.order_id == request.order_id)
+                select(
+                    PaymentModel.id, PaymentModel.status, PaymentModel.provider_checkout_url
+                ).where(PaymentModel.order_id == request.order_id)
             ).first()
 
             if existing:
                 payment_id, status, checkout_url = existing
-                return {
-                    "message": "payment already exists",
-                    "payment_id": str(payment_id),
-                    "status": PaymentStatus(status).name,
-                    "payment_url": checkout_url,
-                }
+                return PaymentCreateResponse(
+                    message="payment already exists",
+                    payment_id=str(payment_id),
+                    status=PaymentStatus(status).name,
+                    payment_url=checkout_url,
+                )
 
             routing_plan = await self.routing_engine.plan(payments_db, merchant_uuid, request)
 
@@ -62,16 +71,14 @@ class PaymentCreationService:
 
             primary_provider = routing_plan.candidates[0]
             idempotency_key = (
-                request.idempotency_key
-                or f"{merchant_uuid}:{request.event_id}:{request.order_id}"
+                request.idempotency_key or f"{merchant_uuid}:{request.event_id}:{request.order_id}"
             )
 
             # --------------------------------------------------
             # Load active merchant subscription
             # --------------------------------------------------
             sub_row = payments_db.execute(
-                select(UserSubscription.id)
-                .where(
+                select(UserSubscription.id).where(
                     UserSubscription.user_id == merchant_uuid,
                     UserSubscription.subscription_id == request.subscription_id,
                     UserSubscription.status == SubscriptionStatus.SUBSCRIPTION_ACTIVE.value,
@@ -94,18 +101,22 @@ class PaymentCreationService:
                 merchant_id=merchant_uuid,
                 status=PaymentStatus.PAYMENT_PENDING.value,
                 environment=routing_plan.environment,
+                currency=request.currency.upper(),
+                country=request.country.upper() if request.country else None,
+                locale=request.locale,
+                channel=request.channel,
                 routing_strategy=routing_plan.strategy,
                 idempotency_key=idempotency_key,
-                routing_metadata=json.dumps({
+                routing_metadata={
                     "matched_rule": routing_plan.matched_rule,
                     "candidate_order": [c.alias for c in routing_plan.candidates],
                     "snapshot": routing_plan.snapshot,
-                }),
+                },
             )
 
             payments_db.add(payment)
             payments_db.flush()
-            payment_id = payment.id
+            payment_id = cast(UUID, payment.id)
 
             # --------------------------------------------------
             # LOG: payment created
@@ -130,12 +141,8 @@ class PaymentCreationService:
                 UserSubscription.__table__.update()
                 .where(UserSubscription.id == subscription_id)
                 .values(
-                    current_period_transactions=(
-                        UserSubscription.current_period_transactions + 1
-                    ),
-                    current_period_volume=(
-                        UserSubscription.current_period_volume + request.price
-                    ),
+                    current_period_transactions=(UserSubscription.current_period_transactions + 1),
+                    current_period_volume=(UserSubscription.current_period_volume + request.price),
                 )
             )
 
@@ -224,6 +231,58 @@ class PaymentCreationService:
                 )
                 continue
 
+            # --------------------------------------------------
+            # Sandbox simulation check (test mode only)
+            # --------------------------------------------------
+            try:
+                with payments_session() as payments_db:
+                    self.sandbox.check(
+                        payments_db, merchant_uuid, routing_plan.environment, provider_alias
+                    )
+            except HTTPException as exc:
+                await self._record_routing_attempt(
+                    payment_id=payment_id,
+                    merchant_id=merchant_uuid,
+                    provider_id=provider_id,
+                    provider_alias=provider_alias,
+                    environment=routing_plan.environment,
+                    strategy=routing_plan.strategy,
+                    attempt_number=attempt_number,
+                    status="failed",
+                    idempotency_key=attempt_idempotency_key,
+                    latency_ms=0,
+                    error_code="sandbox_fail",
+                    error_message=str(exc.detail),
+                    routing_snapshot=routing_plan.snapshot,
+                )
+                await self._record_provider_failure(
+                    merchant_uuid, provider_id, routing_plan.environment,
+                    provider_alias, "sandbox_simulated_failure", timed_out=False,
+                )
+                continue
+            except Exception as exc:
+                # force_timeout raises httpx.TimeoutException
+                await self._record_routing_attempt(
+                    payment_id=payment_id,
+                    merchant_id=merchant_uuid,
+                    provider_id=provider_id,
+                    provider_alias=provider_alias,
+                    environment=routing_plan.environment,
+                    strategy=routing_plan.strategy,
+                    attempt_number=attempt_number,
+                    status="timeout",
+                    idempotency_key=attempt_idempotency_key,
+                    latency_ms=0,
+                    error_code="sandbox_timeout",
+                    error_message=str(exc),
+                    routing_snapshot=routing_plan.snapshot,
+                )
+                await self._record_provider_failure(
+                    merchant_uuid, provider_id, routing_plan.environment,
+                    provider_alias, "sandbox_simulated_timeout", timed_out=True,
+                )
+                continue
+
             self._record_provider_request_log(
                 payment_id=payment_id,
                 provider_alias=provider_alias,
@@ -280,28 +339,52 @@ class PaymentCreationService:
                 continue
             except httpx.TimeoutException as exc:
                 await self._record_routing_attempt(
-                    payment_id, merchant_uuid, provider_id, provider_alias,
-                    routing_plan.environment, routing_plan.strategy, attempt_number,
-                    "timeout", attempt_idempotency_key,
+                    payment_id,
+                    merchant_uuid,
+                    provider_id,
+                    provider_alias,
+                    routing_plan.environment,
+                    routing_plan.strategy,
+                    attempt_number,
+                    "timeout",
+                    attempt_idempotency_key,
                     int((time.monotonic() - started) * 1000),
-                    "timeout", str(exc), routing_plan.snapshot,
+                    "timeout",
+                    str(exc),
+                    routing_plan.snapshot,
                 )
                 await self._record_provider_failure(
-                    merchant_uuid, provider_id, routing_plan.environment,
-                    provider_alias, str(exc), timed_out=True,
+                    merchant_uuid,
+                    provider_id,
+                    routing_plan.environment,
+                    provider_alias,
+                    str(exc),
+                    timed_out=True,
                 )
                 continue
             except httpx.RequestError as exc:
                 await self._record_routing_attempt(
-                    payment_id, merchant_uuid, provider_id, provider_alias,
-                    routing_plan.environment, routing_plan.strategy, attempt_number,
-                    "failed", attempt_idempotency_key,
+                    payment_id,
+                    merchant_uuid,
+                    provider_id,
+                    provider_alias,
+                    routing_plan.environment,
+                    routing_plan.strategy,
+                    attempt_number,
+                    "failed",
+                    attempt_idempotency_key,
                     int((time.monotonic() - started) * 1000),
-                    "network_error", str(exc), routing_plan.snapshot,
+                    "network_error",
+                    str(exc),
+                    routing_plan.snapshot,
                 )
                 await self._record_provider_failure(
-                    merchant_uuid, provider_id, routing_plan.environment,
-                    provider_alias, str(exc), timed_out=False,
+                    merchant_uuid,
+                    provider_id,
+                    routing_plan.environment,
+                    provider_alias,
+                    str(exc),
+                    timed_out=False,
                 )
                 continue
 
@@ -363,25 +446,27 @@ class PaymentCreationService:
                         + "\n"
                         + f"[{now}] Payment is pending and waiting for customer action."
                     ),
-                    payload=json.dumps({
-                        "provider": provider_alias,
-                        "provider_reference": checkout.provider_reference,
-                        "payment_url": checkout.payment_url,
-                        "routing_strategy": routing_plan.strategy,
-                    }),
+                    payload=json.dumps(
+                        {
+                            "provider": provider_alias,
+                            "provider_reference": checkout.provider_reference,
+                            "payment_url": checkout.payment_url,
+                            "routing_strategy": routing_plan.strategy,
+                        }
+                    ),
                 )
             )
             logs_db.commit()
 
-        return {
-            "payment_id": str(payment_id),
-            "status": PaymentStatus.PAYMENT_PENDING.name,
-            "provider": provider_alias,
-            "routing_strategy": routing_plan.strategy,
-            "routing_candidates": [c.alias for c in routing_plan.candidates],
-            "provider_reference": checkout.provider_reference,
-            "payment_url": checkout.payment_url,
-        }
+        return PaymentCreateResponse(
+            payment_id=str(payment_id),
+            status=PaymentStatus.PAYMENT_PENDING.name,
+            provider=provider_alias,
+            routing_strategy=routing_plan.strategy,
+            routing_candidates=[c.alias for c in routing_plan.candidates],
+            provider_reference=checkout.provider_reference,
+            payment_url=checkout.payment_url,
+        )
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -389,10 +474,10 @@ class PaymentCreationService:
 
     def _record_provider_request_log(
         self,
-        payment_id,
+        payment_id: UUID,
         provider_alias: str,
         attempt_number: int,
-        routing_snapshot: dict,
+        routing_snapshot: JsonObject,
     ) -> None:
         with logs_session() as logs_db:
             logs_db.add(
@@ -404,19 +489,21 @@ class PaymentCreationService:
                         f"[{datetime.utcnow().isoformat()}] Provider checkout request sent "
                         f"to {provider_alias} (attempt {attempt_number})"
                     ),
-                    payload=json.dumps({
-                        "provider": provider_alias,
-                        "attempt": attempt_number,
-                        "routing": routing_snapshot,
-                    }),
+                    payload=json.dumps(
+                        {
+                            "provider": provider_alias,
+                            "attempt": attempt_number,
+                            "routing": routing_snapshot,
+                        }
+                    ),
                 )
             )
             logs_db.commit()
 
     async def _record_provider_success(
         self,
-        merchant_id,
-        provider_id,
+        merchant_id: UUID,
+        provider_id: UUID | None,
         environment: str,
         provider_alias: str,
     ) -> None:
@@ -428,8 +515,8 @@ class PaymentCreationService:
 
     async def _record_provider_failure(
         self,
-        merchant_id,
-        provider_id,
+        merchant_id: UUID,
+        provider_id: UUID | None,
         environment: str,
         provider_alias: str,
         error: str,
@@ -437,16 +524,21 @@ class PaymentCreationService:
     ) -> None:
         with payments_session() as payments_db:
             await self.routing_engine.health.record_failure(
-                payments_db, merchant_id, provider_id, environment, provider_alias,
-                error, timed_out,
+                payments_db,
+                merchant_id,
+                provider_id,
+                environment,
+                provider_alias,
+                error,
+                timed_out,
             )
             payments_db.commit()
 
     async def _record_routing_attempt(
         self,
-        payment_id,
-        merchant_id,
-        provider_id,
+        payment_id: UUID,
+        merchant_id: UUID,
+        provider_id: UUID | None,
         provider_alias: str,
         environment: str,
         strategy: str,
@@ -456,7 +548,7 @@ class PaymentCreationService:
         latency_ms: int,
         error_code: str | None,
         error_message: str | None,
-        routing_snapshot: dict,
+        routing_snapshot: JsonObject,
     ) -> None:
         with payments_session() as payments_db:
             payments_db.add(
@@ -478,7 +570,7 @@ class PaymentCreationService:
             )
             payments_db.commit()
 
-    async def _mark_failed_if_pending(self, payment_id) -> None:
+    async def _mark_failed_if_pending(self, payment_id: UUID | str) -> None:
         payment_uuid = payment_id if isinstance(payment_id, UUID) else UUID(str(payment_id))
         with payments_session() as payments_db:
             payments_db.execute(

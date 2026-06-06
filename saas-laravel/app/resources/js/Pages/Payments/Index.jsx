@@ -226,8 +226,15 @@ export default function Payments({ payments, filters = {} }) {
                     <tr className="border-b">
                       <td className="px-4 py-3">{payment.id}</td>
                       <td className="px-4 py-3 font-medium">{payment.order_id}</td>
-                      <td className="px-4 py-3">${formatNumber(payment.price)}</td>
-                      <td className="px-4 py-3">{formatNumber(payment.amount)}</td>
+                      <td className="px-4 py-3">{payment.currency || 'USD'} {formatNumber(payment.price)}</td>
+                      <td className="px-4 py-3">
+                        <div className="space-y-1">
+                          <div>{payment.currency || 'USD'} {formatNumber(payment.amount)}</div>
+                          <div className="text-xs text-gray-500">
+                            {[payment.channel, payment.country, payment.locale].filter(Boolean).join(' · ') || 'No context'}
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${statusClass(payment.status, payment.timing?.state)}`}
@@ -254,15 +261,23 @@ export default function Payments({ payments, filters = {} }) {
                         <ProviderBrand alias={payment.provider} label={payment.provider} variant="compact" />
                       </td>
                       <td className="px-4 py-3">
-                        <button
-                          onClick={() => toggleWorkflow(payment.id)}
-                          className="inline-flex items-center gap-1 text-indigo-600 text-xs font-medium hover:text-indigo-800 transition-colors"
-                        >
-                          {openWorkflow === payment.id
-                            ? <><ChevronUp size={13} strokeWidth={2} />Hide Workflow</>
-                            : <><ChevronDown size={13} strokeWidth={2} />View Workflow</>
-                          }
-                        </button>
+                        <div className="flex flex-col gap-1.5">
+                          <Link
+                            href={route('payments.show', payment.id)}
+                            className="inline-flex items-center gap-1 text-indigo-600 text-xs font-medium hover:text-indigo-800 transition-colors"
+                          >
+                            View details →
+                          </Link>
+                          <button
+                            onClick={() => toggleWorkflow(payment.id)}
+                            className="inline-flex items-center gap-1 text-slate-500 text-xs hover:text-slate-700 transition-colors"
+                          >
+                            {openWorkflow === payment.id
+                              ? <><ChevronUp size={12} strokeWidth={2} />Hide log</>
+                              : <><ChevronDown size={12} strokeWidth={2} />Quick log</>
+                            }
+                          </button>
+                        </div>
                       </td>
                     </tr>
 

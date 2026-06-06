@@ -15,6 +15,7 @@ import {
     Package,
     Key,
     GitBranch,
+    BarChart2,
     LogOut,
     ChevronLeft,
     ChevronRight,
@@ -32,6 +33,7 @@ const navItems = [
     { label: 'Subscriptions', routeName: 'admin.subscriptions.index', pattern: 'admin.subscriptions.*',  Icon: Package },
     { label: 'API Keys',      routeName: 'admin.api-keys.index',      pattern: 'admin.api-keys.*',       Icon: Key },
     { label: 'Routing',       routeName: 'admin.routing.index',       pattern: 'admin.routing.*',        Icon: GitBranch },
+    { label: 'Analytics',     routeName: 'admin.analytics.index',     pattern: 'admin.analytics.*',      Icon: BarChart2 },
 ];
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────

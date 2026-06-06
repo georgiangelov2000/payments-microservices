@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
     /* Payments */
     Route::prefix('payments')->name('payments.')->group(function () {
         Route::get('/', [PaymentController::class, 'index'])->name('index');
+        Route::get('/{id}', [PaymentController::class, 'show'])->name('show');
         Route::post('/exports', [PaymentController::class, 'export'])->name('export');
     });
 
@@ -75,6 +76,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('routing')->name('routing.')->group(function () {
         Route::get('/', [RoutingController::class, 'index'])->name('index');
         Route::put('/', [RoutingController::class, 'update'])->name('update');
+        Route::put('/sandbox', [RoutingController::class, 'updateSandbox'])->name('sandbox.update');
         Route::post('/rules', [RoutingController::class, 'storeRule'])->name('rules.store');
         Route::delete('/rules/{rule}', [RoutingController::class, 'destroyRule'])->name('rules.destroy');
     });

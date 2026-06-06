@@ -27,16 +27,20 @@ class RoutingController extends Controller
         $providers = $this->routingService->getAvailableProviders($merchant->id, $environment);
         $configuration = $this->routingService->getOrCreateConfiguration($merchant->id, $environment);
 
+        $meta = is_array($configuration->metadata) ? $configuration->metadata : [];
+        $sandboxBehaviors = $meta['sandbox_behaviors'] ?? [];
+
         return Inertia::render('Routing/Index', [
-            'environment' => $environment,
-            'providers' => $providers,
-            'configuration' => $configuration,
-            'rules' => ProviderRoutingRule::query()
+            'environment'     => $environment,
+            'providers'       => $providers,
+            'configuration'   => $configuration,
+            'sandboxBehaviors'=> $sandboxBehaviors,
+            'rules'           => ProviderRoutingRule::query()
                 ->where('merchant_id', $merchant->id)
                 ->where('environment', $environment)
                 ->orderBy('priority')
                 ->get(),
-            'health' => ProviderHealthStatus::query()
+            'health'          => ProviderHealthStatus::query()
                 ->where('merchant_id', $merchant->id)
                 ->where('environment', $environment)
                 ->get()
@@ -99,5 +103,37 @@ class RoutingController extends Controller
         $this->routingService->recordAudit(Auth::id(), Auth::id(), 'merchant.deleted_routing_rule', $rule, $before);
 
         return back()->with('status', 'Routing rule deleted.');
+    }
+
+    public function updateSandbox(Request $request): RedirectResponse
+    {
+        $merchant  = Auth::user();
+        $validated = $request->validate([
+            'environment'        => ['required', 'in:test,live'],
+            'sandbox_behaviors'  => ['required', 'array'],
+            'sandbox_behaviors.*.mode'      => ['nullable', 'in:off,force_fail,force_timeout,random_fail'],
+            'sandbox_behaviors.*.fail_rate' => ['nullable', 'integer', 'min:0', 'max:100'],
+        ]);
+
+        // Sandbox config is only meaningful in test mode
+        abort_if($validated['environment'] === 'live', 422, 'Sandbox simulation is only available in test mode.');
+
+        $config = ProviderRoutingConfiguration::query()->firstOrNew([
+            'merchant_id' => $merchant->id,
+            'environment' => $validated['environment'],
+        ]);
+
+        $meta = is_array($config->metadata) ? $config->metadata : [];
+        $meta['sandbox_behaviors'] = collect($validated['sandbox_behaviors'])
+            ->map(fn ($b) => [
+                'mode'      => $b['mode'] ?? 'off',
+                'fail_rate' => (int) ($b['fail_rate'] ?? 0),
+            ])
+            ->toArray();
+
+        $config->metadata = $meta;
+        $config->save();
+
+        return back()->with('status', 'Sandbox behaviors saved.');
     }
 }

@@ -1,7 +1,8 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ProviderBrand from '@/Components/ProviderBrand';
-import { CheckCircle2, AlertTriangle, XCircle, Save, Plus, Trash2 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, Save, Plus, Trash2, FlaskConical } from 'lucide-react';
 
 function aliases(providers) {
     return providers.map((provider) => provider.alias);
@@ -11,7 +12,7 @@ function providerLabel(providers, alias) {
     return providers.find((provider) => provider.alias === alias)?.name || alias;
 }
 
-export default function RoutingIndex({ environment, providers, configuration, rules, health }) {
+export default function RoutingIndex({ environment, providers, configuration, rules, health, sandboxBehaviors = {} }) {
     const { flash } = usePage().props;
     const providerAliases = aliases(providers);
 
@@ -61,6 +62,35 @@ export default function RoutingIndex({ environment, providers, configuration, ru
         configForm.setData('weighted_distribution', {
             ...configForm.data.weighted_distribution,
             [alias]: Number(value),
+        });
+    };
+
+    // Sandbox simulation state
+    const [sandboxState, setSandboxState] = useState(() => {
+        const init = {};
+        providers.forEach(p => {
+            init[p.alias] = sandboxBehaviors[p.alias] ?? { mode: 'off', fail_rate: 30 };
+        });
+        return init;
+    });
+    const [sandboxSaving, setSandboxSaving] = useState(false);
+
+    const setSandboxMode = (alias, mode) => {
+        setSandboxState(prev => ({ ...prev, [alias]: { ...prev[alias], mode } }));
+    };
+    const setSandboxRate = (alias, rate) => {
+        setSandboxState(prev => ({ ...prev, [alias]: { ...prev[alias], fail_rate: Number(rate) } }));
+    };
+
+    const saveSandbox = (e) => {
+        e.preventDefault();
+        setSandboxSaving(true);
+        router.put(route('routing.sandbox.update'), {
+            environment,
+            sandbox_behaviors: sandboxState,
+        }, {
+            preserveScroll: true,
+            onFinish: () => setSandboxSaving(false),
         });
     };
 
@@ -298,6 +328,101 @@ export default function RoutingIndex({ environment, providers, configuration, ru
                         </div>
                     </div>
                 </section>
+
+                {/* ── Sandbox Simulation (test mode only) ── */}
+                {environment === 'test' && providers.length > 0 && (
+                    <form onSubmit={saveSandbox} className="rounded-lg border border-amber-200 bg-amber-50 p-5 shadow-sm">
+                        <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <FlaskConical size={18} strokeWidth={1.75} className="text-amber-600" />
+                                    <h2 className="text-lg font-semibold text-amber-900">Sandbox Simulation</h2>
+                                </div>
+                                <p className="mt-1 text-sm text-amber-700">
+                                    Force providers to fail or timeout in <strong>test mode</strong> so you can verify your failover logic works correctly. Has no effect in live mode.
+                                </p>
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={sandboxSaving}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60 transition-colors"
+                            >
+                                <Save size={14} strokeWidth={2} />
+                                {sandboxSaving ? 'Saving…' : 'Save sandbox config'}
+                            </button>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            {providers.map(provider => {
+                                const state = sandboxState[provider.alias] ?? { mode: 'off', fail_rate: 30 };
+                                return (
+                                    <div key={provider.alias} className="rounded-xl border border-amber-200 bg-white p-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="font-semibold capitalize text-slate-800">{provider.name || provider.alias}</span>
+                                            {state.mode !== 'off' && (
+                                                <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600 uppercase tracking-wide">
+                                                    Simulating
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Mode selector */}
+                                        <div className="grid grid-cols-2 gap-2 mb-3">
+                                            {[
+                                                { value: 'off',           label: 'Normal',        desc: 'Real provider calls' },
+                                                { value: 'force_fail',    label: 'Force Fail',    desc: 'Always return 502' },
+                                                { value: 'force_timeout', label: 'Force Timeout', desc: 'Always timeout' },
+                                                { value: 'random_fail',   label: 'Random Fail',   desc: 'Fail at set rate' },
+                                            ].map(opt => (
+                                                <button
+                                                    key={opt.value}
+                                                    type="button"
+                                                    onClick={() => setSandboxMode(provider.alias, opt.value)}
+                                                    className={`rounded-lg border p-2.5 text-left transition-colors ${
+                                                        state.mode === opt.value
+                                                            ? opt.value === 'off'
+                                                                ? 'border-green-400 bg-green-50 ring-1 ring-green-400'
+                                                                : 'border-red-400 bg-red-50 ring-1 ring-red-400'
+                                                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                                                    }`}
+                                                >
+                                                    <p className="text-xs font-semibold text-slate-800">{opt.label}</p>
+                                                    <p className="text-[10px] text-slate-400 mt-0.5">{opt.desc}</p>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Fail rate slider (only for random_fail) */}
+                                        {state.mode === 'random_fail' && (
+                                            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+                                                <div className="flex items-center justify-between mb-1.5">
+                                                    <label className="text-xs font-semibold text-red-700">Failure rate</label>
+                                                    <span className="text-sm font-bold text-red-700">{state.fail_rate ?? 30}%</span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min="0"
+                                                    max="100"
+                                                    value={state.fail_rate ?? 30}
+                                                    onChange={e => setSandboxRate(provider.alias, e.target.value)}
+                                                    className="w-full accent-red-500"
+                                                />
+                                                <div className="flex justify-between text-[10px] text-red-400 mt-0.5">
+                                                    <span>0% (never)</span>
+                                                    <span>100% (always)</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <p className="mt-4 text-xs text-amber-600">
+                            Tip: Set Stripe to "Force Fail" and save — your next test payment will automatically failover to PayPal. Watch it happen in the payment timeline.
+                        </p>
+                    </form>
+                )}
             </div>
         </AuthenticatedLayout>
     );
