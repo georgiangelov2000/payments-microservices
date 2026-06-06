@@ -13,7 +13,6 @@ from app.enums import LogStatus, PaymentLogEvent, PaymentStatus, SubscriptionSta
 from app.json_types import JsonObject
 from app.models.logs import PaymentLog
 from app.models.payments import (
-    ApiRequest,
     PaymentRoutingAttempt,
     UserSubscription,
 )
@@ -143,20 +142,6 @@ class PaymentCreationService:
                 .values(
                     current_period_transactions=(UserSubscription.current_period_transactions + 1),
                     current_period_volume=(UserSubscription.current_period_volume + request.price),
-                )
-            )
-
-            # --------------------------------------------------
-            # API request audit
-            # --------------------------------------------------
-            payments_db.add(
-                ApiRequest(
-                    event_id=request.event_id,
-                    user_id=merchant_uuid,
-                    subscription_id=request.subscription_id,
-                    payment_id=payment_id,
-                    amount=request.amount,
-                    source="payments:create",
                 )
             )
 

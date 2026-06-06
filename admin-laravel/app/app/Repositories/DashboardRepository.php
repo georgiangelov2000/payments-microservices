@@ -7,7 +7,6 @@ namespace App\Repositories;
 use App\Enums\MerchantAPIKeyStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\Role;
-use App\Models\ApiRequest;
 use App\Models\MerchantApiKey;
 use App\Models\Payment;
 use App\Models\PaymentRoutingAttempt;
@@ -37,7 +36,6 @@ final class DashboardRepository
             'failedPayments' => (int) ($paymentsByStatus[PaymentStatus::FAILED->value] ?? 0),
             'activeApiKeys' => MerchantApiKey::query()->where('status', MerchantAPIKeyStatus::ACTIVE->value)->count(),
             'subscriptions' => Subscription::query()->count(),
-            'apiRequests' => ApiRequest::query()->count(),
             'routingWorkflows' => RoutingWorkflow::query()->count(),
             'publishedWorkflows' => RoutingWorkflow::query()->where('status', 'published')->count(),
             'unhealthyProviders' => ProviderHealthStatus::query()->where('status', 'unhealthy')->count(),

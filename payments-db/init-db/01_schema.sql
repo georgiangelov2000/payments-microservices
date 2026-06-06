@@ -381,29 +381,6 @@ CREATE TABLE user_subscriptions (
 CREATE INDEX ix_user_subscriptions_user_id         ON user_subscriptions(user_id);
 CREATE INDEX ix_user_subscriptions_subscription_id ON user_subscriptions(subscription_id);
 
--- =========================
--- API REQUESTS
--- =========================
-CREATE TABLE api_requests (
-    id UUID PRIMARY KEY,
-
-    event_id VARCHAR(255) NOT NULL UNIQUE,
-
-    payment_id      UUID NOT NULL,
-    subscription_id UUID NOT NULL,
-    user_id         UUID NOT NULL,
-
-    amount NUMERIC(18,8) NOT NULL CHECK (amount >= 0),
-    source VARCHAR(255) NOT NULL,
-
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX ix_api_requests_user_id         ON api_requests(user_id);
-CREATE INDEX ix_api_requests_subscription_id ON api_requests(subscription_id);
-CREATE INDEX ix_api_requests_payment_id      ON api_requests(payment_id);
-CREATE INDEX ix_api_requests_created_at      ON api_requests(created_at DESC);
 
 -- Let the application user run development migrations against objects created
 -- by this init script. The user is created in 01-users-and-permissions.sh.

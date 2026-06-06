@@ -19,7 +19,6 @@ return new class extends Migration
         'gateway_access_profiles' => ['ix_gateway_access_profiles_hash', 'ix_gateway_access_profiles_merchant_id', 'ix_gateway_access_profiles_subscription_id', 'ix_gateway_access_fast_auth', 'ix_gateway_access_profiles_fast_auth'],
         'merchant_provider_credentials' => ['merchant_provider_credentials_merchant_id_index', 'merchant_provider_credentials_provider_id_index', 'merchant_provider_credentials_status_index'],
         'payments' => ['ix_payments_order_id', 'ix_payments_merchant_id', 'ix_payments_provider_id', 'ix_payments_provider_reference', 'ix_payments_status', 'ix_payments_merchant_status', 'ix_payments_created_at'],
-        'api_requests' => ['ix_api_requests_user_id', 'ix_api_requests_subscription_id', 'ix_api_requests_payment_id', 'ix_api_requests_source', 'ix_api_requests_user_subscription', 'ix_api_requests_created_at'],
     ];
 
     public function up(): void

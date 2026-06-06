@@ -360,32 +360,3 @@ class UserSubscription(PaymentsBase):
         Index("ix_user_subscriptions_subscription_id", "subscription_id"),
     )
 
-
-# =========================
-# API Requests
-# =========================
-class ApiRequest(PaymentsBase):
-    __tablename__ = "api_requests"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
-    event_id = Column(String(255), nullable=False, unique=True)
-
-    payment_id = Column(UUID(as_uuid=True), nullable=False)
-    subscription_id = Column(UUID(as_uuid=True), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
-
-    amount = Column(Numeric(18, 8), nullable=False)
-    source = Column(String(50), nullable=False)
-
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
-    )
-
-    __table_args__ = (
-        Index("ix_api_requests_user_id", "user_id"),
-        Index("ix_api_requests_subscription_id", "subscription_id"),
-        Index("ix_api_requests_payment_id", "payment_id"),
-        Index("ix_api_requests_source", "source"),
-        Index("ix_api_requests_user_subscription", "user_id", "subscription_id"),
-    )
