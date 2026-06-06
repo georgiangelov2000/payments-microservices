@@ -2,6 +2,43 @@ const LARAVEL_URL = "http://localhost";
 const AUTH_LOGIN_URL    = `${LARAVEL_URL}/auth/login`;
 const AUTH_REGISTER_URL = `${LARAVEL_URL}/auth/register`;
 
+// ─── Routing workflow animation ───────────────────────────────────
+(function () {
+  const stage = document.getElementById('wf-stage');
+  if (!stage) return;
+
+  const states = ['s1', 's2', 's3', 's4', 's5'];
+  const delays = [0, 900, 1800, 3000, 4200];  // ms per phase
+  const hold   = 2800;                          // ms to hold s5 before reset
+  let timers   = [];
+  let running  = false;
+
+  function clearAll() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    stage.className = stage.className.replace(/\bs\d\b/g, '').trim();
+  }
+
+  function play() {
+    clearAll();
+    running = true;
+    states.forEach((s, i) => {
+      timers.push(setTimeout(() => {
+        stage.classList.add(s);
+      }, delays[i]));
+    });
+    const total = delays[delays.length - 1] + hold;
+    timers.push(setTimeout(() => { clearAll(); play(); }, total));
+  }
+
+  // Start when section enters viewport
+  const obs = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !running) play();
+    if (!entries[0].isIntersecting) { clearAll(); running = false; }
+  }, { threshold: 0.3 });
+  obs.observe(stage);
+})();
+
 // ─── Nav: mobile toggle + scroll state ──────────────────────────────
 const nav = document.getElementById("nav");
 
@@ -273,7 +310,179 @@ function showGeneralError(errorBox, message) {
   errorBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
-// ─── Client-side form validation (unchanged) ──────────────────────────
+// ─── Password visibility toggle ───────────────────────────────────
+document.querySelectorAll('.pass-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = document.getElementById(btn.dataset.target);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.querySelector('.eye-show').style.display = isPassword ? 'none' : '';
+    btn.querySelector('.eye-hide').style.display = isPassword ? ''     : 'none';
+    input.focus();
+  });
+});
+
+// ─── Password strength ─────────────────────────────────────────────
+const pwdInput    = document.getElementById('reg-password');
+const strengthBar = document.getElementById('strength-bar');
+if (pwdInput && strengthBar) {
+  pwdInput.addEventListener('input', () => {
+    const v = pwdInput.value;
+    let score = 0;
+    if (v.length >= 8)            score++;
+    if (/[A-Z]/.test(v))          score++;
+    if (/[0-9]/.test(v))          score++;
+    if (/[^A-Za-z0-9]/.test(v))   score++;
+    strengthBar.className = 'strength-bar' + (score > 0 ? ` s${score}` : '');
+  });
+}
+
+// ─── Scroll progress bar ──────────────────────────────────────────
+const progressBar = document.getElementById('scroll-progress');
+if (progressBar) {
+  const updateProgress = () => {
+    const scrollable = document.body.scrollHeight - window.innerHeight;
+    const pct = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
+    progressBar.style.width = Math.min(pct, 100) + '%';
+  };
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+}
+
+// ─── 3-D card tilt ────────────────────────────────────────────────
+document.querySelectorAll('.value-card, .security-card, .provider-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const dx = (e.clientX - (rect.left + rect.width  / 2)) / (rect.width  / 2);
+    const dy = (e.clientY - (rect.top  + rect.height / 2)) / (rect.height / 2);
+    card.style.transform = `perspective(800px) rotateY(${dx * 7}deg) rotateX(${-dy * 7}deg) translateY(-4px)`;
+  });
+  card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+});
+
+// ─── Live transaction feed ────────────────────────────────────────
+const txnListEl = document.getElementById('txn-list');
+if (txnListEl) {
+  const pool = [
+    { amount: '$312.00', provider: 'Stripe', cls: 'stripe', status: 'Complete', sCls: 'success' },
+    { amount: '$49.99',  provider: 'PayPal', cls: 'paypal', status: 'Pending',  sCls: 'pending' },
+    { amount: '$87.50',  provider: 'Stripe', cls: 'stripe', status: 'Complete', sCls: 'success' },
+    { amount: '$750.00', provider: 'PayPal', cls: 'paypal', status: 'Complete', sCls: 'success' },
+    { amount: '$22.00',  provider: 'Stripe', cls: 'stripe', status: 'Failed',   sCls: 'failed'  },
+    { amount: '$199.00', provider: 'Stripe', cls: 'stripe', status: 'Complete', sCls: 'success' },
+    { amount: '$15.99',  provider: 'PayPal', cls: 'paypal', status: 'Pending',  sCls: 'pending' },
+    { amount: '$540.00', provider: 'Stripe', cls: 'stripe', status: 'Complete', sCls: 'success' },
+  ];
+  let poolIdx = 0;
+
+  const tickTimes = () => {
+    txnListEl.querySelectorAll('.txn-row .txn-time').forEach(el => {
+      const txt = el.textContent.trim();
+      const secMatch = txt.match(/^(\d+)s ago$/);
+      const minMatch = txt.match(/^(\d+)m ago$/);
+      if (secMatch) {
+        const s = parseInt(secMatch[1]) + 3;
+        el.textContent = s >= 60 ? '1m ago' : `${s}s ago`;
+      } else if (minMatch) {
+        el.textContent = `${parseInt(minMatch[1]) + 1}m ago`;
+      }
+    });
+  };
+
+  const addTransaction = () => {
+    const rows = [...txnListEl.querySelectorAll('.txn-row')];
+    if (rows.length >= 4) rows[rows.length - 1].remove();
+    rows.forEach(r => r.classList.remove('txn-new'));
+    tickTimes();
+
+    const t = pool[poolIdx % pool.length];
+    poolIdx++;
+
+    const row = document.createElement('div');
+    row.className = 'txn-row txn-new';
+    row.innerHTML = `<strong>${t.amount}</strong><span class="provider-tag ${t.cls}">${t.provider}</span><span class="status-tag ${t.sCls}">${t.status}</span><span class="txn-time">2s ago</span>`;
+    txnListEl.querySelector('.txn-head').after(row);
+  };
+
+  setInterval(addTransaction, 2800);
+}
+
+// ─── Testimonials carousel ────────────────────────────────────────
+(function () {
+  const sliderEl = document.getElementById('testimonials-slider');
+  const dotsEl   = document.getElementById('t-dots');
+  const prevBtn  = document.getElementById('t-prev');
+  const nextBtn  = document.getElementById('t-next');
+  if (!sliderEl || !dotsEl) return;
+
+  const data = [
+    {
+      quote: "We cut our provider integration time from 3 weeks to 2 days. PayFlow's single API contract means we never touch merchant code when adding a new processor.",
+      name: 'Sarah Kim', role: 'CTO at TechCorp', initials: 'SK',
+    },
+    {
+      quote: "The failover routing saved us during a Stripe outage. PayPal picked up automatically — our merchants didn't notice a thing. That's exactly what we paid for.",
+      name: 'Marcus Chen', role: 'VP Engineering at Shopflow', initials: 'MC',
+    },
+    {
+      quote: "Full workflow visibility in one panel. Our support team finally stopped asking engineers for logs. Every provider event is timestamped and always available.",
+      name: 'Priya Patel', role: 'Head of Payments at Orderbase', initials: 'PP',
+    },
+    {
+      quote: "The sandbox simulation let us stress-test our routing rules before going live. The circuit breaker logic alone saved us from a bad production incident.",
+      name: 'Alex Rivera', role: 'Lead Engineer at Checkout.dev', initials: 'AR',
+    },
+  ];
+
+  let current = 0;
+  let timer;
+
+  data.forEach((t, i) => {
+    const item = document.createElement('div');
+    item.className = 'testimonial-item' + (i === 0 ? ' active' : '');
+    item.innerHTML = `
+      <div class="testimonial-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <p class="testimonial-quote">&ldquo;${t.quote}&rdquo;</p>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">${t.initials}</div>
+        <div class="testimonial-meta"><strong>${t.name}</strong><span>${t.role}</span></div>
+      </div>`;
+    sliderEl.appendChild(item);
+
+    const dot = document.createElement('button');
+    dot.className = 't-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', `Testimonial ${i + 1}`);
+    dot.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(dot);
+  });
+
+  const items = sliderEl.querySelectorAll('.testimonial-item');
+  const dots  = dotsEl.querySelectorAll('.t-dot');
+
+  function goTo(idx) {
+    items[current].classList.remove('active');
+    dots[current].classList.remove('active');
+    current = ((idx % data.length) + data.length) % data.length;
+    items[current].classList.add('active');
+    dots[current].classList.add('active');
+    resetTimer();
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    timer = setInterval(() => goTo(current + 1), 5500);
+  }
+
+  prevBtn?.addEventListener('click', () => goTo(current - 1));
+  nextBtn?.addEventListener('click', () => goTo(current + 1));
+  sliderEl.addEventListener('mouseenter', () => clearInterval(timer));
+  sliderEl.addEventListener('mouseleave', resetTimer);
+
+  resetTimer();
+})();
+
+// ─── Client-side form validation ──────────────────────────────────
 function validateForm(form) {
   let valid = true;
 

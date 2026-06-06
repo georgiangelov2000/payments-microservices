@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=5">
   <script defer src="/app.js"></script>
 </head>
 <body>
@@ -15,7 +15,7 @@
     <a class="brand" href="/">PayFlow<span>.io</span></a>
     <div class="nav-links" data-nav-links>
       <a href="/docs.html" class="nav-link">API Docs</a>
-      <a href="/register.html" class="nav-link">Request access</a>
+      <a href="/#contact" class="nav-link">Contact</a>
     </div>
     <button class="nav-toggle" type="button" data-nav-toggle aria-label="Toggle menu">
       <span></span><span></span><span></span>
@@ -48,7 +48,13 @@
         </label>
         <label>
           Password
-          <input type="password" name="password" placeholder="Your password" minlength="8" required autocomplete="current-password">
+          <div class="pass-wrap">
+            <input type="password" name="password" id="login-password" placeholder="Your password" minlength="8" required autocomplete="current-password">
+            <button type="button" class="pass-toggle" data-target="login-password" aria-label="Toggle password visibility">
+              <svg class="eye-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              <svg class="eye-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:none"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.5 10.677a2 2 0 002.823 2.823M7.362 7.561A9.937 9.937 0 0012 7c4.478 0 8.268 2.943 9.543 7a9.936 9.936 0 01-1.798 3.199M6.257 6.257A9.937 9.937 0 002.457 12c1.275 4.057 5.065 7 9.543 7 1.947 0 3.76-.553 5.298-1.513"/></svg>
+            </button>
+          </div>
           <small class="field-error">Password must be at least 8 characters.</small>
         </label>
 
@@ -61,7 +67,7 @@
           Sign in
         </button>
 
-        <p class="form-note">Don't have an account? <a href="/register.html">Request access →</a></p>
+        <p class="form-note">Need access? <a href="/#contact">Contact sales →</a></p>
       </form>
     </section>
   </main>
