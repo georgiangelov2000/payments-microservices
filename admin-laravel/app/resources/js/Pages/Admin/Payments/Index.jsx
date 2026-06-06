@@ -311,8 +311,13 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                 <span className="text-sm text-slate-400">—</span>
                                             )}
                                                 </td>
-                                                <td className="px-6 py-3.5 text-sm font-semibold text-slate-900">
-                                                    ${fmtCurrency(payment.amount)}
+                                                <td className="px-6 py-3.5">
+                                                    <span className="block text-sm font-semibold text-slate-900">
+                                                        {payment.currency || 'USD'} {fmtCurrency(payment.amount)}
+                                                    </span>
+                                                    <span className="mt-0.5 block text-[11px] font-medium text-slate-400">
+                                                        {[payment.channel, payment.country, payment.locale].filter(Boolean).join(' · ') || 'No context'}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-3.5">
                                                     <Badge value={payment.status} />

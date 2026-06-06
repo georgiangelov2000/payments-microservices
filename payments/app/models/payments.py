@@ -1,18 +1,19 @@
 from sqlalchemy import (
-    Column,
     BigInteger,
     Boolean,
+    Column,
+    DateTime,
+    Index,
+    Numeric,
     SmallInteger,
     String,
-    DateTime,
-    Numeric,
     Text,
     UniqueConstraint,
-    Index,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
+
 from app.db.bases import PaymentsBase
 from app.support.uuid import uuid7
 
@@ -33,13 +34,21 @@ class User(PaymentsBase):
     remember_token = Column(String(100))
 
     status = Column(SmallInteger, nullable=False, server_default="1")  # 1=active
-    role   = Column(SmallInteger, nullable=False, server_default="2")  # 2=merchant
+    role = Column(SmallInteger, nullable=False, server_default="2")  # 2=merchant
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
-    payments = relationship("Payment", primaryjoin="User.id == foreign(Payment.merchant_id)", viewonly=True)
-    api_keys = relationship("MerchantAPIKey", primaryjoin="User.id == foreign(MerchantAPIKey.merchant_id)", viewonly=True)
+    payments = relationship(
+        "Payment", primaryjoin="User.id == foreign(Payment.merchant_id)", viewonly=True
+    )
+    api_keys = relationship(
+        "MerchantAPIKey",
+        primaryjoin="User.id == foreign(MerchantAPIKey.merchant_id)",
+        viewonly=True,
+    )
 
     __table_args__ = (
         Index("ix_users_email", "email"),
@@ -78,7 +87,9 @@ class MerchantAPIKey(PaymentsBase):
     status = Column(SmallInteger, nullable=False, server_default="1")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    merchant = relationship("User", primaryjoin="foreign(MerchantAPIKey.merchant_id) == User.id", viewonly=True)
+    merchant = relationship(
+        "User", primaryjoin="foreign(MerchantAPIKey.merchant_id) == User.id", viewonly=True
+    )
 
     __table_args__ = (
         UniqueConstraint("hash", name="uq_merchant_api_keys_hash"),
@@ -100,7 +111,9 @@ class Provider(PaymentsBase):
     url = Column(String(255), nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
         Index("ix_providers_alias", "alias"),
@@ -125,10 +138,14 @@ class MerchantProviderCredential(PaymentsBase):
     last_validated_at = Column(DateTime(timezone=True))
     last_rotated_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
-        UniqueConstraint("merchant_id", "provider_id", "environment", name="merchant_provider_credentials_unique"),
+        UniqueConstraint(
+            "merchant_id", "provider_id", "environment", name="merchant_provider_credentials_unique"
+        ),
         Index("ix_merchant_provider_credentials_merchant_id", "merchant_id"),
         Index("ix_merchant_provider_credentials_provider_id", "provider_id"),
         Index("ix_merchant_provider_credentials_status", "status"),
@@ -152,17 +169,27 @@ class Payment(PaymentsBase):
     provider_checkout_url = Column(String(2048))
     provider_status = Column(String(100))
     environment = Column(String(20), nullable=False, server_default="test")
+    currency = Column(String(3), nullable=False, server_default="USD")
+    country = Column(String(2))
+    locale = Column(String(20))
+    channel = Column(String(30))
     routing_strategy = Column(String(30))
     idempotency_key = Column(String(255))
-    routing_metadata = Column(String)
+    routing_metadata = Column(JSONB)
 
     status = Column(SmallInteger, nullable=False, server_default="1")  # 1=pending
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
-    merchant = relationship("User", primaryjoin="foreign(Payment.merchant_id) == User.id", viewonly=True)
-    provider = relationship("Provider", primaryjoin="foreign(Payment.provider_id) == Provider.id", viewonly=True)
+    merchant = relationship(
+        "User", primaryjoin="foreign(Payment.merchant_id) == User.id", viewonly=True
+    )
+    provider = relationship(
+        "Provider", primaryjoin="foreign(Payment.provider_id) == Provider.id", viewonly=True
+    )
 
     __table_args__ = (
         Index("ix_payments_order_id", "order_id"),
@@ -173,6 +200,9 @@ class Payment(PaymentsBase):
         Index("ix_payments_merchant_status", "merchant_id", "status"),
         Index("ix_payments_created_at", "created_at"),
         Index("ix_payments_environment", "environment"),
+        Index("ix_payments_currency", "currency"),
+        Index("ix_payments_country", "country"),
+        Index("ix_payments_channel", "channel"),
         Index("ix_payments_routing_strategy", "routing_strategy"),
         Index("ix_payments_idempotency_key", "idempotency_key"),
     )
@@ -191,7 +221,9 @@ class ProviderRoutingConfiguration(PaymentsBase):
     weighted_distribution = Column(Text, nullable=False, server_default="{}")
     metadata_json = Column("metadata", Text, nullable=False, server_default="{}")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
         UniqueConstraint("merchant_id", "environment", name="provider_routing_config_unique"),
@@ -214,7 +246,9 @@ class ProviderRoutingRule(PaymentsBase):
     enabled = Column(Boolean, nullable=False, server_default="true")
     conditions = Column(Text, nullable=False, server_default="{}")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
         Index("ix_provider_routing_rules_merchant_id", "merchant_id"),
@@ -245,10 +279,14 @@ class ProviderHealthStatus(PaymentsBase):
     last_error = Column(Text)
     metadata_json = Column("metadata", Text, nullable=False, server_default="{}")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
-        UniqueConstraint("merchant_id", "provider_alias", "environment", name="provider_health_scope_unique"),
+        UniqueConstraint(
+            "merchant_id", "provider_alias", "environment", name="provider_health_scope_unique"
+        ),
         Index("ix_provider_health_statuses_provider_id", "provider_id"),
         Index("ix_provider_health_statuses_merchant_id", "merchant_id"),
         Index("ix_provider_health_statuses_provider_alias", "provider_alias"),
@@ -277,7 +315,9 @@ class PaymentRoutingAttempt(PaymentsBase):
     error_message = Column(Text)
     routing_snapshot = Column(Text, nullable=False, server_default="{}")
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
         Index("ix_payment_routing_attempts_payment_id", "payment_id"),
@@ -308,10 +348,14 @@ class UserSubscription(PaymentsBase):
     status = Column(SmallInteger, nullable=False, server_default="1")
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
-        UniqueConstraint("user_id", "subscription_id", name="uq_user_subscriptions_user_subscription"),
+        UniqueConstraint(
+            "user_id", "subscription_id", name="uq_user_subscriptions_user_subscription"
+        ),
         Index("ix_user_subscriptions_user_id", "user_id"),
         Index("ix_user_subscriptions_subscription_id", "subscription_id"),
     )
@@ -334,7 +378,9 @@ class ApiRequest(PaymentsBase):
     source = Column(String(50), nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
     __table_args__ = (
         Index("ix_api_requests_user_id", "user_id"),

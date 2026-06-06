@@ -53,6 +53,10 @@ class PaymentController extends Controller
                     'price' => (float) $payment->price,
                     'status' => $payment->status?->label(),
                     'provider_status' => $payment->provider_status,
+                    'currency' => $payment->currency,
+                    'country' => $payment->country,
+                    'locale' => $payment->locale,
+                    'channel' => $payment->channel,
                     'merchant' => $payment->merchant ? [
                         'name' => $payment->merchant->name,
                         'email' => $payment->merchant->email,
@@ -66,7 +70,7 @@ class PaymentController extends Controller
                         'message' => $log->message,
                         'payload' => $log->payload,
                         'created_at' => $log->created_at?->toDateTimeString(),
-                    ])->values(),
+                    ])->values()->all(),
                     'routing_attempts' => $payment->routingAttempts->map(fn ($attempt) => [
                         'id' => $attempt->id,
                         'provider_alias' => $attempt->provider_alias,
@@ -76,7 +80,7 @@ class PaymentController extends Controller
                         'error_message' => $attempt->error_message,
                         'latency_ms' => $attempt->latency_ms,
                         'created_at' => $attempt->created_at?->toDateTimeString(),
-                    ])->values(),
+                    ])->values()->all(),
                 ]),
         ]);
     }

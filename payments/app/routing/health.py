@@ -1,16 +1,18 @@
 import os
 from datetime import datetime, timedelta
+from typing import cast
 from uuid import UUID
 
 import redis.asyncio as redis
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from app.json_types import JsonValue
 from app.models.payments import ProviderHealthStatus
 
 
 class ProviderHealthMonitor:
-    def __init__(self):
+    def __init__(self) -> None:
         self.failure_threshold = int(os.getenv("ROUTING_FAILURE_THRESHOLD", "3"))
         self.quarantine_seconds = int(os.getenv("ROUTING_PROVIDER_QUARANTINE_SECONDS", "300"))
         self.redis_url = os.getenv("REDIS_URL") or (
@@ -21,24 +23,31 @@ class ProviderHealthMonitor:
     def _key(self, merchant_id: UUID, environment: str, provider_alias: str) -> str:
         return f"routing:health:{merchant_id}:{environment}:{provider_alias.lower()}"
 
-    async def is_available(self, db: Session, merchant_id: UUID, environment: str, provider_alias: str) -> bool:
+    async def is_available(
+        self, db: Session, merchant_id: UUID, environment: str, provider_alias: str
+    ) -> bool:
         key = self._key(merchant_id, environment, provider_alias)
         if await self._redis.get(key) == "disabled":
             return False
 
-        row = db.query(ProviderHealthStatus).filter(
-            ProviderHealthStatus.merchant_id == merchant_id,
-            ProviderHealthStatus.environment == environment,
-            ProviderHealthStatus.provider_alias == provider_alias.lower(),
-        ).first()
+        row = (
+            db.query(ProviderHealthStatus)
+            .filter(
+                ProviderHealthStatus.merchant_id == merchant_id,
+                ProviderHealthStatus.environment == environment,
+                ProviderHealthStatus.provider_alias == provider_alias.lower(),
+            )
+            .first()
+        )
 
         if not row:
             return True
 
-        if row.disabled_until and row.disabled_until > datetime.utcnow():
+        disabled_until = cast(datetime | None, row.disabled_until)
+        if disabled_until and disabled_until > datetime.utcnow():
             return False
 
-        return row.status != "unhealthy"
+        return cast(str, row.status) != "unhealthy"
 
     async def record_success(
         self,
@@ -76,13 +85,19 @@ class ProviderHealthMonitor:
         error: str,
         timed_out: bool = False,
     ) -> None:
-        row = db.query(ProviderHealthStatus).filter(
-            ProviderHealthStatus.merchant_id == merchant_id,
-            ProviderHealthStatus.environment == environment,
-            ProviderHealthStatus.provider_alias == provider_alias.lower(),
-        ).first()
+        row = (
+            db.query(ProviderHealthStatus)
+            .filter(
+                ProviderHealthStatus.merchant_id == merchant_id,
+                ProviderHealthStatus.environment == environment,
+                ProviderHealthStatus.provider_alias == provider_alias.lower(),
+            )
+            .first()
+        )
 
-        next_failures = (row.consecutive_failures if row else 0) + 1
+        current_failures = cast(int, row.consecutive_failures) if row else 0
+        current_timeout_count = cast(int, row.timeout_count) if row else 0
+        next_failures = current_failures + 1
         disabled_until = None
         status = "degraded"
 
@@ -104,7 +119,7 @@ class ProviderHealthMonitor:
             values={
                 "status": status,
                 "consecutive_failures": next_failures,
-                "timeout_count": (row.timeout_count if row else 0) + (1 if timed_out else 0),
+                "timeout_count": current_timeout_count + (1 if timed_out else 0),
                 "failure_rate": 100,
                 "disabled_until": disabled_until,
                 "last_failure_at": datetime.utcnow(),
@@ -120,7 +135,7 @@ class ProviderHealthMonitor:
         provider_id: UUID | None,
         environment: str,
         provider_alias: str,
-        values: dict,
+        values: dict[str, JsonValue | datetime],
     ) -> None:
         stmt = insert(ProviderHealthStatus).values(
             merchant_id=merchant_id,

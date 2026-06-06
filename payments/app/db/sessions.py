@@ -1,5 +1,6 @@
 from sqlalchemy.orm import sessionmaker
-from app.db.engines import payments_engine, logs_engine
+
+from app.db.engines import logs_engine, payments_engine
 
 PaymentsSessionLocal = sessionmaker(
     bind=payments_engine,

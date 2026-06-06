@@ -2,15 +2,18 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Protocol
 
+from app.json_types import JsonObject
+
 
 @dataclass(frozen=True)
 class ProviderCredentials:
     """Resolved per-merchant, per-environment provider credentials."""
-    secret_key: str | None = None       # Stripe secret key
-    client_id: str | None = None         # PayPal client ID
-    client_secret: str | None = None     # PayPal client secret
-    base_url: str | None = None          # Optional API base URL override
-    extra: dict = field(default_factory=dict)
+
+    secret_key: str | None = None  # Stripe secret key
+    client_id: str | None = None  # PayPal client ID
+    client_secret: str | None = None  # PayPal client secret
+    base_url: str | None = None  # Optional API base URL override
+    extra: JsonObject = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -36,5 +39,4 @@ class CheckoutSession:
 class PaymentProviderAdapter(Protocol):
     alias: str
 
-    async def create_checkout(self, request: CheckoutRequest) -> CheckoutSession:
-        ...
+    async def create_checkout(self, request: CheckoutRequest) -> CheckoutSession: ...

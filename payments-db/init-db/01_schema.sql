@@ -167,6 +167,10 @@ CREATE TABLE payments (
     provider_checkout_url VARCHAR(2048),
     provider_status       VARCHAR(100),
     environment           VARCHAR(20) NOT NULL DEFAULT 'test',
+    currency              VARCHAR(3) NOT NULL DEFAULT 'USD',
+    country               VARCHAR(2),
+    locale                VARCHAR(20),
+    channel               VARCHAR(30),
     routing_strategy      VARCHAR(30),
     idempotency_key       VARCHAR(255),
     routing_metadata      JSONB,
@@ -185,6 +189,9 @@ CREATE INDEX ix_payments_status          ON payments(status);
 CREATE INDEX ix_payments_merchant_status ON payments(merchant_id, status);
 CREATE INDEX ix_payments_created_at      ON payments(created_at);
 CREATE INDEX ix_payments_environment     ON payments(environment);
+CREATE INDEX ix_payments_currency        ON payments(currency);
+CREATE INDEX ix_payments_country         ON payments(country);
+CREATE INDEX ix_payments_channel         ON payments(channel);
 CREATE INDEX ix_payments_routing_strategy ON payments(routing_strategy);
 CREATE INDEX ix_payments_idempotency_key ON payments(idempotency_key);
 
@@ -397,3 +404,23 @@ CREATE INDEX ix_api_requests_user_id         ON api_requests(user_id);
 CREATE INDEX ix_api_requests_subscription_id ON api_requests(subscription_id);
 CREATE INDEX ix_api_requests_payment_id      ON api_requests(payment_id);
 CREATE INDEX ix_api_requests_created_at      ON api_requests(created_at DESC);
+
+-- Let the application user run development migrations against objects created
+-- by this init script. The user is created in 01-users-and-permissions.sh.
+DO $$
+DECLARE
+    object_name text;
+BEGIN
+    FOR object_name IN
+        SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('ALTER TABLE public.%I OWNER TO payments_api', object_name);
+    END LOOP;
+
+    FOR object_name IN
+        SELECT sequencename FROM pg_sequences WHERE schemaname = 'public'
+    LOOP
+        EXECUTE format('ALTER SEQUENCE public.%I OWNER TO payments_api', object_name);
+    END LOOP;
+END
+$$;

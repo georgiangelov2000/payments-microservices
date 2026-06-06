@@ -222,8 +222,15 @@ export default function Dashboard({ metrics, recentPayments }) {
                                                 <span className="text-sm text-slate-400">—</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-3.5 text-sm font-semibold text-slate-900">
-                                            ${fmtCurrency(payment.amount)}
+                                        <td className="px-6 py-3.5">
+                                            <span className="block text-sm font-semibold text-slate-900">
+                                                {payment.currency || 'USD'} {fmtCurrency(payment.amount)}
+                                            </span>
+                                            {payment.channel && (
+                                                <span className="block text-[11px] font-medium text-slate-400">
+                                                    {payment.channel}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-3.5">
                                             <Badge value={payment.status} />

@@ -56,6 +56,8 @@ final class DashboardRepository
                 'id' => $payment->id,
                 'order_id' => $payment->order_id,
                 'amount' => (float) $payment->amount,
+                'currency' => $payment->currency,
+                'channel' => $payment->channel,
                 'status' => $payment->status?->label(),
                 'merchant' => $payment->merchant?->name,
                 'provider' => $payment->provider?->alias,

@@ -1,18 +1,20 @@
+import logging
 import os
+
 import aio_pika
-from typing import Optional
+from aio_pika.abc import AbstractChannel, AbstractExchange, AbstractRobustConnection
+from aio_pika.exceptions import DeliveryError
 
 from app.dto.payments import PaymentDTO
+
+logger = logging.getLogger(__name__)
 
 
 # -------------------------
 # Config
 # -------------------------
 
-RABBITMQ_URL = os.getenv(
-    "RABBITMQ_URL",
-    "amqp://guest:guest@rabbitmq:5672/"
-)
+RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/")
 
 EXCHANGE_NAME = "payments"
 
@@ -21,31 +23,34 @@ EXCHANGE_NAME = "payments"
 # Connection state (shared)
 # -------------------------
 
-_connection: Optional[aio_pika.RobustConnection] = None
-_channel: Optional[aio_pika.RobustChannel] = None
-_exchange: Optional[aio_pika.RobustExchange] = None
+_connection: AbstractRobustConnection | None = None
+_channel: AbstractChannel | None = None
+_exchange: AbstractExchange | None = None
 
 
 # -------------------------
 # Lifecycle
 # -------------------------
 
-async def connect():
+
+async def connect() -> None:
     global _connection, _channel, _exchange
 
-    _connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    connection = await aio_pika.connect_robust(RABBITMQ_URL)
+    _connection = connection
 
     # ENABLE PUBLISHER CONFIRMS
-    _channel = await _connection.channel(publisher_confirms=True)
+    channel = await connection.channel(publisher_confirms=True)
+    _channel = channel
 
-    _exchange = await _channel.declare_exchange(
+    _exchange = await channel.declare_exchange(
         EXCHANGE_NAME,
         aio_pika.ExchangeType.TOPIC,
         durable=True,
     )
 
 
-async def close():
+async def close() -> None:
     global _connection
 
     if _connection:
@@ -56,7 +61,8 @@ async def close():
 # Publisher (DTO-based)
 # -------------------------
 
-async def publish_payment_event(payment: PaymentDTO):
+
+async def publish_payment_event(payment: PaymentDTO) -> None:
     """
     Publishes a payment event to RabbitMQ WITH confirmation.
     Requires `connect()` to have been called.
@@ -79,26 +85,30 @@ async def publish_payment_event(payment: PaymentDTO):
             mandatory=True,  # detect unroutable messages
         )
 
-        print(
-            f"[PUBLISH] CONFIRMED={confirmed} "
-            f"id={payment.payment_id} "
-            f"status={payment.status} "
-            f"rk={routing_key}"
+        logger.info(
+            "Published payment event",
+            extra={
+                "confirmed": confirmed,
+                "payment_id": payment.payment_id,
+                "status": payment.status,
+                "routing_key": routing_key,
+            },
         )
 
-    except aio_pika.exceptions.UnroutableError:
-        print(
-            f"[PUBLISH] UNROUTABLE "
-            f"id={payment.payment_id} "
-            f"rk={routing_key}"
+    except DeliveryError:
+        logger.exception(
+            "Payment event was unroutable",
+            extra={"payment_id": payment.payment_id, "routing_key": routing_key},
         )
         raise
 
     except Exception as exc:
-        print(
-            f"[PUBLISH] FAILED "
-            f"id={payment.payment_id} "
-            f"rk={routing_key} "
-            f"error={exc}"
+        logger.exception(
+            "Failed to publish payment event",
+            extra={
+                "payment_id": payment.payment_id,
+                "routing_key": routing_key,
+                "error": str(exc),
+            },
         )
         raise

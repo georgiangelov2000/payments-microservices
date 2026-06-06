@@ -5,15 +5,15 @@ from enum import IntEnum
 # PAYMENT STATUS (payments.status)
 # ==================================================
 class PaymentStatus(IntEnum):
-    PAYMENT_PENDING = 1             # Created, awaiting provider checkout
-    PAYMENT_FINISHED = 2            # Successfully completed and captured
-    PAYMENT_FAILED = 3              # Provider declined or all providers failed
-    PAYMENT_PROCESSING = 4          # Customer submitted, awaiting provider confirmation
-    PAYMENT_CANCELLED = 5           # Cancelled by customer or merchant before capture
-    PAYMENT_REFUNDED = 6            # Full refund issued
+    PAYMENT_PENDING = 1  # Created, awaiting provider checkout
+    PAYMENT_FINISHED = 2  # Successfully completed and captured
+    PAYMENT_FAILED = 3  # Provider declined or all providers failed
+    PAYMENT_PROCESSING = 4  # Customer submitted, awaiting provider confirmation
+    PAYMENT_CANCELLED = 5  # Cancelled by customer or merchant before capture
+    PAYMENT_REFUNDED = 6  # Full refund issued
     PAYMENT_PARTIALLY_REFUNDED = 7  # Partial refund issued
-    PAYMENT_DISPUTED = 8            # Chargeback or dispute initiated
-    PAYMENT_EXPIRED = 9             # Checkout session expired without action
+    PAYMENT_DISPUTED = 8  # Chargeback or dispute initiated
+    PAYMENT_EXPIRED = 9  # Checkout session expired without action
 
 
 # ==================================================

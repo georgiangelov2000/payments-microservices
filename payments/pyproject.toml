@@ -1,0 +1,96 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["app"]
+extend-exclude = ["alembic", "seeders"]
+
+[tool.ruff.lint]
+select = [
+    "A",
+    "ASYNC",
+    "B",
+    "C4",
+    "E",
+    "F",
+    "FA",
+    "I",
+    "N",
+    "PERF",
+    "PIE",
+    "RET",
+    "RUF",
+    "SIM",
+    "T20",
+    "UP",
+    "W",
+]
+ignore = [
+    "B008",
+    "E501",
+    "PERF401",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/*" = ["INP001"]
+"seeders/*" = ["T20"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.basedpyright]
+pythonVersion = "3.11"
+pythonPlatform = "Linux"
+typeCheckingMode = "strict"
+include = ["app"]
+exclude = [
+    "alembic",
+    "seeders",
+]
+reportMissingTypeStubs = "none"
+reportUnknownMemberType = "warning"
+reportUnknownVariableType = "warning"
+reportUnknownArgumentType = "warning"
+reportUnknownLambdaType = "warning"
+reportAny = "warning"
+reportArgumentType = "warning"
+reportAssignmentType = "warning"
+reportAttributeAccessIssue = "warning"
+reportDeprecated = "warning"
+reportGeneralTypeIssues = "warning"
+reportOptionalIterable = "warning"
+reportOptionalMemberAccess = "warning"
+
+[tool.mypy]
+python_version = "3.11"
+plugins = ["pydantic.mypy"]
+strict = true
+explicit_package_bases = true
+mypy_path = "."
+warn_unreachable = true
+warn_unused_ignores = true
+show_error_codes = true
+pretty = true
+exclude = [
+    "alembic/",
+    "seeders/",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "aio_pika.*",
+    "sqlalchemy.*",
+    "redis.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "app.models.*",
+]
+disable_error_code = ["misc"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]

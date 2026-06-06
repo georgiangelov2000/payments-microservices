@@ -1,10 +1,13 @@
+from collections.abc import Generator
 from contextlib import contextmanager
+
+from sqlalchemy.orm import Session
 
 from app.db.sessions import LogsSessionLocal, PaymentsSessionLocal
 
 
 @contextmanager
-def payments_session():
+def payments_session() -> Generator[Session]:
     db = PaymentsSessionLocal()
     try:
         yield db
@@ -16,7 +19,7 @@ def payments_session():
 
 
 @contextmanager
-def logs_session():
+def logs_session() -> Generator[Session]:
     db = LogsSessionLocal()
     try:
         yield db

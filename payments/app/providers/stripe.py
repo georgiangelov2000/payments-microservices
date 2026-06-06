@@ -1,9 +1,11 @@
 import os
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
+from typing import cast
 
 import httpx
 from fastapi import HTTPException
 
+from app.json_types import JsonObject
 from app.providers.base import CheckoutRequest, CheckoutSession, ProviderCredentials
 
 
@@ -23,8 +25,14 @@ class StripeConnector:
         raise HTTPException(
             status_code=500,
             detail="Stripe credentials are not configured for this merchant. "
-                   "Please connect your Stripe account in the dashboard.",
+            "Please connect your Stripe account in the dashboard.",
         )
+
+    def _json_object(self, response: httpx.Response) -> JsonObject:
+        payload = response.json()
+        if not isinstance(payload, dict):
+            raise HTTPException(502, detail="Stripe returned a non-object JSON response")
+        return cast(JsonObject, payload)
 
     async def create_checkout(self, request: CheckoutRequest) -> CheckoutSession:
         secret_key = self._secret_key()
@@ -66,19 +74,29 @@ class StripeConnector:
             )
 
         if response.status_code >= 400:
-            raise HTTPException(502, detail={
-                "message": "Stripe checkout session creation failed",
-                "provider_error": response.json(),
-            })
+            raise HTTPException(
+                502,
+                detail={
+                    "message": "Stripe checkout session creation failed",
+                    "provider_error": self._json_object(response),
+                },
+            )
 
-        payload = response.json()
+        payload = self._json_object(response)
+        session_id = payload.get("id")
+        payment_url = payload.get("url")
+
+        if not isinstance(session_id, str) or not isinstance(payment_url, str):
+            raise HTTPException(502, detail="Stripe checkout response is missing id or url")
+
+        raw_status = payload.get("payment_status")
         return CheckoutSession(
-            provider_reference=payload["id"],
-            payment_url=payload["url"],
-            raw_status=payload.get("payment_status", "unpaid"),
+            provider_reference=session_id,
+            payment_url=payment_url,
+            raw_status=raw_status if isinstance(raw_status, str) else "unpaid",
         )
 
-    async def retrieve_checkout_session(self, session_id: str) -> dict:
+    async def retrieve_checkout_session(self, session_id: str) -> JsonObject:
         secret_key = self._secret_key()
 
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -88,9 +106,12 @@ class StripeConnector:
             )
 
         if response.status_code >= 400:
-            raise HTTPException(502, detail={
-                "message": "Stripe checkout session lookup failed",
-                "provider_error": response.json(),
-            })
+            raise HTTPException(
+                502,
+                detail={
+                    "message": "Stripe checkout session lookup failed",
+                    "provider_error": self._json_object(response),
+                },
+            )
 
-        return response.json()
+        return self._json_object(response)

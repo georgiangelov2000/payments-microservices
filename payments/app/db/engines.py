@@ -1,8 +1,15 @@
-from sqlalchemy import create_engine
 import os
+
+from sqlalchemy import create_engine
 
 PAYMENTS_DB_URL = os.getenv("PAYMENTS_DB_URL")
 LOGS_DB_URL = os.getenv("LOGS_DB_URL")
+
+if PAYMENTS_DB_URL is None:
+    raise RuntimeError("PAYMENTS_DB_URL is required")
+
+if LOGS_DB_URL is None:
+    raise RuntimeError("LOGS_DB_URL is required")
 
 payments_engine = create_engine(
     PAYMENTS_DB_URL,

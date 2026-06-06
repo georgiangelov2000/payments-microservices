@@ -1,4 +1,4 @@
-from typing import Type
+from collections.abc import Callable
 
 from fastapi import HTTPException
 
@@ -6,7 +6,9 @@ from app.providers.base import PaymentProviderAdapter, ProviderCredentials
 from app.providers.paypal import PayPalConnector
 from app.providers.stripe import StripeConnector
 
-_REGISTRY: dict[str, Type] = {
+ConnectorFactory = Callable[[ProviderCredentials | None], PaymentProviderAdapter]
+
+_REGISTRY: dict[str, ConnectorFactory] = {
     "stripe": StripeConnector,
     "paypal": PayPalConnector,
 }
@@ -23,7 +25,7 @@ def provider_connector(
             status_code=400,
             detail=f"Provider '{alias}' is not registered on this platform.",
         )
-    return connector_class(credentials=credentials)
+    return connector_class(credentials)
 
 
 def registered_aliases() -> list[str]:

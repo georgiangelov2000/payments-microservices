@@ -10,6 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property string|null $currency
+ * @property string|null $country
+ * @property string|null $locale
+ * @property string|null $channel
+ */
 class Payment extends Model
 {
     use HasUuidV7PrimaryKey;
@@ -24,6 +30,10 @@ class Payment extends Model
         'provider_checkout_url',
         'provider_status',
         'environment',
+        'currency',
+        'country',
+        'locale',
+        'channel',
         'routing_strategy',
         'idempotency_key',
         'routing_metadata',

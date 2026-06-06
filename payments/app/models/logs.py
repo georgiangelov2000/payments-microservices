@@ -1,14 +1,16 @@
 from sqlalchemy import (
     Column,
-    SmallInteger,
-    Text,
     DateTime,
     Index,
+    SmallInteger,
+    Text,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID
+
 from app.db.bases import LogsBase
 from app.support.uuid import uuid7
+
 
 # =========================
 # Payment Logs
@@ -25,15 +27,9 @@ class PaymentLog(LogsBase):
     message = Column(Text, nullable=True)
     payload = Column(Text, nullable=True)
 
-    retry_count = Column(
-        SmallInteger,
-        nullable=False,
-        default=0,
-        server_default="0"
-    )
+    retry_count = Column(SmallInteger, nullable=False, default=0, server_default="0")
 
     next_retry_at = Column(DateTime(timezone=True), nullable=True)
-
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
