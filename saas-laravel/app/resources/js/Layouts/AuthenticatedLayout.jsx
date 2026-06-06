@@ -7,7 +7,6 @@ import {
     Key,
     Package,
     GitBranch,
-    Activity,
     LogOut,
     ChevronLeft,
     ChevronRight,
@@ -24,7 +23,6 @@ const NAV_ITEMS = [
     { label: 'API Keys',     routeName: 'api-keys.index',      pattern: 'api-keys.*',         Icon: Key },
     { label: 'Subscriptions',routeName: 'subscriptions.index', pattern: 'subscriptions.*',    Icon: Package },
     { label: 'Routing',      routeName: 'routing.index',       pattern: 'routing.*',          Icon: GitBranch },
-    { label: 'API Requests', routeName: 'api-requests.index',  pattern: 'api-requests.*',     Icon: Activity },
 ];
 
 // ── Nav Item ─────────────────────────────────────────────────────────────────

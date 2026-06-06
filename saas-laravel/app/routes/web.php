@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\ApiKeyController;
-use App\Http\Controllers\ApiRequestController;
 use App\Http\Controllers\Auth\AuthApiController;
 use App\Http\Controllers\ContactFormController;
 use App\Http\Controllers\DashboardController;
@@ -68,10 +67,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [ContactFormController::class, 'store'])->name('store');
     });
 
-    /* API Requests */
-    Route::prefix('api-requests')->name('api-requests.')->group(function () {
-        Route::get('/', [ApiRequestController::class, 'index'])->name('index');
-    });
 
     Route::prefix('routing')->name('routing.')->group(function () {
         Route::get('/', [RoutingController::class, 'index'])->name('index');
