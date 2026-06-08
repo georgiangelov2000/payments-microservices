@@ -29,7 +29,10 @@ export async function authPost(req, res, next) {
         .json(Errors.FORBIDDEN_ROUTE.body)
     }
 
-    if (!providerAllowed(authData, req)) {
+    // Only enforce provider allowlist when the merchant explicitly pins a provider.
+    // alias: null means "let the routing engine decide" and must pass through.
+    const alias = req.body?.alias
+    if (alias && !providerAllowed(authData, req)) {
       return res
         .status(Errors.PROVIDER_NOT_ALLOWED.status)
         .json(Errors.PROVIDER_NOT_ALLOWED.body)

@@ -7,6 +7,7 @@ from uuid import UUID
 import httpx
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.db.context import logs_session, payments_session
 from app.enums import LogStatus, PaymentLogEvent, PaymentStatus, SubscriptionStatus
@@ -114,7 +115,28 @@ class PaymentCreationService:
             )
 
             payments_db.add(payment)
-            payments_db.flush()
+            try:
+                payments_db.flush()
+            except IntegrityError:
+                # Concurrent request already inserted this order_id — roll back and
+                # return the existing record as an idempotent response.
+                payments_db.rollback()
+                existing = payments_db.execute(
+                    select(
+                        PaymentModel.id,
+                        PaymentModel.status,
+                        PaymentModel.provider_checkout_url,
+                    ).where(PaymentModel.order_id == request.order_id)
+                ).first()
+                if existing:
+                    payment_id, status, checkout_url = existing
+                    return PaymentCreateResponse(
+                        message="payment already exists",
+                        payment_id=str(payment_id),
+                        status=PaymentStatus(status).name,
+                        payment_url=checkout_url,
+                    )
+                raise
             payment_id = cast(UUID, payment.id)
 
             # --------------------------------------------------

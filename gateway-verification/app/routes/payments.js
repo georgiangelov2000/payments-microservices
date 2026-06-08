@@ -23,18 +23,30 @@ router.post("/", authPost, async (req, res) => {
     return send(res, Errors.PAYMENTS_UNAVAILABLE)
   }
 
+  // Track circuit breaker outcome based on the actual HTTP status code returned
+  // by FastAPI, not just whether the TCP connection succeeded. Without this,
+  // recordSuccess() fires even on 502/500 responses from the payments service.
+  const onProxyRes = async proxyRes => {
+    proxy.removeListener("proxyRes", onProxyRes)
+    if (proxyRes.statusCode >= 500) {
+      await recordFailure()
+    } else {
+      await recordSuccess()
+    }
+  }
+  proxy.once("proxyRes", onProxyRes)
+
   proxy.web(
     req,
     res,
     { target: `${env.PAYMENTS_URL}/api/v1/payments`, ignorePath: true },
     async err => {
       if (err) {
+        proxy.removeListener("proxyRes", onProxyRes)
         await recordFailure()
         if (!res.headersSent) {
           return send(res, Errors.PAYMENTS_UNREACHABLE)
         }
-      } else {
-        await recordSuccess()
       }
     }
   )

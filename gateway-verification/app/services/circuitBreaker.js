@@ -13,12 +13,21 @@ export async function recordFailure() {
   if (!redisReady()) return
   const fails = await redis.incr(`${CB_KEY}:fails`)
   if (fails >= FAIL_THRESHOLD) {
-    await redisSetEx(CB_KEY, OPEN_TTL, "open")
-    await redisDel(`${CB_KEY}:fails`)
+    // Use a pipeline so SETEX and DEL are sent as a single atomic batch.
+    // Without this, a concurrent recordSuccess() could delete CB_KEY between
+    // the two commands, then DEL removes the freshly-reset counter.
+    const pipeline = redis.multi()
+    pipeline.setEx(CB_KEY, OPEN_TTL, "open")
+    pipeline.del(`${CB_KEY}:fails`)
+    await pipeline.exec()
   }
 }
 
 export async function recordSuccess() {
-  await redisDel(CB_KEY)
-  await redisDel(`${CB_KEY}:fails`)
+  // Pipeline keeps the two DELs atomic so a concurrent recordFailure()
+  // cannot increment the counter between them and have it silently wiped.
+  const pipeline = redis.multi()
+  pipeline.del(CB_KEY)
+  pipeline.del(`${CB_KEY}:fails`)
+  await pipeline.exec()
 }

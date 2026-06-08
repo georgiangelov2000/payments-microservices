@@ -85,6 +85,8 @@ class ProviderHealthMonitor:
         error: str,
         timed_out: bool = False,
     ) -> None:
+        # SELECT FOR UPDATE locks the row so concurrent record_failure calls
+        # cannot both read the same consecutive_failures value and undercount.
         row = (
             db.query(ProviderHealthStatus)
             .filter(
@@ -92,6 +94,7 @@ class ProviderHealthMonitor:
                 ProviderHealthStatus.environment == environment,
                 ProviderHealthStatus.provider_alias == provider_alias.lower(),
             )
+            .with_for_update()
             .first()
         )
 

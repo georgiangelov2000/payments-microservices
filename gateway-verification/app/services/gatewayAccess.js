@@ -1,10 +1,12 @@
 import crypto from "crypto"
 import { pool } from "../config/postgres.js"
 import { env } from "../config/env.js"
-import { redisDel, redisGet, redisSetEx } from "../config/redis.js"
+import { redisDel, redisGet, redisSetEx, redis, redisReady } from "../config/redis.js"
 
 const CACHE_PREFIX = "gateway:auth:v1:"
 const INVALID_PREFIX = `${CACHE_PREFIX}invalid:`
+const LOCK_PREFIX = `${CACHE_PREFIX}lock:`
+const LOCK_TTL_SECONDS = 5
 
 export function hashApiKey(apiKey) {
   return crypto.createHmac("sha256", env.GATEWAY_HMAC_SECRET).update(apiKey).digest("hex")
@@ -14,6 +16,7 @@ export async function getGatewayAccess(apiKey) {
   const apiKeyHash = hashApiKey(apiKey)
   const cacheKey = `${CACHE_PREFIX}${apiKeyHash}`
   const invalidKey = `${INVALID_PREFIX}${apiKeyHash}`
+  const lockKey = `${LOCK_PREFIX}${apiKeyHash}`
 
   const invalidCached = await safeRedisGet(invalidKey)
   if (invalidCached) {
@@ -28,24 +31,49 @@ export async function getGatewayAccess(apiKey) {
     }
   }
 
-  const profile = await loadGatewayProfile(apiKeyHash)
-  if (!profile?.valid) {
-    await safeRedisSetEx(
-      invalidKey,
-      env.GATEWAY_NEGATIVE_CACHE_TTL_SECONDS,
-      "1"
-    )
-    return { ok: false, reason: "invalid_api_key", apiKeyHash }
+  // Cache stampede guard: only one request does the DB lookup per API key.
+  // Others wait briefly and then re-read from cache. If Redis is down we fall
+  // through to the DB directly (safe degraded behaviour).
+  const gotLock = await acquireLock(lockKey, LOCK_TTL_SECONDS)
+  if (!gotLock) {
+    // Another request is already loading this profile — wait then retry cache.
+    await sleep(150)
+    const retried = await safeRedisGet(cacheKey)
+    if (retried) {
+      const profile = safeParse(retried)
+      if (profile?.valid) {
+        return { ok: true, data: profile, source: "redis", apiKeyHash }
+      }
+    }
+    // Still nothing (lock holder may have found an invalid key) — fall through.
   }
 
-  await safeRedisSetEx(
-    cacheKey,
-    env.GATEWAY_AUTH_CACHE_TTL_SECONDS,
-    JSON.stringify(profile)
-  )
-  await safeRedisDel(invalidKey)
+  try {
+    const profile = await loadGatewayProfile(apiKeyHash)
+    if (!profile?.valid) {
+      await safeRedisSetEx(
+        invalidKey,
+        env.GATEWAY_NEGATIVE_CACHE_TTL_SECONDS,
+        "1"
+      )
+      return { ok: false, reason: "invalid_api_key", apiKeyHash }
+    }
 
-  return { ok: true, data: profile, source: "database", apiKeyHash }
+    // Delete the invalid-key BEFORE writing the valid cache entry.
+    // If the DEL is skipped (Redis error), the next request would still hit
+    // the invalid-key check first and get a false 401. Writing valid first
+    // then deleting invalid creates the same window in reverse.
+    await safeRedisDel(invalidKey)
+    await safeRedisSetEx(
+      cacheKey,
+      env.GATEWAY_AUTH_CACHE_TTL_SECONDS,
+      JSON.stringify(profile)
+    )
+
+    return { ok: true, data: profile, source: "database", apiKeyHash }
+  } finally {
+    await safeRedisDel(lockKey)
+  }
 }
 
 export function routeAllowed(profile, req) {
@@ -150,4 +178,21 @@ async function safeRedisDel(key) {
   } catch {
     return false
   }
+}
+
+// Acquire a Redis NX lock. Returns true if this caller holds the lock.
+// Falls back to true (allow DB access) when Redis is unavailable so auth
+// still works in a degraded state.
+async function acquireLock(key, ttlSeconds) {
+  try {
+    if (!redisReady()) return true
+    const result = await redis.set(key, "1", { NX: true, EX: ttlSeconds })
+    return result === "OK"
+  } catch {
+    return true
+  }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
