@@ -371,7 +371,7 @@ function normalizeEdgeForCanvas(edge, index) {
     }
 }
 
-function WorkflowCanvas({ workflow }) {
+function WorkflowCanvas({ workflow, height = 'h-[560px]' }) {
     const initialNodes = layoutWorkflowNodes(workflow.nodes || [], workflow.edges || []).map(normalizeNodeForCanvas)
     const edges = (workflow.edges || []).map(normalizeEdgeForCanvas)
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
@@ -389,7 +389,7 @@ function WorkflowCanvas({ workflow }) {
     }
 
     return (
-        <div className="h-[420px] overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+        <div className={`${height} overflow-hidden bg-slate-50`}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
@@ -443,42 +443,39 @@ function buildFlowSummary(nodes, edges) {
 
 function WorkflowCard({ workflow }) {
     const [showVersions, setShowVersions] = useState(false)
-    const summary = buildFlowSummary(workflow.nodes, workflow.edges)
     const hasErrors = workflow.validation_errors?.length > 0
+    const environmentClass = workflow.environment === 'live'
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+        : 'border-indigo-200 bg-indigo-50 text-indigo-700'
 
     return (
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-slate-100">
-                <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-slate-800">{workflow.name}</h3>
-                        <Badge variant={workflow.status}>{capitalize(workflow.status)}</Badge>
-                        <Badge variant="default">{capitalize(workflow.environment)}</Badge>
-                        <span className="text-xs text-slate-400">v{workflow.current_version}</span>
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
+                <div className="min-w-0 flex items-center gap-3">
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="truncate text-sm font-semibold text-slate-900">{workflow.name}</h3>
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${workflow.status === 'published' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-blue-200 bg-blue-50 text-blue-700'}`}>
+                                {workflow.status}
+                            </span>
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${environmentClass}`}>
+                                {workflow.environment}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                                v{workflow.current_version}
+                            </span>
+                        </div>
+                        {workflow.published_at && (
+                            <p className="mt-1 text-xs text-slate-400">Published {fmt(workflow.published_at)}</p>
+                        )}
                     </div>
-                    {workflow.published_at && (
-                        <p className="mt-0.5 text-xs text-slate-400">Published {fmt(workflow.published_at)}</p>
-                    )}
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <Lock size={12} className="text-slate-300" strokeWidth={2} />
-                    <span className="text-xs text-slate-400">Read-only</span>
+                <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                    <Lock size={13} strokeWidth={2} />
+                    Read-only
                 </div>
             </div>
 
-            {/* Flow visual */}
-            <div className="px-5 py-4 border-b border-slate-100">
-                <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">Flow</p>
-                <ReactFlowProvider>
-                    <WorkflowCanvas workflow={workflow} />
-                </ReactFlowProvider>
-                {summary && (
-                    <p className="mt-2 text-xs text-slate-500">{summary}</p>
-                )}
-            </div>
-
-            {/* Validation errors */}
             {hasErrors && (
                 <div className="px-5 py-3 bg-red-50 border-b border-red-100">
                     <div className="flex items-center gap-1.5 text-xs text-red-600 font-medium mb-1">
@@ -493,8 +490,45 @@ function WorkflowCard({ workflow }) {
                 </div>
             )}
 
-            {/* Version history */}
-            <div className="px-5 py-3">
+            <div className="flex min-h-[560px] overflow-hidden">
+                <aside className="hidden w-48 shrink-0 border-r border-slate-200 bg-slate-50 p-3 lg:block">
+                    <div className="mb-3 rounded-lg border border-slate-200 bg-white p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Version</p>
+                        <p className="mt-1 text-lg font-semibold text-slate-900">v{workflow.current_version}</p>
+                    </div>
+                    {workflow.versions?.length > 0 && (
+                        <div>
+                            <button
+                                onClick={() => setShowVersions(v => !v)}
+                                className="mb-2 flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-700"
+                            >
+                                {showVersions ? <ChevronUp size={12} strokeWidth={2} /> : <ChevronDown size={12} strokeWidth={2} />}
+                                History
+                            </button>
+                            {showVersions && (
+                                <div className="space-y-1.5">
+                                    {workflow.versions.slice(0, 6).map(v => (
+                                        <div key={v.id} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="font-mono font-semibold text-slate-600">v{v.version}</span>
+                                                <Badge variant={v.status ?? 'default'}>{capitalize(v.status ?? 'draft')}</Badge>
+                                            </div>
+                                            <p className="mt-1 truncate text-[10px] text-slate-400">{fmt(v.created_at)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </aside>
+                <div className="min-w-0 flex-1">
+                    <ReactFlowProvider>
+                        <WorkflowCanvas workflow={workflow} height="h-[560px]" />
+                    </ReactFlowProvider>
+                </div>
+            </div>
+
+            <div className="border-t border-slate-100 px-4 py-2 lg:hidden">
                 <button
                     onClick={() => setShowVersions(v => !v)}
                     className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 transition-colors"
@@ -503,13 +537,12 @@ function WorkflowCard({ workflow }) {
                     {workflow.versions?.length ?? 0} version{workflow.versions?.length !== 1 ? 's' : ''}
                 </button>
                 {showVersions && workflow.versions?.length > 0 && (
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
                         {workflow.versions.map(v => (
-                            <div key={v.id} className="flex items-center gap-3 text-xs text-slate-500 py-1 border-t border-slate-50">
+                            <div key={v.id} className="rounded-lg border border-slate-100 px-3 py-2 text-xs text-slate-500">
                                 <span className="font-mono text-slate-400">v{v.version}</span>
-                                <Badge variant={v.status ?? 'default'}>{capitalize(v.status ?? 'draft')}</Badge>
-                                <span>{fmt(v.created_at)}</span>
-                                {v.published_at && <span className="text-emerald-600">Published {fmt(v.published_at)}</span>}
+                                <span className="ml-2">{capitalize(v.status ?? 'draft')}</span>
+                                <span className="ml-2">{fmt(v.created_at)}</span>
                             </div>
                         ))}
                     </div>
@@ -528,8 +561,19 @@ const PROVIDER_COLORS = {
     paypal:  'bg-blue-500',
 }
 
-function TrafficSplitPanel({ trafficSplit }) {
-    if (!trafficSplit?.length) {
+function TrafficSplitPanel({ trafficSplit, configurations }) {
+    const [selectedEnvironment, setSelectedEnvironment] = useState(null)
+    const environments = Array.from(new Set([
+        ...(configurations || []).map((config) => config.environment),
+        ...(trafficSplit || []).map((row) => row.environment),
+    ])).sort((a, b) => (a === 'live' ? -1 : b === 'live' ? 1 : a.localeCompare(b)))
+
+    const rows = environments.map((environment) => {
+        const existing = (trafficSplit || []).find((row) => row.environment === environment)
+        return existing || { environment, total: 0, providers: [] }
+    })
+
+    if (!rows.length) {
         return (
             <div className="rounded-xl border-2 border-dashed border-slate-200 py-10 text-center">
                 <Activity size={24} strokeWidth={1} className="mx-auto text-slate-300 mb-2" />
@@ -539,16 +583,56 @@ function TrafficSplitPanel({ trafficSplit }) {
         )
     }
 
-    const totalRequests = trafficSplit.reduce((s, r) => s + r.total, 0)
+    const activeEnvironment = selectedEnvironment || rows[0]?.environment || 'test'
+    const selected = rows.find((row) => row.environment === activeEnvironment) || rows[0]
+    const providers = selected?.providers || []
+    const totalRequests = rows.reduce((s, r) => s + r.total, 0)
+    const envLabel = capitalize(selected?.environment || 'test')
+    const envBadgeClass = selected?.environment === 'live'
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+        : 'border-indigo-200 bg-indigo-50 text-indigo-700'
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-700">Actual traffic distribution</h3>
-                <span className="text-xs text-slate-400">{totalRequests.toLocaleString()} total attempts</span>
+            <div className="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold text-slate-700">Actual traffic distribution</h3>
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${envBadgeClass}`}>
+                        {envLabel} mode
+                    </span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                        {rows.map((row) => (
+                            <button
+                                key={row.environment}
+                                onClick={() => setSelectedEnvironment(row.environment)}
+                                className={[
+                                    'rounded-md px-3 py-1 text-xs font-semibold transition',
+                                    activeEnvironment === row.environment
+                                        ? 'bg-white text-slate-900 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700',
+                                ].join(' ')}
+                            >
+                                {capitalize(row.environment)}
+                                <span className="ml-1 text-slate-400">{row.total}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <span className="text-xs text-slate-400">{totalRequests.toLocaleString()} all attempts</span>
+                </div>
             </div>
             <div className="px-5 py-4 space-y-5">
-                {trafficSplit.map(r => {
+                <div className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-xs text-slate-500">
+                    Showing {envLabel.toLowerCase()} routing attempts only. Test and live traffic are separated because they use different operational environments.
+                </div>
+                {providers.length === 0 && (
+                    <div className="rounded-xl border-2 border-dashed border-slate-200 py-8 text-center">
+                        <Activity size={22} strokeWidth={1} className="mx-auto text-slate-300 mb-2" />
+                        <p className="text-sm text-slate-500">No {envLabel.toLowerCase()} routing attempts yet.</p>
+                    </div>
+                )}
+                {providers.map(r => {
                     const barColor = PROVIDER_COLORS[r.provider_alias?.toLowerCase()] ?? 'bg-slate-400'
                     const successColor = r.success_rate >= 90
                         ? 'text-emerald-600'
@@ -584,10 +668,10 @@ function TrafficSplitPanel({ trafficSplit }) {
                     )
                 })}
             </div>
-            {trafficSplit.length > 1 && (
+            {providers.length > 1 && (
                 <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/60">
                     <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
-                        {trafficSplit.map(r => (
+                        {providers.map(r => (
                             <div
                                 key={r.provider_alias}
                                 className={`h-full transition-all ${PROVIDER_COLORS[r.provider_alias?.toLowerCase()] ?? 'bg-slate-400'}`}
@@ -597,7 +681,7 @@ function TrafficSplitPanel({ trafficSplit }) {
                         ))}
                     </div>
                     <div className="flex items-center gap-4 mt-2">
-                        {trafficSplit.map(r => (
+                        {providers.map(r => (
                             <div key={r.provider_alias} className="flex items-center gap-1.5 text-xs text-slate-500">
                                 <span className={`inline-block w-2.5 h-2.5 rounded-sm ${PROVIDER_COLORS[r.provider_alias?.toLowerCase()] ?? 'bg-slate-400'}`} />
                                 {capitalize(r.provider_alias)} {r.pct}%
@@ -953,23 +1037,6 @@ export default function RoutingIndex({ workflows, health, attempts, configuratio
                 {/* Tab content */}
                 {tab === 'Workflows' && (
                     <div className="space-y-6">
-                        {/* Actual traffic distribution */}
-                        <div className="space-y-2">
-                            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Traffic distribution</h2>
-                            <TrafficSplitPanel trafficSplit={trafficSplit} />
-                        </div>
-
-                        {/* Routing configs */}
-                        {configurations.length > 0 && (
-                            <div className="space-y-3">
-                                <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Routing configuration</h2>
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    {configurations.map((c, i) => <RoutingConfigCard key={i} config={c} />)}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Visual workflow cards */}
                         <div className="space-y-3">
                             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Workflows</h2>
                             {workflows.length > 0 ? (

@@ -68,6 +68,7 @@ class RoutingController extends Controller
             ->map(fn ($a) => [
                 'id'             => $a->id,
                 'payment_id'     => $a->payment_id,
+                'environment'    => $a->environment,
                 'provider_alias' => $a->provider_alias,
                 'strategy'       => $a->strategy,
                 'attempt_number' => $a->attempt_number,
@@ -80,21 +81,33 @@ class RoutingController extends Controller
 
         $trafficAgg = PaymentRoutingAttempt::query()
             ->where('merchant_id', $merchantId)
-            ->selectRaw("provider_alias, COUNT(*) as total, SUM(CASE WHEN status = 'succeeded' THEN 1 ELSE 0 END) as succeeded, COALESCE(ROUND(AVG(latency_ms)), 0) as avg_latency_ms")
-            ->groupBy('provider_alias')
+            ->selectRaw("environment, provider_alias, COUNT(*) as total, SUM(CASE WHEN status = 'succeeded' THEN 1 ELSE 0 END) as succeeded, COALESCE(ROUND(AVG(latency_ms)), 0) as avg_latency_ms")
+            ->groupBy('environment', 'provider_alias')
             ->get();
 
         $grandTotal = $trafficAgg->sum('total');
 
-        $trafficSplit = $trafficAgg->map(fn ($r) => [
-            'provider_alias' => $r->provider_alias,
-            'total'          => (int) $r->total,
-            'succeeded'      => (int) $r->succeeded,
-            'failed'         => (int) $r->total - (int) $r->succeeded,
-            'pct'            => $grandTotal > 0 ? round(($r->total / $grandTotal) * 100, 1) : 0.0,
-            'success_rate'   => $r->total > 0 ? round(($r->succeeded / $r->total) * 100, 1) : 0.0,
-            'avg_latency_ms' => (int) $r->avg_latency_ms ?: null,
-        ])->sortByDesc('total')->values();
+        $trafficSplit = $trafficAgg
+            ->groupBy('environment')
+            ->map(function ($rows, string $environment) {
+                $environmentTotal = $rows->sum('total');
+
+                return [
+                    'environment' => $environment,
+                    'total' => (int) $environmentTotal,
+                    'providers' => $rows->map(fn ($r) => [
+                        'provider_alias' => $r->provider_alias,
+                        'total'          => (int) $r->total,
+                        'succeeded'      => (int) $r->succeeded,
+                        'failed'         => (int) $r->total - (int) $r->succeeded,
+                        'pct'            => $environmentTotal > 0 ? round(($r->total / $environmentTotal) * 100, 1) : 0.0,
+                        'success_rate'   => $r->total > 0 ? round(($r->succeeded / $r->total) * 100, 1) : 0.0,
+                        'avg_latency_ms' => (int) $r->avg_latency_ms ?: null,
+                    ])->sortByDesc('total')->values(),
+                ];
+            })
+            ->sortBy(fn ($row) => $row['environment'] === 'live' ? 0 : 1)
+            ->values();
 
         $configurations = ProviderRoutingConfiguration::query()
             ->where('merchant_id', $merchantId)
