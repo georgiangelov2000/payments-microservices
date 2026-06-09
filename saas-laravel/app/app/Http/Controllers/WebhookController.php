@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Carbon;
 
 class WebhookController extends Controller
 {
@@ -60,6 +61,72 @@ class WebhookController extends Controller
         return Inertia::render('Webhooks/Index', [
             'webhooks'       => $webhooks,
             'availableEvents' => self::EVENTS,
+        ]);
+    }
+
+    public function logs(Request $request): Response
+    {
+        $merchantId = Auth::id();
+
+        $webhookIds = MerchantWebhook::query()
+            ->where('merchant_id', $merchantId)
+            ->pluck('id');
+
+        $endpoints = MerchantWebhook::query()
+            ->where('merchant_id', $merchantId)
+            ->get(['id', 'url', 'description']);
+
+        $query = WebhookDelivery::query()
+            ->with(['webhook:id,url,description'])
+            ->whereIn('webhook_id', $webhookIds)
+            ->orderByDesc('created_at');
+
+        if ($webhookId = $request->query('webhook_id')) {
+            $query->where('webhook_id', $webhookId);
+        }
+
+        if ($event = $request->query('event')) {
+            $query->where('event', $event);
+        }
+
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($from = $request->query('from')) {
+            $query->where('created_at', '>=', Carbon::parse($from)->startOfDay());
+        }
+
+        if ($to = $request->query('to')) {
+            $query->where('created_at', '<=', Carbon::parse($to)->endOfDay());
+        }
+
+        $deliveries = $query->paginate(25)->withQueryString();
+
+        return Inertia::render('Webhooks/Logs', [
+            'deliveries' => $deliveries->through(fn ($d) => [
+                'id'            => $d->id,
+                'event'         => $d->event,
+                'status'        => $d->status,
+                'response_code' => $d->response_code,
+                'response_body' => $d->response_body,
+                'last_error'    => $d->last_error,
+                'attempts'      => $d->attempts,
+                'payload'       => $d->payload,
+                'delivered_at'  => $d->delivered_at?->toIso8601String(),
+                'next_retry_at' => $d->next_retry_at?->toIso8601String(),
+                'created_at'    => $d->created_at?->toIso8601String(),
+                'payment_id'    => $d->payment_id,
+                'webhook_url'   => $d->webhook?->url,
+                'webhook_desc'  => $d->webhook?->description,
+            ]),
+            'endpoints' => $endpoints->map(fn ($w) => [
+                'id'   => $w->id,
+                'url'  => $w->url,
+                'desc' => $w->description,
+            ]),
+            'events'  => self::EVENTS,
+            'filters' => $request->only(['webhook_id', 'event', 'status', 'from', 'to']),
         ]);
     }
 

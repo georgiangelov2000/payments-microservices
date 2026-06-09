@@ -250,7 +250,7 @@ final class RoutingWorkflowService
         if (empty($dist)) {
             return 'unknown';
         }
-        $token = ($input['amount'] ?? '').':'.($input['country'] ?? '');
+        $token = ($input['price'] ?? '').':'.($input['country'] ?? '');
         $hash = abs(crc32($token));
         $bucket = $hash % 100;
         $cursor = 0;

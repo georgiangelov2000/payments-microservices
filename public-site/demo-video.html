@@ -28,12 +28,12 @@
             <div class="metric-row">
               <article><span>Volume</span><strong>$184,920</strong></article>
               <article><span>Approval rate</span><strong>98.4%</strong></article>
-              <article><span>Active providers</span><strong>3</strong></article>
+              <article><span>Active providers</span><strong>2</strong></article>
             </div>
             <div class="chart"><b></b><b></b><b></b><b></b><b></b><b></b></div>
             <div class="table-row success"><span>#1029</span><span>Stripe</span><span>Approved</span><span>$124.00</span></div>
             <div class="table-row pending"><span>#1030</span><span>PayPal</span><span>Customer action</span><span>$49.00</span></div>
-            <div class="table-row"><span>#1031</span><span>Adyen</span><span>Fallback ready</span><span>$300.00</span></div>
+            <div class="table-row"><span>#1031</span><span>PayPal</span><span>Fallback ready</span><span>$300.00</span></div>
           </div>
         </div>
       </div>
@@ -53,7 +53,7 @@
           </div>
           <div class="path active">
             <div class="line"></div>
-            <div class="node provider">Adyen Retry</div>
+            <div class="node provider">PayPal Retry</div>
             <em>Success</em>
           </div>
           <div class="path">
@@ -97,11 +97,10 @@
       <div class="globe-grid">
         <div class="provider-card">Stripe<span>Primary card route</span></div>
         <div class="provider-card">PayPal<span>Wallet approval</span></div>
-        <div class="provider-card">Adyen<span>Regional fallback</span></div>
       </div>
       <div class="routing-panel">
         <span>US traffic → Stripe</span>
-        <span>EU retry → Adyen</span>
+        <span>EU retry → PayPal</span>
         <span>Wallet preference → PayPal</span>
       </div>
     </section>

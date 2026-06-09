@@ -135,6 +135,23 @@ services:
         condition: service_healthy
       payments-logs-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  saas-horizon:
+    build: ./saas-laravel
+    container_name: saas-horizon
+    command: ["php", "artisan", "horizon"]
+    volumes:
+      - ./saas-laravel/app:/var/www
+    restart: unless-stopped
+    depends_on:
+      payments-db:
+        condition: service_healthy
+      payments-logs-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   admin-gateway:
     image: nginx:alpine

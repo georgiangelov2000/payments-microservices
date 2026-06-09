@@ -160,7 +160,6 @@ class Payment(PaymentsBase):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
     price = Column(Numeric(18, 8), nullable=False)
-    amount = Column(Numeric(18, 8), nullable=False)
 
     merchant_id = Column(UUID(as_uuid=True), nullable=False)
     provider_id = Column(UUID(as_uuid=True), nullable=False)

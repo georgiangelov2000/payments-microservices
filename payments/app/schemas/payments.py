@@ -9,7 +9,6 @@ MerchantMetadata = dict[str, MerchantMetadataValue]
 
 class CreatePaymentRequest(BaseModel):
     order_id: int = Field(..., gt=0)
-    amount: Decimal = Field(..., gt=0)
     price: Decimal = Field(..., gt=0)
     alias: str | None = Field(None, description="Optional provider alias override")
     subscription_id: UUID
@@ -36,7 +35,7 @@ class CreatePaymentRequest(BaseModel):
         None, description="Arbitrary merchant-defined key-value pairs"
     )
 
-    @field_validator("amount", "price")
+    @field_validator("price")
     @classmethod
     def validate_decimal_positive(cls, v: Decimal) -> Decimal:
         if v <= 0:
@@ -69,7 +68,6 @@ class PaymentShowResponse(BaseModel):
     payment_id: str
     order_id: int
     provider: str
-    amount: Decimal
     price: Decimal
     status: str
     currency: str
@@ -83,7 +81,6 @@ class PaymentListItem(BaseModel):
     payment_id: str
     order_id: int
     provider: str
-    amount: Decimal
     status: str
     currency: str
     country: str | None = None

@@ -49,7 +49,6 @@ class PaymentController extends Controller
                 ->through(fn (Payment $payment) => [
                     'id' => $payment->id,
                     'order_id' => $payment->order_id,
-                    'amount' => (float) $payment->amount,
                     'price' => (float) $payment->price,
                     'status' => $payment->status?->label(),
                     'provider_status' => $payment->provider_status,

@@ -1,9 +1,10 @@
-import { Head, useForm, router, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import {
     Webhook, Plus, Trash2, Play, CheckCircle2, XCircle,
-    Clock, ExternalLink, AlertTriangle, Code2,
+    Clock, ExternalLink, AlertTriangle, Code2, ScrollText,
+    ChevronDown, ChevronUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -257,6 +258,7 @@ function WebhookRow({ webhook }) {
 export default function WebhooksIndex({ webhooks, availableEvents }) {
     const [showForm, setShowForm] = useState(false);
     const [showSnippet, setShowSnippet] = useState(false);
+    const [showEvents, setShowEvents] = useState(false);
     const { flash } = usePage().props;
 
     return (
@@ -268,6 +270,13 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                         Webhooks
                     </h2>
                     <div className="flex gap-2">
+                        <Link
+                            href={route('webhooks.logs')}
+                            className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+                        >
+                            <ScrollText size={13} strokeWidth={2} />
+                            Delivery logs
+                        </Link>
                         <button
                             onClick={() => setShowSnippet(s => !s)}
                             className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
@@ -310,6 +319,109 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                     <p>PayFlow sends a signed <code className="rounded bg-slate-200 px-1 text-xs">POST</code> request to your endpoint when a payment event occurs.
                     Requests include a <code className="rounded bg-slate-200 px-1 text-xs">X-PayFlow-Signature</code> header with an HMAC-SHA256 signature you can verify using your endpoint secret.
                     Failed deliveries are retried up to 5 times with exponential backoff (1m → 5m → 15m → 1h → 3h).</p>
+                </div>
+
+                {/* Events reference */}
+                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                    <button
+                        type="button"
+                        onClick={() => setShowEvents(v => !v)}
+                        className="w-full px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between hover:bg-slate-100 transition-colors"
+                    >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Event reference</p>
+                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                            <span>All events share the same payload shape</span>
+                            {showEvents ? <ChevronUp size={13} strokeWidth={2} /> : <ChevronDown size={13} strokeWidth={2} />}
+                        </div>
+                    </button>
+
+                    {showEvents && (
+                        <>
+                        <div className="divide-y divide-slate-100">
+                            <div className="px-5 py-4 flex gap-4">
+                                <div className="w-44 shrink-0">
+                                    <span className="inline-block rounded-full border border-blue-200 bg-blue-50 px-2.5 py-0.5 font-mono text-xs font-medium text-blue-700">
+                                        payment.created
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-700">Payment session opened</p>
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                        Fired as soon as a new payment is created and the customer is redirected to the provider checkout.
+                                        Use this to mark the order as <em>awaiting payment</em> in your system.
+                                    </p>
+                                    <p className="mt-1 text-[11px] text-slate-400 font-mono">data.status = "created"</p>
+                                </div>
+                            </div>
+                            <div className="px-5 py-4 flex gap-4">
+                                <div className="w-44 shrink-0">
+                                    <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-mono text-xs font-medium text-emerald-700">
+                                        payment.succeeded
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-700">Payment captured successfully</p>
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                        Fired when the provider confirms the charge was captured. This is the authoritative signal
+                                        to fulfil the order — do not fulfil on <code className="rounded bg-slate-100 px-1">payment.created</code> alone.
+                                    </p>
+                                    <p className="mt-1 text-[11px] text-slate-400 font-mono">data.status = "succeeded"  ·  data.amount and data.currency are set</p>
+                                </div>
+                            </div>
+                            <div className="px-5 py-4 flex gap-4">
+                                <div className="w-44 shrink-0">
+                                    <span className="inline-block rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 font-mono text-xs font-medium text-red-600">
+                                        payment.failed
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-700">Payment declined by provider</p>
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                        Fired when the provider declines the charge — insufficient funds, card blocked, fraud check, etc.
+                                        All retry attempts have already been exhausted before this event is sent.
+                                        Prompt the customer to use a different payment method.
+                                    </p>
+                                    <p className="mt-1 text-[11px] text-slate-400 font-mono">data.status = "failed"</p>
+                                </div>
+                            </div>
+                            <div className="px-5 py-4 flex gap-4">
+                                <div className="w-44 shrink-0">
+                                    <span className="inline-block rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 font-mono text-xs font-medium text-slate-600">
+                                        payment.cancelled
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-700">Customer abandoned checkout</p>
+                                    <p className="mt-0.5 text-xs text-slate-500">
+                                        Fired when the customer clicks "Cancel" or navigates away from the provider checkout page.
+                                        No charge was attempted. You can show a recovery prompt or restart the checkout flow.
+                                    </p>
+                                    <p className="mt-1 text-[11px] text-slate-400 font-mono">data.status = "cancelled"</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="border-t border-slate-100 bg-slate-900 overflow-hidden">
+                            <div className="flex items-center justify-between px-5 py-2 border-b border-slate-700">
+                                <span className="text-xs font-medium text-slate-400">Example payload (all events)</span>
+                            </div>
+                            <pre className="px-5 py-4 text-xs text-slate-300 overflow-x-auto leading-relaxed">{`{
+  "id": "019eaccb-1234-...",
+  "event": "payment.succeeded",
+  "created_at": "2026-06-09T14:32:13.000Z",
+  "data": {
+    "payment_id": "019eaccb-...",
+    "order_id": "1001",
+    "status": "succeeded",
+    "amount": 149.99,
+    "currency": "USD",
+    "provider_reference": "cs_test_a1B2c3...",
+    "environment": "test",
+    "created_at": "2026-06-09T14:31:00.000Z"
+  }
+}`}</pre>
+                        </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Signature verification snippet */}

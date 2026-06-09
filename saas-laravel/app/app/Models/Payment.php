@@ -22,7 +22,6 @@ class Payment extends Model
 
     protected $fillable = [
         'price',
-        'amount',
         'merchant_id',
         'order_id',
         'provider_id',
@@ -42,7 +41,6 @@ class Payment extends Model
 
     protected $casts = [
         'price' => 'decimal:8',
-        'amount' => 'decimal:8',
         'status' => PaymentStatus::class,
         'routing_metadata' => 'array',
     ];

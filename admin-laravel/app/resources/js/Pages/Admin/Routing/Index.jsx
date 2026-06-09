@@ -370,8 +370,8 @@ function humanizeRule(rule) {
     const cond = rule.conditions ?? {};
     const parts = [];
     if (cond.currency)       parts.push(`currency is ${cond.currency.toUpperCase()}`);
-    if (cond.min_amount)     parts.push(`amount is over $${cond.min_amount}`);
-    if (cond.max_amount)     parts.push(`amount is under $${cond.max_amount}`);
+    if (cond.min_price)      parts.push(`price is over $${cond.min_price}`);
+    if (cond.max_price)      parts.push(`price is under $${cond.max_price}`);
     if (cond.country)        parts.push(`country is ${cond.country.toUpperCase()}`);
     if (cond.payment_method) parts.push(`method is ${cond.payment_method}`);
     if (cond.recurring === true || cond.recurring === 'true') parts.push('payment is recurring');

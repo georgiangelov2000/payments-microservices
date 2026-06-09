@@ -1,6 +1,6 @@
 export const STORE_NAME = "TechShop"
 
-// alias must match a seeded provider in the payments DB: stripe | paypal | adyen
+// alias must match a seeded provider in the payments DB: stripe | paypal
 export const products = [
   {
     id: 1,
@@ -27,7 +27,7 @@ export const products = [
     name: "USB-C Hub 7-in-1",
     price: 49.99,
     description: "Expand connectivity with HDMI 4K, 3× USB-A, SD/TF slots and 100W PD",
-    provider: "adyen",
+    provider: "stripe",
     emoji: "🔌",
     category: "Accessories",
     badge: null,
@@ -57,7 +57,7 @@ export const products = [
     name: "XL Mouse Pad",
     price: 24.99,
     description: "Extended 90×40 cm gaming surface with anti-slip rubber base",
-    provider: "adyen",
+    provider: "paypal",
     emoji: "🖱️",
     category: "Accessories",
     badge: "New",

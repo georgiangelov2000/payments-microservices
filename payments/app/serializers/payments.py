@@ -8,7 +8,6 @@ def payment_to_dict(payment: PaymentModel) -> JsonObject:
         "order_id": int(payment.order_id),
         "merchant_id": str(payment.merchant_id),
         "status": int(payment.status.value),
-        "amount": str(payment.amount),
         "price": str(payment.price),
         "currency": str(payment.currency),
         "country": str(payment.country) if payment.country else None,

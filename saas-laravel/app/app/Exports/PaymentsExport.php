@@ -28,7 +28,8 @@ class PaymentsExport implements FromQuery, WithChunkReading, WithHeadings, WithM
             ->whereStatus($this->filters['status'] ?? null)
             ->whereOrder($this->filters['order_id'] ?? null)
             ->whereDateRange($this->filters['from'] ?? null, $this->filters['to'] ?? null)
-            ->latest();
+            ->latest()
+            ->getQuery();
     }
 
     /**
@@ -47,7 +48,7 @@ class PaymentsExport implements FromQuery, WithChunkReading, WithHeadings, WithM
         return [
             'ID',
             'Order ID',
-            'Amount',
+            'Price',
             'Currency',
             'Channel',
             'Country',

@@ -15,7 +15,6 @@ return new class extends Migration
                 $table->uuid('id')->primary();
 
                 $table->decimal('price', 18, 8);
-                $table->decimal('amount', 18, 8);
 
                 $table->uuid('merchant_id');
                 $table->unsignedBigInteger('order_id')->unique();

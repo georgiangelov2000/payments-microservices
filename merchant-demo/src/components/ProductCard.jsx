@@ -1,13 +1,11 @@
 const PROVIDER_COLORS = {
   stripe: "#635bff",
   paypal: "#003087",
-  adyen: "#0abf53",
 }
 
 const PROVIDER_LABELS = {
   stripe: "Stripe",
   paypal: "PayPal",
-  adyen: "Adyen",
 }
 
 export default function ProductCard({ product, onBuy, onAddToCart }) {

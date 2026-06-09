@@ -16,6 +16,7 @@ use App\Http\Controllers\ContactFormController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoutingController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -78,8 +79,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
+    Route::get('/routing', [RoutingController::class, 'index'])->name('routing.index');
+
     Route::prefix('webhooks')->name('webhooks.')->group(function () {
         Route::get('/', [WebhookController::class, 'index'])->name('index');
+        Route::get('/logs', [WebhookController::class, 'logs'])->name('logs');
         Route::post('/', [WebhookController::class, 'store'])->name('store');
         Route::delete('/{webhook}', [WebhookController::class, 'destroy'])->name('destroy');
         Route::post('/{webhook}/test', [WebhookController::class, 'test'])->name('test');

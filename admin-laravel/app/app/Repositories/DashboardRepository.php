@@ -30,7 +30,7 @@ final class DashboardRepository
             'merchants' => User::query()->where('role', Role::MERCHANT->value)->count(),
             'activeMerchants' => User::query()->where('role', Role::MERCHANT->value)->where('status', 1)->count(),
             'payments' => Payment::query()->count(),
-            'paymentVolume' => (float) Payment::query()->sum('amount'),
+            'paymentVolume' => (float) Payment::query()->sum('price'),
             'pendingPayments' => (int) ($paymentsByStatus[PaymentStatus::PENDING->value] ?? 0),
             'finishedPayments' => (int) ($paymentsByStatus[PaymentStatus::FINISHED->value] ?? 0),
             'failedPayments' => (int) ($paymentsByStatus[PaymentStatus::FAILED->value] ?? 0),
@@ -53,7 +53,7 @@ final class DashboardRepository
             ->map(fn (Payment $payment) => [
                 'id' => $payment->id,
                 'order_id' => $payment->order_id,
-                'amount' => (float) $payment->amount,
+                'price' => (float) $payment->price,
                 'currency' => $payment->currency,
                 'channel' => $payment->channel,
                 'status' => $payment->status?->label(),

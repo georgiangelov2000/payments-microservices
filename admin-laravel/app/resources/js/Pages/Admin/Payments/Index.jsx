@@ -313,7 +313,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                 </td>
                                                 <td className="px-6 py-3.5">
                                                     <span className="block text-sm font-semibold text-slate-900">
-                                                        {payment.currency || 'USD'} {fmtCurrency(payment.amount)}
+                                                        {payment.currency || 'USD'} {fmtCurrency(payment.price)}
                                                     </span>
                                                     <span className="mt-0.5 block text-[11px] font-medium text-slate-400">
                                                         {[payment.channel, payment.country, payment.locale].filter(Boolean).join(' · ') || 'No context'}

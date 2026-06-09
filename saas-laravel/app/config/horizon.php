@@ -99,8 +99,9 @@ return [
     */
 
     'waits' => [
-        'redis:default' => 60,
+        'redis:default'       => 60,
         'redis:notifications' => 300,
+        'redis:exports'       => 300,
     ],
 
     /*
@@ -202,39 +203,63 @@ return [
     'defaults' => [
         'supervisor-default' => [
             'connection' => 'redis',
-            'queue' => ['default', 'notifications'],
-            'balance' => 'auto',
+            'queue'      => ['default', 'notifications'],
+            'balance'    => 'auto',
             'autoScalingStrategy' => 'time',
-            'processes' => 3,
-            'memory' => 128,
-            'tries' => 1,
-            'timeout' => 60,
-
+            'processes'  => 3,
+            'memory'     => 128,
+            'tries'      => 1,
+            'timeout'    => 60,
+        ],
+        'supervisor-exports' => [
+            'connection' => 'redis',
+            'queue'      => ['exports'],
+            'balance'    => 'simple',
+            'processes'  => 2,
+            'memory'     => 256,
+            'tries'      => 3,
+            'timeout'    => 300,
         ],
     ],
 
     'environments' => [
 
         'production' => [
-
             'supervisor-notifications' => [
                 'connection' => 'redis',
-                'queue' => ['notifications'],
-                'balance' => 'auto',
-                'processes' => 5,
-                'tries' => 3,
-                'timeout' => 3600,
+                'queue'      => ['notifications'],
+                'balance'    => 'auto',
+                'processes'  => 5,
+                'tries'      => 3,
+                'timeout'    => 3600,
+            ],
+            'supervisor-exports' => [
+                'connection' => 'redis',
+                'queue'      => ['exports'],
+                'balance'    => 'simple',
+                'processes'  => 3,
+                'memory'     => 256,
+                'tries'      => 3,
+                'timeout'    => 300,
             ],
         ],
 
         'local' => [
             'supervisor-notifications' => [
                 'connection' => 'redis',
-                'queue' => ['notifications'],
-                'balance' => 'auto',
-                'processes' => 2,
-                'timeout' => 3600,
-
+                'queue'      => ['notifications'],
+                'balance'    => 'auto',
+                'processes'  => 2,
+                'timeout'    => 3600,
+            ],
+            'supervisor-exports' => [
+                'connection' => 'redis',
+                'queue'      => ['exports'],
+                'balance'    => 'simple',
+                'processes'  => 1,
+                'memory'     => 256,
+                'tries'      => 3,
+                'timeout'    => 300,
             ],
         ],
     ],

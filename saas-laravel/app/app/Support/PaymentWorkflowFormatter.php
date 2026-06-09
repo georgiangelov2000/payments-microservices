@@ -156,7 +156,38 @@ final class PaymentWorkflowFormatter
         $message = trim((string) $message);
         $message = preg_replace('/\s+/', ' ', $message);
 
-        return $message !== '' ? $message : 'Provider response received without a readable summary';
+        if ($message === '') {
+            return 'Provider response received without a readable summary';
+        }
+
+        // Translate legacy raw Python log strings stored in the DB into plain English.
+        $simpleTranslations = [
+            '/Provider return processed:\s*PAYMENT_CANCELLED/i'       => 'Customer cancelled the checkout session.',
+            '/Provider return processed:\s*PAYMENT_FINISHED/i'        => 'Payment captured successfully by the provider.',
+            '/Provider return processed:\s*PAYMENT_FAILED/i'          => 'Payment was declined by the provider.',
+            '/Provider return processed:\s*PAYMENT_\w+/i'             => 'Payment status updated by provider.',
+            '/Payment is pending and waiting for customer action\.?/i' => 'Customer redirect ready — awaiting payment at checkout.',
+            '/Payment created with (\w+) routing/i'                   => 'Payment initiated with $1 routing strategy.',
+        ];
+
+        foreach ($simpleTranslations as $pattern => $replacement) {
+            $translated = preg_replace($pattern, $replacement, $message);
+            if ($translated !== $message) {
+                return trim((string) $translated);
+            }
+        }
+
+        // Provider checkout — capitalize provider name via callback.
+        $translated = preg_replace_callback(
+            '/Provider checkout request sent to (\w+) \(attempt (\d+)\)/i',
+            fn ($m) => 'Checkout session created with ' . ucfirst(strtolower($m[1])) . ' (attempt ' . $m[2] . ').',
+            $message
+        );
+        if ($translated !== $message) {
+            return trim((string) $translated);
+        }
+
+        return $message;
     }
 
     private static function decodePayload(array|string|null $payload): array|string|null

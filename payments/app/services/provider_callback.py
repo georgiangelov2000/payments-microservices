@@ -23,6 +23,18 @@ _TERMINAL_WEBHOOK_EVENTS = {
     PaymentStatus.PAYMENT_CANCELLED: "payment.cancelled",
 }
 
+_TERMINAL_LOG_MESSAGES = {
+    PaymentStatus.PAYMENT_FINISHED:  "Payment captured successfully by the provider.",
+    PaymentStatus.PAYMENT_FAILED:    "Payment was declined by the provider.",
+    PaymentStatus.PAYMENT_CANCELLED: "Customer cancelled the checkout session.",
+}
+
+_TERMINAL_LOG_STATUSES = {
+    PaymentStatus.PAYMENT_FINISHED:  LogStatus.LOG_SUCCESS,
+    PaymentStatus.PAYMENT_CANCELLED: LogStatus.LOG_SUCCESS,
+    PaymentStatus.PAYMENT_FAILED:    LogStatus.LOG_FAILED,
+}
+
 
 def _uuid(value: str | UUID) -> UUID:
     return value if isinstance(value, UUID) else UUID(str(value))
@@ -187,10 +199,9 @@ class ProviderCallbackService:
                 payments_db.commit()
                 status_updated = True
 
-                log_status = (
-                    LogStatus.LOG_SUCCESS.value
-                    if status == PaymentStatus.PAYMENT_FINISHED
-                    else LogStatus.LOG_FAILED.value
+                log_status = _TERMINAL_LOG_STATUSES.get(status, LogStatus.LOG_FAILED).value
+                human_msg = _TERMINAL_LOG_MESSAGES.get(
+                    status, f"Payment status updated: {status.name}."
                 )
                 with logs_session() as logs_db:
                     logs_db.add(
@@ -198,7 +209,7 @@ class ProviderCallbackService:
                             payment_id=payment_uuid,
                             event_type=event_type.value,
                             status=log_status,
-                            message=f"[{datetime.utcnow().isoformat()}] Provider return processed: {status.name}",
+                            message=f"[{datetime.utcnow().isoformat()}] {human_msg}",
                             payload=json.dumps(payload),
                         )
                     )

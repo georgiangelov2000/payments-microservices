@@ -19,7 +19,6 @@ final readonly class PaymentsDTO
     public function __construct(
         public string $id,
         public float $price,
-        public float $amount,
         public string $merchant_id,
         public int|string $order_id,
         public string $status,
@@ -48,7 +47,6 @@ final readonly class PaymentsDTO
         return new self(
             id: $payment->id,
             price: (float) $payment->price,
-            amount: (float) $payment->amount,
             merchant_id: $payment->merchant_id,
             order_id: $payment->order_id,
             status: $payment->status->label(),
@@ -72,7 +70,6 @@ final readonly class PaymentsDTO
      * @return array{
      *     id: string,
      *     price: float,
-     *     amount: float,
      *     merchant_id: string,
      *     order_id: int|string,
      *     status: string,
@@ -96,7 +93,6 @@ final readonly class PaymentsDTO
         return [
             'id' => $this->id,
             'price' => $this->price,
-            'amount' => $this->amount,
             'merchant_id' => $this->merchant_id,
             'order_id' => $this->order_id,
             'status' => $this->status,

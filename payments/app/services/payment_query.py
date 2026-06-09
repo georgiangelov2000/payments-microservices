@@ -79,7 +79,6 @@ class PaymentQueryService:
                 select(
                     PaymentModel.id,
                     PaymentModel.order_id,
-                    PaymentModel.amount,
                     PaymentModel.price,
                     PaymentModel.status,
                     PaymentModel.currency,
@@ -99,7 +98,6 @@ class PaymentQueryService:
             (
                 pid,
                 order_id,
-                amount,
                 price,
                 status,
                 currency,
@@ -114,7 +112,6 @@ class PaymentQueryService:
             payment_id=str(pid),
             order_id=order_id,
             provider=provider_alias,
-            amount=amount,
             price=price,
             status=PaymentStatus(status).name,
             currency=currency,
@@ -139,7 +136,6 @@ class PaymentQueryService:
                 select(
                     PaymentModel.id,
                     PaymentModel.order_id,
-                    PaymentModel.amount,
                     PaymentModel.status,
                     PaymentModel.currency,
                     PaymentModel.country,
@@ -160,7 +156,6 @@ class PaymentQueryService:
                     payment_id=str(row.id),
                     order_id=row.order_id,
                     provider=row.alias,
-                    amount=row.amount,
                     currency=row.currency,
                     country=row.country,
                     locale=row.locale,

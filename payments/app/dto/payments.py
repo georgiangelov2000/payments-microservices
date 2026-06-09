@@ -6,5 +6,4 @@ class PaymentDTO(BaseModel):
     order_id: int
     merchant_id: str
     status: int
-    amount: str
     price: str

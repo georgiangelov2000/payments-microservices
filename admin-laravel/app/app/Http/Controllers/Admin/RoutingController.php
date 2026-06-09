@@ -132,7 +132,7 @@ class RoutingController extends Controller
             'input' => ['required', 'array'],
             'input.country' => ['nullable', 'string'],
             'input.currency' => ['nullable', 'string'],
-            'input.amount' => ['nullable', 'numeric'],
+            'input.price' => ['nullable', 'numeric'],
             'input.payment_method' => ['nullable', 'string'],
             'input.recurring' => ['nullable', 'boolean'],
         ]);

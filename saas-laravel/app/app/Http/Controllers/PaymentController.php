@@ -5,20 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\PaymentStatus;
-use App\Exports\PaymentsExport;
 use App\Http\Requests\ExportRequest;
 use App\Http\Requests\PaymentRequest;
+use App\Jobs\PaymentsExportJob;
 use App\Models\Payment;
-use App\Models\Provider;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
-use Maatwebsite\Excel\Excel as ExcelFormat;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class PaymentController extends Controller
 {
@@ -39,7 +34,6 @@ final class PaymentController extends Controller
             'payment' => [
                 'id'                   => $payment->id,
                 'order_id'             => $payment->order_id,
-                'amount'               => (float) $payment->amount,
                 'price'                => (float) $payment->price,
                 'currency'             => $payment->currency ?? 'USD',
                 'country'              => $payment->country,
@@ -96,51 +90,24 @@ final class PaymentController extends Controller
         ]);
     }
 
-    public function export(ExportRequest $request): JsonResponse|BinaryFileResponse|StreamedResponse
+    public function export(ExportRequest $request): JsonResponse
     {
         $params = $request->safe()->toArray();
-        $format = $params['format'];
         $params['status'] = $params['status']
             ? PaymentStatus::fromString($params['status'])->value
             : null;
 
-        $filename = sprintf('payments_%s.%s', now()->format('Ymd_His'), $format);
+        $user = Auth::user();
 
-        if ($format === 'json') {
-            $rows = (new PaymentsExport($params['merchant_id'], $params))
-                ->query()
-                ->get()
-                ->map(function ($payment): array {
-                    /** @var \App\Models\Payment $payment */
-                    return [
-                        'id' => $payment->id,
-                        'order_id' => $payment->order_id,
-                        'amount' => (float) $payment->price,
-                        'currency' => $payment->currency,
-                        'channel' => $payment->channel,
-                        'country' => $payment->country,
-                        'locale' => $payment->locale,
-                        'status' => $payment->status->label(),
-                        'provider' => $payment->provider instanceof Provider
-                            ? $payment->provider->name
-                            : null,
-                        'created_at' => $payment->created_at->toDateTimeString(),
-                    ];
-                });
-
-            return response()->streamDownload(
-                fn () => print json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-                $filename,
-                ['Content-Type' => 'application/json']
-            );
-        }
-
-        $writerType = $format === 'csv' ? ExcelFormat::CSV : ExcelFormat::XLSX;
-
-        return Excel::download(
-            new PaymentsExport($params['merchant_id'], $params),
-            $filename,
-            $writerType
+        PaymentsExportJob::dispatch(
+            merchantId: $params['merchant_id'],
+            userEmail: $user->email,
+            format: $params['format'],
+            filters: $params,
         );
+
+        return response()->json([
+            'message' => "Your export is being prepared. We'll email it to {$user->email} when it's ready.",
+        ], 202);
     }
 }

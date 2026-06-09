@@ -791,7 +791,6 @@ pre {
 .provider-logo-wrap svg { width: 32px; height: 32px; }
 .stripe-logo { background: #F0EEFF; }
 .paypal-logo { background: #EEF4FF; }
-.adyen-logo  { background: #F0FDF4; }
 .more-logo   { background: var(--soft); color: var(--muted); }
 .provider-info { flex: 1; }
 .provider-info h4 { font-size: var(--text-base); font-weight: 700; margin-bottom: 6px; }

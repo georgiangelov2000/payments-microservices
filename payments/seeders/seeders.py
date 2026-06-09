@@ -11,7 +11,6 @@ def seed_providers(db):
     providers = [
         {"name": "Stripe", "alias": "stripe", "url": "https://stripe.com"},
         {"name": "PayPal", "alias": "paypal", "url": "https://paypal.com"},
-        {"name": "Adyen", "alias": "adyen", "url": "https://adyen.com"},
     ]
 
     for p in providers:

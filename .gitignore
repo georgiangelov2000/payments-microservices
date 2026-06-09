@@ -13,6 +13,7 @@ admin-laravel/app/.env.testing
 !**/.env.example
 
 # Docker volumes / build artefacts
+.claude/
 **/node_modules/
 **/__pycache__/
 **/*.pyc

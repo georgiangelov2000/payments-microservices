@@ -378,7 +378,7 @@ const OPERATORS = [
     { value: 'gte', label: '≥' },
     { value: 'lte', label: '≤' },
 ];
-const COND_FIELDS = ['country', 'currency', 'payment_method', 'card_type', 'recurring', 'amount', 'environment'];
+const COND_FIELDS = ['country', 'currency', 'payment_method', 'card_type', 'recurring', 'price', 'environment'];
 
 function ConditionEditor({ conditions, onChange }) {
     const add = () => onChange([...conditions, { field: 'country', operator: 'eq', value: '' }]);
@@ -545,7 +545,7 @@ function clientSimulate(nodes, edges, input) {
         }
         if (type === 'weighted') {
             const dist = data.distribution || [];
-            const token = String(input.amount || '') + String(input.country || '');
+            const token = String(input.price || '') + String(input.country || '');
             let hash = 0; for (const c of token) hash = ((hash << 5) - hash) + c.charCodeAt(0);
             const bucket = Math.abs(hash) % 100;
             let cursor = 0, chosen = dist[0]?.provider_alias || 'unknown';
@@ -573,7 +573,7 @@ function clientSimulate(nodes, edges, input) {
 
 function SimulationPanel({ nodes, edges }) {
     const [open, setOpen]     = useState(false);
-    const [input, setInput]   = useState({ country: 'US', currency: 'USD', amount: '99', payment_method: 'card', recurring: false });
+    const [input, setInput]   = useState({ country: 'US', currency: 'USD', price: '99', payment_method: 'card', recurring: false });
     const [result, setResult] = useState(null);
 
     const run = () => setResult(clientSimulate(nodes, edges, input));
@@ -594,7 +594,7 @@ function SimulationPanel({ nodes, edges }) {
                         {[
                             { key: 'country', label: 'Country', placeholder: 'US, DE…' },
                             { key: 'currency', label: 'Currency', placeholder: 'USD' },
-                            { key: 'amount',   label: 'Amount',   placeholder: '99.99' },
+                            { key: 'price',    label: 'Price',    placeholder: '99.99' },
                             { key: 'payment_method', label: 'Method', placeholder: 'card' },
                         ].map(f => (
                             <div key={f.key}>

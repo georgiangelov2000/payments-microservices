@@ -224,7 +224,7 @@ export default function Dashboard({ metrics, recentPayments }) {
                                         </td>
                                         <td className="px-6 py-3.5">
                                             <span className="block text-sm font-semibold text-slate-900">
-                                                {payment.currency || 'USD'} {fmtCurrency(payment.amount)}
+                                                {payment.currency || 'USD'} {fmtCurrency(payment.price)}
                                             </span>
                                             {payment.channel && (
                                                 <span className="block text-[11px] font-medium text-slate-400">

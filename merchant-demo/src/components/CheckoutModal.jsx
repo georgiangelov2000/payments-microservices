@@ -4,7 +4,6 @@ import { createPayment } from "../api/payments"
 const PROVIDER_LABELS = {
   stripe: "Stripe",
   paypal: "PayPal",
-  adyen: "Adyen",
 }
 
 export default function CheckoutModal({ items, onClose, onSuccess }) {

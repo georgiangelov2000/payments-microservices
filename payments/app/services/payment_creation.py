@@ -99,7 +99,6 @@ class PaymentCreationService:
             # --------------------------------------------------
             payment = PaymentModel(
                 order_id=request.order_id,
-                amount=request.amount,
                 price=request.price,
                 provider_id=primary_provider.id,
                 merchant_id=merchant_uuid,
@@ -471,7 +470,7 @@ class PaymentCreationService:
                     message=(
                         PaymentLog.message
                         + "\n"
-                        + f"[{now}] Payment is pending and waiting for customer action."
+                        + f"[{now}] Customer redirect ready — awaiting payment at {provider_alias.capitalize()} checkout."
                     ),
                     payload=json.dumps(
                         {
@@ -515,8 +514,8 @@ class PaymentCreationService:
                     event_type=PaymentLogEvent.EVENT_PROVIDER_REQUEST_SENT.value,
                     status=LogStatus.LOG_SUCCESS.value,
                     message=(
-                        f"[{datetime.utcnow().isoformat()}] Provider checkout request sent "
-                        f"to {provider_alias} (attempt {attempt_number})"
+                        f"[{datetime.utcnow().isoformat()}] Checkout session created with "
+                        f"{provider_alias.capitalize()} (attempt {attempt_number})"
                     ),
                     payload=json.dumps(
                         {
