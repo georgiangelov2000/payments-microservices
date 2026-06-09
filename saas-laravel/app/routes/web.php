@@ -2,80 +2,104 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\Auth\AuthApiController;
+use App\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ContactFormController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RoutingController;
 use App\Http\Controllers\SubscriptionController;
-use Illuminate\Http\RedirectResponse;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function (): RedirectResponse {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : redirect(config('services.static_site.url'), 302);
+/*
+ * Guest routes — login/register redirect to the static marketing site;
+ * password-reset is handled here because it needs a server-rendered token.
+ */
+Route::middleware('guest')->group(function () {
+    Route::get('login', fn () => redirect(config('services.static_site.url').'/login.html', 302))->name('login');
+    Route::get('register', fn () => redirect(config('services.static_site.url').'/register.html', 302))->name('register');
+
+    Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+    Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 });
 
 /*
- * JSON authentication endpoints — called by the static marketing site via fetch().
- * These routes use the web middleware group (session + cookies) but are exempt
- * from CSRF verification (configured in bootstrap/app.php) because they receive
- * cross-origin requests from the static site with credentials.
+ * JSON authentication endpoints — POSTed by the static marketing site via fetch().
+ * Exempt from CSRF (see bootstrap/app.php) to allow cross-origin requests with credentials.
  */
-Route::prefix('auth')->middleware('web')->group(function () {
+Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthApiController::class, 'login'])->name('auth.api.login');
     Route::post('/register', [AuthApiController::class, 'register'])->name('auth.api.register');
 });
 
+/*
+ * Authenticated merchant routes.
+ */
 Route::middleware('auth')->group(function () {
+    Route::get('/', fn () => redirect()->route('dashboard'));
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    /* Dashboard */
-    Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
-
-    /* Profile */
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'edit'])->name('edit');
         Route::patch('/', [ProfileController::class, 'update'])->name('update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
     });
 
-    /* Payments */
     Route::prefix('payments')->name('payments.')->group(function () {
         Route::get('/', [PaymentController::class, 'index'])->name('index');
         Route::get('/{id}', [PaymentController::class, 'show'])->name('show');
         Route::post('/exports', [PaymentController::class, 'export'])->name('export');
     });
 
-    /* API Keys */
     Route::prefix('api-keys')->name('api-keys.')->group(function () {
         Route::get('/', [ApiKeyController::class, 'index'])->name('index');
         Route::post('/', [ApiKeyController::class, 'store'])->name('store');
     });
 
-    /* Subscriptions */
     Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
         Route::get('/', [SubscriptionController::class, 'index'])->name('index');
     });
 
-    /* Contacts */
     Route::prefix('contacts')->name('contacts.')->group(function () {
         Route::get('/', [ContactFormController::class, 'index'])->name('index');
         Route::post('/', [ContactFormController::class, 'store'])->name('store');
     });
 
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
-    Route::prefix('routing')->name('routing.')->group(function () {
-        Route::get('/', [RoutingController::class, 'index'])->name('index');
-        Route::put('/', [RoutingController::class, 'update'])->name('update');
-        Route::put('/sandbox', [RoutingController::class, 'updateSandbox'])->name('sandbox.update');
-        Route::post('/rules', [RoutingController::class, 'storeRule'])->name('rules.store');
-        Route::delete('/rules/{rule}', [RoutingController::class, 'destroyRule'])->name('rules.destroy');
+    Route::prefix('webhooks')->name('webhooks.')->group(function () {
+        Route::get('/', [WebhookController::class, 'index'])->name('index');
+        Route::post('/', [WebhookController::class, 'store'])->name('store');
+        Route::delete('/{webhook}', [WebhookController::class, 'destroy'])->name('destroy');
+        Route::post('/{webhook}/test', [WebhookController::class, 'test'])->name('test');
     });
 
-});
+    // Password management
+    Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
-require __DIR__.'/auth.php';
+    // Email verification
+    Route::get('verify-email', EmailVerificationPromptController::class)->name('verification.notice');
+    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+
+    // Password confirmation
+    Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])->name('password.confirm');
+    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
+
+    Route::post('logout', [AuthApiController::class, 'logout'])->name('logout');
+});

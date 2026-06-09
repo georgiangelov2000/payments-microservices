@@ -68,9 +68,14 @@ final class PaymentWorkflowFormatter
         $hasCheckoutUrl = filled($payment->provider_checkout_url);
 
         $summary = match ($payment->status->label()) {
-            'finished' => 'Payment approved',
-            'failed' => self::failureSummary($latestPayload, $providerStatus),
-            default => $hasCheckoutUrl
+            'finished'           => 'Payment approved',
+            'failed'             => self::failureSummary($latestPayload, $providerStatus),
+            'cancelled'          => 'Customer cancelled checkout',
+            'refunded'           => 'Payment refunded',
+            'partially_refunded' => 'Payment partially refunded',
+            'disputed'           => 'Payment disputed',
+            'expired'            => 'Checkout session expired',
+            default              => $hasCheckoutUrl
                 ? "Redirect customer to {$provider}"
                 : self::pendingSummary($latestPayload, $providerStatus),
         };
@@ -213,9 +218,13 @@ final class PaymentWorkflowFormatter
     private static function nextStep(string $status, bool $hasCheckoutUrl, string $provider): string
     {
         return match ($status) {
-            'finished' => 'No action required',
-            'failed' => 'Review provider message and ask the customer to retry if needed',
-            default => $hasCheckoutUrl
+            'finished'                        => 'No action required',
+            'failed'                          => 'Review provider message and ask the customer to retry if needed',
+            'cancelled'                       => 'No action required — payment was cancelled',
+            'refunded', 'partially_refunded'  => 'Refund has been issued',
+            'disputed'                        => 'Review and respond to the dispute',
+            'expired'                         => 'Ask the customer to initiate a new payment',
+            default                           => $hasCheckoutUrl
                 ? "Customer must complete checkout on {$provider}"
                 : 'Wait for the next provider response',
         };
@@ -313,9 +322,15 @@ final class PaymentWorkflowFormatter
     private static function stateLabel(string $status): string
     {
         return match ($status) {
-            'finished' => 'Completed',
-            'failed' => 'Failed',
-            default => 'Pending provider response',
+            'finished'           => 'Completed',
+            'failed'             => 'Failed',
+            'cancelled'          => 'Cancelled',
+            'processing'         => 'Processing',
+            'refunded'           => 'Refunded',
+            'partially_refunded' => 'Partially Refunded',
+            'disputed'           => 'Disputed',
+            'expired'            => 'Expired',
+            default              => 'Pending provider response',
         };
     }
 }

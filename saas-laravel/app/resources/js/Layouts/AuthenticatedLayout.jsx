@@ -6,7 +6,8 @@ import {
     CreditCard,
     Key,
     Package,
-    GitBranch,
+    BarChart2,
+    Webhook,
     LogOut,
     ChevronLeft,
     ChevronRight,
@@ -20,9 +21,10 @@ import {
 const NAV_ITEMS = [
     { label: 'Dashboard',    routeName: 'dashboard',           pattern: 'dashboard',          Icon: LayoutDashboard },
     { label: 'Payments',     routeName: 'payments.index',      pattern: 'payments.*',         Icon: CreditCard },
+    { label: 'Analytics',    routeName: 'analytics',           pattern: 'analytics',          Icon: BarChart2 },
     { label: 'API Keys',     routeName: 'api-keys.index',      pattern: 'api-keys.*',         Icon: Key },
     { label: 'Subscriptions',routeName: 'subscriptions.index', pattern: 'subscriptions.*',    Icon: Package },
-    { label: 'Routing',      routeName: 'routing.index',       pattern: 'routing.*',          Icon: GitBranch },
+    { label: 'Webhooks',     routeName: 'webhooks.index',      pattern: 'webhooks.*',         Icon: Webhook },
 ];
 
 // ── Nav Item ─────────────────────────────────────────────────────────────────

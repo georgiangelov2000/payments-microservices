@@ -275,7 +275,7 @@ function clearErrors(form, errorBox) {
   form.querySelectorAll("label").forEach(l => {
     l.classList.remove("invalid");
     const fe = l.querySelector(".field-error");
-    if (fe) { fe.textContent = ""; fe.style.display = ""; }
+    if (fe) { fe.textContent = fe.dataset.msg ?? ""; fe.style.display = ""; }
   });
   if (errorBox) { errorBox.style.display = "none"; errorBox.textContent = ""; }
 }

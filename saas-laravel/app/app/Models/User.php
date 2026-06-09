@@ -66,14 +66,4 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserSubscription::class);
     }
-
-    public function routingConfigurations(): HasMany
-    {
-        return $this->hasMany(ProviderRoutingConfiguration::class, 'merchant_id');
-    }
-
-    public function routingRules(): HasMany
-    {
-        return $this->hasMany(ProviderRoutingRule::class, 'merchant_id');
-    }
 }

@@ -13,6 +13,15 @@ from app.providers.credential_resolver import CredentialResolver
 from app.providers.paypal import PayPalConnector
 from app.providers.stripe import StripeConnector
 from app.schemas.payments import ProviderReturnResponse
+from app.services.webhook_dispatcher import WebhookDispatcher
+
+_dispatcher = WebhookDispatcher()
+
+_TERMINAL_WEBHOOK_EVENTS = {
+    PaymentStatus.PAYMENT_FINISHED: "payment.succeeded",
+    PaymentStatus.PAYMENT_FAILED: "payment.failed",
+    PaymentStatus.PAYMENT_CANCELLED: "payment.cancelled",
+}
 
 
 def _uuid(value: str | UUID) -> UUID:
@@ -153,18 +162,30 @@ class ProviderCallbackService:
             PaymentStatus.PAYMENT_REFUNDED.value,
         }
 
+        merchant_id: UUID | None = None
+        payment_snapshot: PaymentModel | None = None
+        status_updated = False
+
         with payments_session() as payments_db:
             payment = payments_db.get(PaymentModel, payment_uuid)
             if not payment:
                 raise HTTPException(status_code=404, detail="Payment not found")
 
+            merchant_id = UUID(str(payment.merchant_id))
+
             if payment.status not in terminal_states:
+                # Expunge before commit so the snapshot retains attribute values
+                # after the session closes (commit would otherwise expire the object).
+                payments_db.expunge(payment)
+                payment_snapshot = payment
+
                 payments_db.execute(
                     PaymentModel.__table__.update()
                     .where(PaymentModel.id == payment_uuid)
                     .values(status=status.value, provider_status=provider_status)
                 )
                 payments_db.commit()
+                status_updated = True
 
                 log_status = (
                     LogStatus.LOG_SUCCESS.value
@@ -189,3 +210,8 @@ class ProviderCallbackService:
                     .values(provider_status=provider_status or payment.provider_status)
                 )
                 payments_db.commit()
+
+        if status_updated and merchant_id and payment_snapshot:
+            webhook_event = _TERMINAL_WEBHOOK_EVENTS.get(status)
+            if webhook_event:
+                await _dispatcher.dispatch(merchant_id, webhook_event, payment_snapshot)

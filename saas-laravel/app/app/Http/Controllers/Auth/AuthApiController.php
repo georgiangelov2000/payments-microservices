@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class AuthApiController extends Controller
 {
@@ -51,5 +52,14 @@ class AuthApiController extends Controller
         $request->session()->regenerate();
 
         return response()->json(['redirect' => route('dashboard')], 201);
+    }
+
+    public function logout(Request $request): \Symfony\Component\HttpFoundation\Response
+    {
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return Inertia::location(config('services.static_site.url').'/login.html');
     }
 }

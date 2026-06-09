@@ -110,7 +110,7 @@ function TimelineEvent({ event, isLast }) {
                     }`}>{event.status}</span>
                 </div>
                 {event.message && (
-                    <p className="mt-1 text-xs text-slate-500 leading-relaxed">{event.message}</p>
+                    <p className="mt-1 text-xs text-slate-500 leading-relaxed break-words whitespace-pre-wrap">{event.message}</p>
                 )}
                 <p className="mt-1 text-[11px] text-slate-400">{fmtDate(event.timestamp)}</p>
 

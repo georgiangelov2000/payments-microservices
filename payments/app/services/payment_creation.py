@@ -21,11 +21,15 @@ from app.models.payments import (
     Payment as PaymentModel,
 )
 from app.providers.base import CheckoutRequest
+from app.services.decline_classifier import extract_decline_code, is_hard_decline
 from app.providers.credential_resolver import CredentialResolver
 from app.providers.registry import provider_connector
 from app.routing import PaymentRoutingEngine
 from app.schemas.payments import CreatePaymentRequest, PaymentCreateResponse
 from app.services.sandbox_simulation import SandboxSimulationService
+from app.services.webhook_dispatcher import WebhookDispatcher
+
+_dispatcher = WebhookDispatcher()
 
 
 class PaymentCreationService:
@@ -320,6 +324,8 @@ class PaymentCreationService:
                     )
                 )
             except HTTPException as exc:
+                decline_code = extract_decline_code(exc.detail)
+                hard = is_hard_decline(decline_code, exc.detail)
                 await self._record_routing_attempt(
                     payment_id=payment_id,
                     merchant_id=merchant_uuid,
@@ -328,13 +334,26 @@ class PaymentCreationService:
                     environment=routing_plan.environment,
                     strategy=routing_plan.strategy,
                     attempt_number=attempt_number,
-                    status="failed",
+                    status="hard_declined" if hard else "failed",
                     idempotency_key=attempt_idempotency_key,
                     latency_ms=int((time.monotonic() - started) * 1000),
-                    error_code=str(exc.status_code),
-                    error_message=str(exc.detail),
+                    error_code=decline_code,
+                    error_message=str(exc.detail)[:2000],
                     routing_snapshot=routing_plan.snapshot,
                 )
+                # Hard declines (invalid amount, bad currency, etc.) mean the
+                # payment request itself is wrong — no point trying other providers.
+                if hard:
+                    await self._mark_failed_if_pending(payment_id)
+                    await self._dispatch_event(payment_id, merchant_uuid, "payment.failed")
+                    raise HTTPException(
+                        status_code=422,
+                        detail={
+                            "message": f"Hard decline from {provider_alias}: {decline_code}",
+                            "decline_code": decline_code,
+                            "provider": provider_alias,
+                        },
+                    )
                 await self._record_provider_failure(
                     merchant_uuid,
                     provider_id,
@@ -417,6 +436,7 @@ class PaymentCreationService:
 
         if checkout is None or provider_alias is None:
             await self._mark_failed_if_pending(payment_id)
+            await self._dispatch_event(payment_id, merchant_uuid, "payment.failed")
             raise HTTPException(
                 status_code=502,
                 detail={
@@ -464,6 +484,8 @@ class PaymentCreationService:
                 )
             )
             logs_db.commit()
+
+        await self._dispatch_event(payment_id, merchant_uuid, "payment.created")
 
         return PaymentCreateResponse(
             payment_id=str(payment_id),
@@ -587,3 +609,12 @@ class PaymentCreationService:
                 .values(status=PaymentStatus.PAYMENT_FAILED.value)
             )
             payments_db.commit()
+
+    async def _dispatch_event(
+        self, payment_id: UUID | str, merchant_id: UUID, event: str
+    ) -> None:
+        payment_uuid = payment_id if isinstance(payment_id, UUID) else UUID(str(payment_id))
+        with payments_session() as payments_db:
+            payment = payments_db.get(PaymentModel, payment_uuid)
+        if payment:
+            await _dispatcher.dispatch(merchant_id, event, payment)

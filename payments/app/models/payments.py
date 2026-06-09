@@ -360,3 +360,56 @@ class UserSubscription(PaymentsBase):
         Index("ix_user_subscriptions_subscription_id", "subscription_id"),
     )
 
+
+# =========================
+# Merchant Webhooks
+# (config written by saas-laravel, read + delivery by this service)
+# =========================
+class MerchantWebhook(PaymentsBase):
+    __tablename__ = "merchant_webhooks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    merchant_id = Column(UUID(as_uuid=True), nullable=False)
+    url = Column(String(500), nullable=False)
+    secret = Column(String(64), nullable=False)
+    events = Column(JSONB, nullable=False)
+    active = Column(Boolean, nullable=False, server_default="true")
+    description = Column(String(200))
+    last_used_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_merchant_webhooks_merchant_id", "merchant_id"),
+        Index("ix_merchant_webhooks_active", "active"),
+    )
+
+
+class WebhookDelivery(PaymentsBase):
+    __tablename__ = "webhook_deliveries"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid7)
+    webhook_id = Column(UUID(as_uuid=True), nullable=False)
+    payment_id = Column(UUID(as_uuid=True))
+    event = Column(String(50), nullable=False)
+    payload = Column(JSONB, nullable=False)
+    status = Column(String(20), nullable=False, server_default="pending")
+    attempts = Column(SmallInteger, nullable=False, server_default="0")
+    response_code = Column(SmallInteger)
+    response_body = Column(Text)
+    last_error = Column(Text)
+    next_retry_at = Column(DateTime(timezone=True))
+    delivered_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_webhook_deliveries_webhook_id", "webhook_id"),
+        Index("ix_webhook_deliveries_payment_id", "payment_id"),
+        Index("ix_webhook_deliveries_status", "status"),
+    )
+
