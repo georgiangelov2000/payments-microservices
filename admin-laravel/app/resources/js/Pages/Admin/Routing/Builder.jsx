@@ -653,6 +653,29 @@ function edgeLabel(sourceHandle) {
     return null;
 }
 
+function edgeCondition(params) {
+    return String(edgeLabel(params.sourceHandle) || params.sourceHandle || 'default').toLowerCase();
+}
+
+function validateEdgeConnection(params, nodes) {
+    const source = nodes.find(n => n.id === params.source);
+    const target = nodes.find(n => n.id === params.target);
+    const condition = edgeCondition(params);
+    const failureConditions = ['failed', 'failure', 'timeout', 'declined', 'error', 'no'];
+    const successConditions = ['success', 'succeeded', 'yes'];
+
+    if (!source || !target) return 'Both ends of the connection must be valid nodes.';
+    if (source.id === target.id) return 'A node cannot route to itself.';
+    if (source.type === 'success' || source.type === 'failure') return 'Terminal nodes cannot route to another node.';
+    if (source.type === 'start' && failureConditions.includes(condition)) return 'The Start node must use a normal/default edge.';
+    if (target.type === 'success' && failureConditions.includes(condition)) return 'Failure or timeout paths cannot route directly to Success.';
+    if (target.type === 'failure' && successConditions.includes(condition)) return 'Success paths cannot route directly to Failure.';
+    if (source.type === 'provider' && target.type === 'provider' && successConditions.includes(condition)) return 'Provider success should route to Success, not another provider.';
+    if (source.type === 'provider' && target.type === 'success' && !successConditions.includes(condition)) return 'Providers can reach Success only through a success edge.';
+
+    return null;
+}
+
 // ─── Main builder ─────────────────────────────────────────────────────────────
 
 // Ensure every node has a valid position and data wrapper before React Flow touches it.
@@ -708,14 +731,21 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
     }, [nodes]);
 
     const onConnect = useCallback((params) => {
+        const validationError = validateEdgeConnection(params, nodes);
+        if (validationError) {
+            toast.error(validationError);
+            return;
+        }
+
         const style = edgeStyle(params.sourceHandle);
         const label = edgeLabel(params.sourceHandle);
         setEdges(prev => addEdge({
             ...params, style, label,
+            condition: label || params.sourceHandle || 'default',
             markerEnd: { type: MarkerType.ArrowClosed, color: style.stroke, width: 14, height: 14 },
             type: 'smoothstep',
         }, prev));
-    }, [setEdges]);
+    }, [nodes, setEdges]);
 
     const onDragOver = useCallback(e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }, []);
 

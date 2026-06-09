@@ -1,10 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Head, Link } from '@inertiajs/react'
+import {
+    ReactFlow, ReactFlowProvider,
+    Background, Controls, MiniMap,
+    Handle, Position, MarkerType,
+    useNodesState,
+} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
+import { getProviderMeta, ProviderIcon } from '@/Components/ProviderBrand'
 import {
     GitBranch, Activity, Shield, CheckCircle2, XCircle,
     AlertTriangle, Clock, ChevronDown, ChevronUp,
     ArrowRight, Zap, RefreshCw, Lock,
+    Play, Scale,
 } from 'lucide-react'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,70 +76,340 @@ function ProviderPill({ alias, type }) {
     )
 }
 
-function ProviderFlow({ nodes, edges }) {
-    if (!nodes?.length) {
-        return <p className="text-xs text-slate-400 italic">No flow configured yet.</p>
-    }
+function NodeShell({ children, cls }) {
+    return <div className={`rounded-xl border-2 shadow-sm ${cls}`}>{children}</div>
+}
 
-    // Build an ordered path: start → providers (by priority) → terminal
-    const byId = Object.fromEntries((nodes).map(n => [n.id, n]))
-    const edgeMap = {}
-    for (const e of (edges ?? [])) {
-        if (!edgeMap[e.source]) edgeMap[e.source] = []
-        edgeMap[e.source].push(e)
-    }
+function StartNode({ data }) {
+    return (
+        <NodeShell cls="min-w-[170px] border-indigo-700 bg-indigo-600 text-white">
+            <div className="flex items-center gap-2.5 px-4 py-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20"><Play size={14} fill="currentColor" /></span>
+                <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">Entry Point</p>
+                    <p className="text-sm font-bold leading-snug">{data.label || 'Payment Request'}</p>
+                </div>
+            </div>
+            <Handle type="source" position={Position.Bottom} id="output" className="opacity-0" />
+        </NodeShell>
+    )
+}
 
-    // Walk from start node
-    const startNode = nodes.find(n => n.type === 'start')
-    if (!startNode) {
-        // Fallback: just sort providers by priority
-        const providers = nodes
-            .filter(n => n.type === 'provider' && n.data?.provider_alias)
-            .sort((a, b) => (a.data?.priority ?? 99) - (b.data?.priority ?? 99))
-        return (
-            <div className="flex flex-wrap items-center gap-1.5">
-                {providers.map((n, i) => (
-                    <div key={n.id} className="flex items-center gap-1.5">
-                        {i > 0 && <ArrowRight size={12} className="text-slate-300" />}
-                        <ProviderPill alias={n.data.provider_alias} type="provider" />
+function ProviderNode({ data }) {
+    const meta = getProviderMeta(data.provider_alias, data.label)
+    return (
+        <NodeShell cls="min-w-[210px] border-slate-200 bg-white">
+            <Handle type="target" position={Position.Top} className="opacity-0" />
+            <div className="px-4 py-3">
+                <div className="mb-2.5 flex items-center gap-2.5">
+                    <ProviderIcon alias={data.provider_alias} label={data.label} size="md" className="ring-0" />
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Provider</p>
+                        <p className="text-sm font-bold leading-snug text-slate-800">{data.label || meta.label}</p>
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                    {data.enabled !== false
+                        ? <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Active</span>
+                        : <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Disabled</span>}
+                    {Number(data.weight) > 0 && <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">{data.weight}%</span>}
+                    {Number(data.priority) > 0 && <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">P{data.priority}</span>}
+                </div>
+            </div>
+            <div className="flex border-t border-slate-100">
+                <div className="relative flex-1 py-1.5 text-center">
+                    <Handle type="source" position={Position.Bottom} id="success" className="opacity-0" />
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">Success</span>
+                </div>
+                <div className="relative flex-1 border-l border-slate-100 py-1.5 text-center">
+                    <Handle type="source" position={Position.Bottom} id="failure" className="opacity-0" />
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">Failure</span>
+                </div>
+            </div>
+        </NodeShell>
+    )
+}
+
+function ConditionNode({ data }) {
+    const conds = data.conditions || []
+    return (
+        <NodeShell cls="min-w-[210px] border-amber-300 bg-amber-50">
+            <Handle type="target" position={Position.Top} className="opacity-0" />
+            <div className="px-4 py-3">
+                <div className="mb-2 flex items-center gap-2">
+                    <GitBranch size={18} className="shrink-0 text-amber-500" />
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Condition</p>
+                        <p className="text-sm font-bold text-slate-800">{data.label || 'IF / ELSE'}</p>
+                    </div>
+                </div>
+                {conds.slice(0, 3).map((c, i) => (
+                    <div key={i} className="mt-1 rounded border border-amber-200 bg-white px-2 py-1 text-[11px] text-slate-600">
+                        <span className="font-semibold text-amber-700">{c.field}</span> {c.operator} <span className="font-semibold">{Array.isArray(c.value) ? c.value.join(', ') : c.value}</span>
                     </div>
                 ))}
+            </div>
+            <div className="flex border-t border-amber-200">
+                <div className="relative flex-1 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="yes" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">Yes</span></div>
+                <div className="relative flex-1 border-l border-amber-200 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="no" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-red-500">No</span></div>
+            </div>
+        </NodeShell>
+    )
+}
+
+function WeightedNode({ data }) {
+    const dist = data.distribution || []
+    return (
+        <NodeShell cls="min-w-[210px] border-purple-300 bg-purple-50">
+            <Handle type="target" position={Position.Top} className="opacity-0" />
+            <div className="px-4 py-3">
+                <div className="mb-2.5 flex items-center gap-2">
+                    <Scale size={16} className="shrink-0 text-purple-500" />
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-purple-600">Weighted Split</p>
+                        <p className="text-sm font-bold text-slate-800">{data.label || 'Traffic Split'}</p>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    {dist.map((d, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                            <ProviderIcon alias={d.provider_alias} size="xs" className="shadow-none ring-0" />
+                            <span className="flex-1 text-[11px] text-slate-600">{getProviderMeta(d.provider_alias).label}</span>
+                            <div className="h-1.5 w-16 rounded-full bg-slate-200"><div className="h-1.5 rounded-full bg-purple-400" style={{ width: `${d.weight}%` }} /></div>
+                            <span className="w-8 text-right text-[11px] font-bold text-purple-700">{d.weight}%</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <Handle type="source" position={Position.Bottom} id="output" className="opacity-0" />
+        </NodeShell>
+    )
+}
+
+function FailoverNode({ data }) {
+    const chain = data.chain || []
+    return (
+        <NodeShell cls="min-w-[210px] border-orange-300 bg-orange-50">
+            <Handle type="target" position={Position.Top} className="opacity-0" />
+            <div className="px-4 py-3">
+                <div className="mb-2.5 flex items-center gap-2">
+                    <Zap size={16} className="shrink-0 text-orange-500" />
+                    <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">Failover Chain</p>
+                        <p className="text-sm font-bold text-slate-800">{data.label || 'Auto Failover'}</p>
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-1">
+                    {chain.map((alias, i) => (
+                        <div key={`${alias}-${i}`} className="flex items-center gap-1">
+                            {i > 0 && <span className="text-xs text-orange-400">→</span>}
+                            <ProviderIcon alias={alias} size="xs" className="shadow-none ring-0" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <Handle type="source" position={Position.Bottom} id="output" className="opacity-0" />
+        </NodeShell>
+    )
+}
+
+function TerminalNode({ data, type }) {
+    const ok = type === 'success'
+    return (
+        <NodeShell cls={`min-w-[170px] ${ok ? 'border-emerald-300 bg-emerald-50' : 'border-red-300 bg-red-50'}`}>
+            <Handle type="target" position={Position.Top} className="opacity-0" />
+            <div className="flex items-center gap-2.5 px-4 py-3">
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${ok ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                    {ok ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
+                </span>
+                <div>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${ok ? 'text-emerald-600' : 'text-red-600'}`}>Terminal</p>
+                    <p className="text-sm font-bold text-slate-800">{data.label || (ok ? 'Payment Success' : 'Payment Failed')}</p>
+                </div>
+            </div>
+        </NodeShell>
+    )
+}
+
+const FLOW_NODE_TYPES = {
+    start: StartNode,
+    provider: ProviderNode,
+    condition: ConditionNode,
+    weighted: WeightedNode,
+    failover: FailoverNode,
+    success: (props) => <TerminalNode {...props} type="success" />,
+    failure: (props) => <TerminalNode {...props} type="failure" />,
+}
+
+function nodePayload(node) {
+    return node.data || node
+}
+
+function layoutWorkflowNodes(rawNodes, rawEdges) {
+    const nodes = rawNodes || []
+    const edges = rawEdges || []
+
+    if (!nodes.length) return []
+
+    const ids = nodes.map((node, index) => String(node.id || `node-${index}`))
+    const ranks = Object.fromEntries(ids.map((id) => [id, 0]))
+    const byId = Object.fromEntries(nodes.map((node, index) => [String(node.id || `node-${index}`), node]))
+    const incoming = Object.fromEntries(ids.map((id) => [id, 0]))
+
+    edges.forEach((edge) => {
+        if (edge.target && incoming[String(edge.target)] != null) {
+            incoming[String(edge.target)] += 1
+        }
+    })
+
+    nodes.forEach((node, index) => {
+        const id = String(node.id || `node-${index}`)
+        if (node.type === 'start' || incoming[id] === 0) {
+            ranks[id] = 0
+        }
+    })
+
+    for (let i = 0; i < nodes.length + 2; i += 1) {
+        edges.forEach((edge) => {
+            const source = String(edge.source || '')
+            const target = String(edge.target || '')
+            if (ranks[source] == null || ranks[target] == null) return
+            ranks[target] = Math.max(ranks[target], ranks[source] + 1)
+        })
+    }
+
+    const maxNonTerminalRank = Math.max(
+        0,
+        ...ids
+            .filter((id) => !['success', 'failure'].includes(byId[id]?.type))
+            .map((id) => ranks[id] || 0),
+    )
+
+    ids.forEach((id) => {
+        if (['success', 'failure'].includes(byId[id]?.type)) {
+            ranks[id] = Math.max(ranks[id] || 0, maxNonTerminalRank + 1)
+        }
+    })
+
+    const rankGroups = ids.reduce((groups, id) => {
+        const rank = ranks[id] || 0
+        groups[rank] = groups[rank] || []
+        groups[rank].push(id)
+        return groups
+    }, {})
+
+    Object.values(rankGroups).forEach((group) => {
+        group.sort((a, b) => {
+            const aNode = byId[a]
+            const bNode = byId[b]
+            const aData = nodePayload(aNode)
+            const bData = nodePayload(bNode)
+            const terminalOrder = { success: 1, failure: 2 }
+
+            return (terminalOrder[aNode.type] || 0) - (terminalOrder[bNode.type] || 0)
+                || Number(aData.priority || 99) - Number(bData.priority || 99)
+                || String(aData.label || aData.provider_alias || '').localeCompare(String(bData.label || bData.provider_alias || ''))
+        })
+    })
+
+    const xGap = 310
+    const yGap = 165
+    const startX = 60
+    const centerY = 190
+
+    return nodes.map((node, index) => {
+        const id = String(node.id || `node-${index}`)
+        const rank = ranks[id] || 0
+        const group = rankGroups[rank] || [id]
+        const row = group.indexOf(id)
+        const yOffset = (row - (group.length - 1) / 2) * yGap
+
+        return {
+            ...node,
+            position: {
+                x: startX + rank * xGap,
+                y: Math.max(40, centerY + yOffset),
+            },
+        }
+    })
+}
+
+function normalizeNodeForCanvas(node, index) {
+    const data = node.data || node
+    return {
+        ...node,
+        id: String(node.id || `node-${index}`),
+        type: node.type || 'provider',
+        position: node.position || { x: 80 + (index % 3) * 280, y: 70 + Math.floor(index / 3) * 190 },
+        draggable: true,
+        selectable: true,
+        data: {
+            ...data,
+            label: data.label || data.provider_alias || node.type || 'Node',
+        },
+    }
+}
+
+function normalizeEdgeForCanvas(edge, index) {
+    const label = edge.label || edge.condition || (edge.sourceHandle === 'failure' ? 'failed' : '')
+    const isFailure = ['failure', 'failed', 'timeout', 'declined'].includes(String(label).toLowerCase()) || edge.sourceHandle === 'failure'
+    const isSuccess = ['success', 'succeeded'].includes(String(label).toLowerCase()) || edge.sourceHandle === 'success'
+    const color = isFailure ? '#f97316' : isSuccess ? '#10b981' : '#64748b'
+
+    return {
+        ...edge,
+        id: String(edge.id || `edge-${index}`),
+        type: 'smoothstep',
+        animated: false,
+        selectable: false,
+        markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color },
+        style: { stroke: color, strokeWidth: 2 },
+        label,
+        labelBgPadding: [8, 4],
+        labelBgBorderRadius: 6,
+        labelStyle: { fill: '#475569', fontSize: 11, fontWeight: 600 },
+    }
+}
+
+function WorkflowCanvas({ workflow }) {
+    const initialNodes = layoutWorkflowNodes(workflow.nodes || [], workflow.edges || []).map(normalizeNodeForCanvas)
+    const edges = (workflow.edges || []).map(normalizeEdgeForCanvas)
+    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+
+    useEffect(() => {
+        setNodes(initialNodes)
+    }, [workflow.id])
+
+    if (!initialNodes?.length) {
+        return (
+            <div className="flex h-72 items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+                No workflow canvas configured yet.
             </div>
         )
     }
 
-    // BFS to build a linear path (first success edge at each step)
-    const path = []
-    const visited = new Set()
-    let current = startNode.id
-
-    while (current && !visited.has(current)) {
-        visited.add(current)
-        const node = byId[current]
-        if (node) path.push(node)
-        if (node?.type === 'success' || node?.type === 'failure') break
-        const outEdges = edgeMap[current] ?? []
-        // Prefer 'success' or 'output' handles; fall back to first edge
-        const next = outEdges.find(e => e.sourceHandle === 'success' || e.sourceHandle === 'output') ?? outEdges[0]
-        current = next?.target
-    }
-
-    const display = path.filter(n => n.type !== 'start' || path.length === 1)
-
     return (
-        <div className="flex flex-wrap items-center gap-1.5">
-            {path[0]?.type === 'start' && (
-                <>
-                    <ProviderPill alias={null} type="start" />
-                    {display.length > 0 && <ArrowRight size={12} className="text-slate-300" />}
-                </>
-            )}
-            {display.map((n, i) => (
-                <div key={n.id} className="flex items-center gap-1.5">
-                    {i > 0 && <ArrowRight size={12} className="text-slate-300" />}
-                    <ProviderPill alias={n.data?.provider_alias} type={n.type} />
-                </div>
-            ))}
+        <div className="h-[420px] overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={FLOW_NODE_TYPES}
+                fitView
+                fitViewOptions={{ padding: 0.22 }}
+                nodesDraggable
+                nodesConnectable={false}
+                onNodesChange={onNodesChange}
+                edgesFocusable={false}
+                edgesReconnectable={false}
+                elementsSelectable
+                panOnDrag
+                zoomOnScroll
+                proOptions={{ hideAttribution: true }}
+            >
+                <Background color="#cbd5e1" gap={18} size={1} />
+                <MiniMap pannable={false} zoomable={false} nodeStrokeWidth={3} className="!bg-white/90" />
+                <Controls showInteractive={false} />
+            </ReactFlow>
         </div>
     )
 }
@@ -191,7 +470,9 @@ function WorkflowCard({ workflow }) {
             {/* Flow visual */}
             <div className="px-5 py-4 border-b border-slate-100">
                 <p className="text-xs font-medium text-slate-500 mb-2 uppercase tracking-wide">Flow</p>
-                <ProviderFlow nodes={workflow.nodes} edges={workflow.edges} />
+                <ReactFlowProvider>
+                    <WorkflowCanvas workflow={workflow} />
+                </ReactFlowProvider>
                 {summary && (
                     <p className="mt-2 text-xs text-slate-500">{summary}</p>
                 )}

@@ -268,6 +268,7 @@ final class RoutingWorkflowService
     {
         $errors = [];
         $nodeIds = collect($nodes)->pluck('id')->all();
+        $nodesById = collect($nodes)->keyBy('id');
 
         // Require a start node
         $startCount = collect($nodes)->where('type', 'start')->count();
@@ -302,6 +303,13 @@ final class RoutingWorkflowService
                 $errors[] = 'Every workflow edge must reference existing nodes.';
                 break;
             }
+
+            $source = $nodesById[$edge['source']] ?? null;
+            $target = $nodesById[$edge['target']] ?? null;
+
+            if ($source && $target) {
+                $errors = array_merge($errors, $this->validateEdgeLogic($source, $target, $edge));
+            }
         }
 
         // Weighted nodes must sum to 100 %
@@ -321,6 +329,49 @@ final class RoutingWorkflowService
         }
 
         return array_values(array_unique($errors));
+    }
+
+    private function validateEdgeLogic(array $source, array $target, array $edge): array
+    {
+        $errors = [];
+        $sourceType = $source['type'] ?? null;
+        $targetType = $target['type'] ?? null;
+        $sourceLabel = $source['data']['label'] ?? $sourceType ?? 'Source';
+        $targetLabel = $target['data']['label'] ?? $targetType ?? 'Target';
+        $condition = strtolower((string) ($edge['condition'] ?? $edge['label'] ?? $edge['sourceHandle'] ?? 'default'));
+
+        $failureConditions = ['failed', 'failure', 'timeout', 'declined', 'error', 'no'];
+        $successConditions = ['success', 'succeeded', 'yes'];
+
+        if ($sourceType === 'success') {
+            $errors[] = "Success node '{$sourceLabel}' cannot route to another node.";
+        }
+
+        if ($sourceType === 'failure') {
+            $errors[] = "Failure node '{$sourceLabel}' cannot route to another node.";
+        }
+
+        if ($sourceType === 'start' && in_array($condition, $failureConditions, true)) {
+            $errors[] = "Start node '{$sourceLabel}' cannot use a {$condition} edge. Route the payment request with a normal/default edge.";
+        }
+
+        if ($targetType === 'success' && in_array($condition, $failureConditions, true)) {
+            $errors[] = "Failure or timeout edge from '{$sourceLabel}' cannot route directly to Success.";
+        }
+
+        if ($targetType === 'failure' && in_array($condition, $successConditions, true)) {
+            $errors[] = "Success edge from '{$sourceLabel}' cannot route directly to Failure.";
+        }
+
+        if ($sourceType === 'provider' && $targetType === 'provider' && in_array($condition, $successConditions, true)) {
+            $errors[] = "Success edge from provider '{$sourceLabel}' should route to Success, not another provider.";
+        }
+
+        if ($sourceType === 'provider' && $targetType === 'success' && ! in_array($condition, $successConditions, true)) {
+            $errors[] = "Provider '{$sourceLabel}' may route to Success only through a success edge.";
+        }
+
+        return $errors;
     }
 
     public function serializeWorkflow(RoutingWorkflow $workflow): array
