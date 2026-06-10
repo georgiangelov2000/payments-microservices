@@ -19,12 +19,17 @@ class MerchantApiKey extends Model
         'hash',
         'merchant_id',
         'status',
+        'name',
+        'environment',
+        'key_prefix',
+        'revoked_at',
     ];
 
     protected $casts = [
-        'status' => MerchantAPIKeyStatus::class,
+        'status'     => MerchantAPIKeyStatus::class,
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'revoked_at' => 'datetime',
     ];
 
     public function merchant(): BelongsTo

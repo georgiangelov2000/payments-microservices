@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('api-keys')->name('api-keys.')->group(function () {
         Route::get('/', [ApiKeyController::class, 'index'])->name('index');
         Route::post('/', [ApiKeyController::class, 'store'])->name('store');
+        Route::delete('/{id}', [ApiKeyController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('subscriptions')->name('subscriptions.')->group(function () {

@@ -30,21 +30,61 @@ class ApiKeyService
         );
     }
 
-    public function generateForMerchant(string $merchantId): string
+    public function generateForMerchant(string $merchantId, string $environment = 'test'): string
     {
-        $plainTextKey = 'pgw_test_'.bin2hex(random_bytes(24));
-        $hash = hash_hmac('sha256', $plainTextKey, config('services.gateway.hmac_secret'));
+        $prefix       = $environment === 'live' ? 'pgw_live_' : 'pgw_test_';
+        $plainTextKey = $prefix . bin2hex(random_bytes(24));
+        $keyPrefix    = substr($plainTextKey, 0, 13);
+        $hash         = hash_hmac('sha256', $plainTextKey, config('services.gateway.hmac_secret'));
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($merchantId, $hash, &$apiKey) {
-            $apiKey = MerchantApiKey::create([
+        \Illuminate\Support\Facades\DB::transaction(function () use ($merchantId, $environment, $hash, $keyPrefix, &$newKey) {
+            // Enforce one active key per merchant per environment:
+            // revoke every currently active key before issuing the new one.
+            $this->revokeActiveKeys($merchantId, $environment);
+
+            $newKey = MerchantApiKey::create([
                 'merchant_id' => $merchantId,
-                'hash' => $hash,
-                'status' => MerchantAPIKeyStatus::ACTIVE,
+                'hash'        => $hash,
+                'key_prefix'  => $keyPrefix,
+                'environment' => $environment,
+                'status'      => MerchantAPIKeyStatus::ACTIVE,
             ]);
 
-            $this->gatewayAccessProfileService->syncApiKey($apiKey);
+            $this->gatewayAccessProfileService->syncApiKey($newKey);
         });
 
         return $plainTextKey;
+    }
+
+    /**
+     * Push a single already-revoked key's status to the gateway / Redis cache.
+     * Called by the controller after an explicit manual revocation.
+     */
+    public function syncRevokedKey(MerchantApiKey $key): void
+    {
+        $this->gatewayAccessProfileService->syncApiKey($key);
+    }
+
+    /**
+     * Revoke all active API keys for a given merchant + environment.
+     * Each revoked key is synced to the gateway so the Redis cache is
+     * invalidated immediately — no grace window, no stale credentials.
+     */
+    private function revokeActiveKeys(string $merchantId, string $environment): void
+    {
+        MerchantApiKey::query()
+            ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
+            ->where('status', MerchantAPIKeyStatus::ACTIVE)
+            ->get()
+            ->each(function (MerchantApiKey $key) {
+                $key->update([
+                    'status'     => MerchantAPIKeyStatus::INACTIVE,
+                    'revoked_at' => now(),
+                ]);
+
+                // Push the revocation to the gateway profile + Redis immediately.
+                $this->gatewayAccessProfileService->syncApiKey($key);
+            });
     }
 }
