@@ -10,7 +10,6 @@ use App\Models\ProviderHealthStatus;
 use App\Models\ProviderRoutingConfiguration;
 use App\Models\ProviderRoutingRule;
 use App\Models\RoutingWorkflow;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -212,7 +211,7 @@ class RoutingController extends Controller
      * Accepts: { layout: { [nodeId]: { x: number, y: number } } }
      * Only updates canvas_layout — routing logic (nodes/edges) is never touched.
      */
-    public function saveCanvasLayout(Request $request, string $workflow): JsonResponse
+    public function saveCanvasLayout(Request $request, string $workflow): \Illuminate\Http\RedirectResponse
     {
         $merchantId = Auth::id();
 
@@ -230,6 +229,6 @@ class RoutingController extends Controller
 
         $wf->update(['canvas_layout' => $validated['layout']]);
 
-        return response()->json(['saved' => true]);
+        return redirect()->back();
     }
 }

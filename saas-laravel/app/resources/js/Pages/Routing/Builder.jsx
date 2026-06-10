@@ -410,10 +410,12 @@ function BuilderCanvas({ workflow, onNodeSelect, onPositionsChange }) {
 
     useEffect(() => { setNodes(buildNodes(workflow)) }, [workflow.id])
 
-    const onNodeClick     = useCallback((_, node) => onNodeSelect(node), [onNodeSelect])
-    const onNodeDragStop  = useCallback((_, __, allNodes) => {
-        onPositionsChange(Object.fromEntries(allNodes.map(n => [n.id, { x: n.position.x, y: n.position.y }])))
-    }, [onPositionsChange])
+    const onNodeClick    = useCallback((_, node) => onNodeSelect(node), [onNodeSelect])
+    // `nodes` (state) has ALL current positions; the third arg of onNodeDragStop
+    // is only the dragged subset — using it would save partial data and break restore.
+    const onNodeDragStop = useCallback(() => {
+        onPositionsChange(Object.fromEntries(nodes.map(n => [n.id, { x: n.position.x, y: n.position.y }])))
+    }, [nodes, onPositionsChange])
 
     if (!initialNodes.length) {
         return (

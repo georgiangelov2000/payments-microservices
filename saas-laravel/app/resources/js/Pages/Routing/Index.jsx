@@ -469,11 +469,11 @@ function ReadOnlyCanvas({ workflow, onNodeSelect, onPositionsChange }) {
 
     const onNodeClick = useCallback((_, node) => { onNodeSelect(node) }, [onNodeSelect])
 
-    // After every drag-stop, bubble current positions up so the modal can save them
-    const onNodeDragStop = useCallback((_, __, allNodes) => {
-        const positions = Object.fromEntries(allNodes.map(n => [n.id, { x: n.position.x, y: n.position.y }]))
-        onPositionsChange(positions)
-    }, [onPositionsChange])
+    // Use `nodes` state (all nodes) — the third arg of onNodeDragStop is only the
+    // dragged subset and would overwrite the saved layout with partial data.
+    const onNodeDragStop = useCallback(() => {
+        onPositionsChange(Object.fromEntries(nodes.map(n => [n.id, { x: n.position.x, y: n.position.y }])))
+    }, [nodes, onPositionsChange])
 
     if (!initialNodes.length) {
         return (
