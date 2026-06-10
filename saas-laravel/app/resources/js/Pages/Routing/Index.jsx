@@ -896,6 +896,107 @@ const ENV_TABS = [
     { key: 'live', label: 'Live', Icon: Globe,        activeCls: 'border-violet-500 bg-violet-50 text-violet-700', dotCls: 'bg-violet-400' },
 ]
 
+function humanizeAuditAction(action) {
+    if (!action) return 'Unknown action';
+    const map = {
+        'workflow.created':   'Created a new payment route',
+        'workflow.updated':   'Updated route configuration',
+        'workflow.published': 'Published route — now live',
+        'workflow.rollback':  'Rolled back to a previous version',
+    };
+    return map[action] ?? action.replace(/[._]/g, ' ');
+}
+
+function ActivityFeed({ attempts, audits }) {
+    const items = [
+        ...(attempts ?? []).map((a) => ({
+            id: `att-${a.id}`,
+            type: 'attempt',
+            time: a.created_at,
+            ok: a.status === 'succeeded',
+            text: a.status === 'succeeded'
+                ? `Payment routed to ${a.provider_alias} via ${a.strategy} strategy in ${a.latency_ms}ms`
+                : `Routing to ${a.provider_alias} failed (${a.error_code ?? a.status}) after ${a.latency_ms}ms`,
+        })),
+        ...(audits ?? []).map((a) => ({
+            id: `aud-${a.id}`,
+            type: 'audit',
+            time: a.created_at,
+            ok: null,
+            text: `${humanizeAuditAction(a.action)} by ${a.actor_type}`,
+        })),
+    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 10);
+
+    if (!items.length) {
+        return <p className="text-sm text-slate-400 py-4 text-center">No recent activity.</p>;
+    }
+
+    return (
+        <div className="space-y-0">
+            {items.map((item) => (
+                <div key={item.id} className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+                    <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${item.ok === null ? 'bg-slate-300' : item.ok ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-sm text-slate-700">{item.text}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{item.time}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function ProviderHealthPanel({ health }) {
+    if (!health?.length) {
+        return (
+            <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 flex items-center gap-3">
+                <CheckCircle2 size={20} strokeWidth={2} className="shrink-0 text-green-500" />
+                <p className="text-sm font-medium text-green-700">All payment processors are running normally — no issues detected.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {health.map((row) => {
+                const isUnhealthy = row.status === 'unhealthy';
+                const isDegraded  = row.status === 'degraded';
+                return (
+                    <div key={row.id} className={`rounded-2xl border p-5 shadow-sm ${isUnhealthy ? 'border-red-200 bg-red-50' : isDegraded ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-50'}`}>
+                        <div className="flex items-center gap-3 mb-3">
+                            <ProviderIcon alias={row.provider_alias} size="lg" />
+                            <div>
+                                <p className="text-sm font-semibold text-slate-900 capitalize">{row.provider_alias}</p>
+                                <p className="text-xs text-slate-500">{row.environment}</p>
+                            </div>
+                            <div className="ml-auto">
+                                <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${isUnhealthy ? 'border-red-300 bg-red-100 text-red-700' : isDegraded ? 'border-amber-300 bg-amber-100 text-amber-700' : 'border-green-300 bg-green-100 text-green-700'}`}>
+                                    <span className={`h-1.5 w-1.5 rounded-full ${isUnhealthy ? 'bg-red-500' : isDegraded ? 'bg-amber-500' : 'bg-green-500'}`} />
+                                    {isUnhealthy ? 'Down' : isDegraded ? 'Degraded' : 'Healthy'}
+                                </span>
+                            </div>
+                        </div>
+
+                        {row.consecutive_failures > 0 && (
+                            <p className="text-xs text-red-600 font-medium mb-1">
+                                {row.consecutive_failures} failed attempt{row.consecutive_failures > 1 ? 's' : ''} in a row
+                            </p>
+                        )}
+                        {row.disabled_until && (
+                            <p className="text-xs text-amber-700">Automatically paused until {row.disabled_until}</p>
+                        )}
+                        {row.last_error && (
+                            <p className="mt-2 text-xs text-slate-500 bg-white/70 rounded-lg px-2 py-1.5 border border-white truncate" title={row.last_error}>
+                                {row.last_error}
+                            </p>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 export default function RoutingIndex({ workflows, health, attempts, summary }) {
     const [env, setEnv] = useState('test')
     const [tab, setTab] = useState('Payment Routes')
