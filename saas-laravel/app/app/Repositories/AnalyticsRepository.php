@@ -128,34 +128,41 @@ class AnalyticsRepository
      */
     public function getProviderPerformance(string $merchantId, int $days = 30, string $environment = 'test'): array
     {
-        $since = Carbon::now()->subDays($days)->startOfDay();
-
         $rows = DB::table('payment_routing_attempts')
             ->selectRaw("
                 provider_alias,
-                COUNT(*)                                                               AS total_attempts,
-                COUNT(CASE WHEN status = 'succeeded' THEN 1 END)                       AS succeeded,
-                COUNT(CASE WHEN status IN ('failed','timeout') THEN 1 END)             AS failed,
-                ROUND(AVG(latency_ms))                                                 AS avg_latency_ms,
+                COUNT(*)                                                               AS total,
+                SUM(CASE WHEN status = 'succeeded' THEN 1 ELSE 0 END)                  AS succeeded,
+                SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END)                     AS failed,
+                SUM(CASE WHEN status = 'timeout' THEN 1 ELSE 0 END)                    AS timeouts,
+                SUM(CASE WHEN status = 'skipped' THEN 1 ELSE 0 END)                    AS skipped,
+                ROUND(AVG(latency_ms)::numeric, 0)                                     AS avg_latency_ms,
+                MIN(latency_ms)                                                        AS min_latency_ms,
+                MAX(latency_ms)                                                        AS max_latency_ms,
                 ROUND(
-                    COUNT(CASE WHEN status = 'succeeded' THEN 1 END) * 100.0
+                    SUM(CASE WHEN status = 'succeeded' THEN 1 ELSE 0 END) * 100.0
                     / NULLIF(COUNT(*), 0),
                 1)                                                                     AS success_rate
             ")
             ->where('merchant_id', $merchantId)
             ->where('environment', $environment)
-            ->where('created_at', '>=', $since)
             ->where('status', '!=', 'skipped')
             ->groupBy('provider_alias')
-            ->orderByDesc('total_attempts')
+            ->orderByDesc('total')
             ->get();
 
         return $rows->map(fn ($r) => [
+            'provider'        => $r->provider_alias,
             'provider_alias'  => $r->provider_alias,
-            'total_attempts'  => (int) $r->total_attempts,
+            'total'           => (int) $r->total,
+            'total_attempts'  => (int) $r->total,
             'succeeded'       => (int) $r->succeeded,
             'failed'          => (int) $r->failed,
+            'timeouts'        => (int) $r->timeouts,
+            'skipped'         => (int) $r->skipped,
             'avg_latency_ms'  => $r->avg_latency_ms ? (int) $r->avg_latency_ms : null,
+            'min_latency_ms'  => $r->min_latency_ms !== null ? (int) $r->min_latency_ms : null,
+            'max_latency_ms'  => $r->max_latency_ms !== null ? (int) $r->max_latency_ms : null,
             'success_rate'    => (float) ($r->success_rate ?? 0),
         ])->toArray();
     }

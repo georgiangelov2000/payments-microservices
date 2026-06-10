@@ -120,6 +120,7 @@ export default function ApiKeys({ keys, filters = {} }) {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left">Key Hash</th>
+                <th className="px-4 py-3 text-left">Environment</th>
                 <th className="px-4 py-3 text-left">Status</th>
               </tr>
             </thead>
@@ -127,7 +128,7 @@ export default function ApiKeys({ keys, filters = {} }) {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan="2" className="px-4 py-14 text-center">
+                  <td colSpan="3" className="px-4 py-14 text-center">
                     <div className="flex flex-col items-center gap-2 text-slate-400">
                       <Key size={32} strokeWidth={1.25} />
                       <span className="text-sm font-medium">No API keys found</span>
@@ -139,6 +140,19 @@ export default function ApiKeys({ keys, filters = {} }) {
                   <tr key={key.id} className="border-b last:border-0">
                     <td className="px-4 py-3 font-mono text-xs">
                       {key.hash}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex px-2 py-1 rounded text-xs font-semibold capitalize
+                          ${
+                            key.environment === 'live'
+                              ? 'bg-violet-100 text-violet-700'
+                              : 'bg-indigo-100 text-indigo-700'
+                          }`}
+                      >
+                        {key.environment === 'live' ? 'Live' : 'Test'}
+                      </span>
                     </td>
 
                     <td className="px-4 py-3">

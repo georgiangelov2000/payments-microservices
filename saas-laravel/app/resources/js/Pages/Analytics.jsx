@@ -210,7 +210,7 @@ function rateBarColor(rate) {
 
 function ProviderCard({ provider }) {
     const rate = Number(provider.success_rate ?? 0);
-    const name = provider.provider_alias ?? provider.provider ?? 'Unknown';
+    const name = provider.provider ?? provider.provider_alias ?? 'Unknown';
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             {/* Header */}
@@ -221,7 +221,7 @@ function ProviderCard({ provider }) {
                     </div>
                     <div>
                         <p className="font-semibold capitalize text-slate-900">{name}</p>
-                        <p className="text-xs text-slate-400">{fmt(provider.total_attempts)} attempts</p>
+                        <p className="text-xs text-slate-400">{fmt(provider.total ?? provider.total_attempts)} attempts</p>
                     </div>
                 </div>
                 <div className="text-right">
@@ -333,7 +333,7 @@ function PeriodSelector({ current, env }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Donut chart (routing strategy distribution)
+// Routing strategy distribution
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STRATEGY_COLORS = {
@@ -342,46 +342,74 @@ const STRATEGY_COLORS = {
     conditional: '#f59e0b',
     failover:    '#10b981',
 };
-const PALETTE = ['#6366f1', '#06b6d4', '#f59e0b', '#10b981', '#ec4899'];
 
-function DonutChart({ data }) {
-    const total = data.reduce((s, d) => s + d.count, 0);
-    if (!total) return <p className="text-center text-sm text-slate-400 py-6">No data</p>;
+const STRATEGY_COPY = {
+    priority: {
+        label: 'Priority routing',
+        description: 'Payments follow your configured provider order, then use fallback providers when needed.',
+    },
+    weighted: {
+        label: 'Traffic distribution',
+        description: 'Payments are split across providers by percentage weights.',
+    },
+    conditional: {
+        label: 'Rule-based routing',
+        description: 'Payments are routed by rules such as country, currency, payment method, or amount.',
+    },
+    failover: {
+        label: 'Failover routing',
+        description: 'Payments move to the next provider after a provider error, decline, or timeout.',
+    },
+};
 
-    const CX = 80, CY = 80, R = 58, INNER = 36;
-    let angle = -Math.PI / 2;
-    const slices = data.map((d, i) => {
-        const pct = d.count / total;
-        const a1 = angle;
-        const a2 = angle + pct * 2 * Math.PI;
-        angle = a2;
-        const x1 = CX + R * Math.cos(a1), y1 = CY + R * Math.sin(a1);
-        const x2 = CX + R * Math.cos(a2), y2 = CY + R * Math.sin(a2);
-        const xi1 = CX + INNER * Math.cos(a1), yi1 = CY + INNER * Math.sin(a1);
-        const xi2 = CX + INNER * Math.cos(a2), yi2 = CY + INNER * Math.sin(a2);
-        const large = pct > 0.5 ? 1 : 0;
-        const path = `M${xi1},${yi1} L${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${INNER},${INNER} 0 ${large},0 ${xi1},${yi1} Z`;
-        return { ...d, path, color: STRATEGY_COLORS[d.strategy] ?? PALETTE[i % PALETTE.length], pct };
-    });
+function StrategyBreakdown({ data, environment }) {
+    const total = data.reduce((sum, row) => sum + Number(row.count ?? 0), 0);
+    if (!total) return <p className="text-center text-sm text-slate-400 py-6">No routing data yet</p>;
 
     return (
-        <div className="flex items-center gap-6">
-            <svg viewBox="0 0 160 160" style={{ width: 120, height: 120, flexShrink: 0 }}>
-                {slices.map((s, i) => <path key={i} d={s.path} fill={s.color} />)}
-                <text x={CX} y={CY + 4} textAnchor="middle" fontSize="11" fontWeight="600" fill="#1e293b">
-                    {total}
-                </text>
-                <text x={CX} y={CY + 16} textAnchor="middle" fontSize="8" fill="#94a3b8">total</text>
-            </svg>
-            <ul className="space-y-2 flex-1">
-                {slices.map((s, i) => (
-                    <li key={i} className="flex items-center gap-2 text-xs">
-                        <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: s.color }} />
-                        <span className="capitalize text-slate-700 flex-1">{s.strategy}</span>
-                        <span className="font-semibold tabular-nums text-slate-600">{(s.pct * 100).toFixed(0)}%</span>
-                    </li>
-                ))}
-            </ul>
+        <div className="space-y-4">
+            {data.map((row) => {
+                const strategy = row.strategy ?? 'unknown';
+                const copy = STRATEGY_COPY[strategy] ?? {
+                    label: `${strategy.charAt(0).toUpperCase()}${strategy.slice(1)} routing`,
+                    description: 'Payments used this routing mode.',
+                };
+                const count = Number(row.count ?? 0);
+                const pct = total > 0 ? (count / total) * 100 : 0;
+                const color = STRATEGY_COLORS[strategy] ?? '#64748b';
+
+                return (
+                    <div key={strategy} className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+                                    <p className="text-sm font-semibold text-slate-800">{copy.label}</p>
+                                </div>
+                                <p className="mt-1 text-xs leading-5 text-slate-500">{copy.description}</p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                                <p className="text-sm font-bold text-slate-900">{fmt(count)}</p>
+                                <p className="text-[11px] text-slate-400">payments</p>
+                            </div>
+                        </div>
+                        <div className="mt-3 flex items-center gap-3">
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white">
+                                <div
+                                    className="h-full rounded-full"
+                                    style={{ width: `${Math.max(pct, 4)}%`, backgroundColor: color }}
+                                />
+                            </div>
+                            <span className="w-12 text-right text-xs font-semibold tabular-nums text-slate-600">
+                                {pct.toFixed(0)}%
+                            </span>
+                        </div>
+                    </div>
+                );
+            })}
+            <p className="text-xs text-slate-400">
+                Based on {fmt(total)} payments in the selected {environment} environment.
+            </p>
         </div>
     );
 }
@@ -472,6 +500,24 @@ export default function Analytics({
                     />
                 </div>
 
+                {/* Provider performance cards */}
+                <section>
+                    <h3 className="mb-3 text-base font-semibold text-slate-900">Provider Performance</h3>
+                    {providerPerformance.length === 0 ? (
+                        <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
+                            <BarChart2 size={32} strokeWidth={1.25} className="mx-auto mb-2 text-slate-300" />
+                            <p className="text-sm text-slate-400">No routing attempts recorded yet for <strong>{environment}</strong> environment.</p>
+                            <p className="mt-1 text-xs text-slate-400">Process some payments to see analytics here.</p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-4 lg:grid-cols-2">
+                            {providerPerformance.map(p => (
+                                <ProviderCard key={p.provider ?? p.provider_alias} provider={p} />
+                            ))}
+                        </div>
+                    )}
+                </section>
+
                 {/* Trend charts */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <AreaChart
@@ -505,27 +551,6 @@ export default function Analytics({
                     yMax={Math.max(...dailyTrend.map(d => d.total), 1)}
                 />
 
-                {/* Provider performance cards */}
-                <section>
-                    <div className="mb-3">
-                        <h3 className="text-base font-semibold text-slate-900">Provider Performance</h3>
-                        <p className="text-xs text-slate-400 mt-0.5">Approval rates, attempt counts and latency per provider</p>
-                    </div>
-                    {providerPerformance.length === 0 ? (
-                        <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
-                            <BarChart2 size={32} strokeWidth={1.25} className="mx-auto mb-2 text-slate-300" />
-                            <p className="text-sm text-slate-400">No routing attempts recorded yet for the <strong>{environment}</strong> environment.</p>
-                            <p className="mt-1 text-xs text-slate-400">Process some payments to see provider analytics here.</p>
-                        </div>
-                    ) : (
-                        <div className="grid gap-4 lg:grid-cols-2">
-                            {providerPerformance.map(p => (
-                                <ProviderCard key={p.provider_alias} provider={p} />
-                            ))}
-                        </div>
-                    )}
-                </section>
-
                 {/* Bottom row: decline codes + routing distribution + latency buckets */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
@@ -553,13 +578,13 @@ export default function Analytics({
                     {/* Routing strategy distribution */}
                     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div className="mb-4">
-                            <h3 className="text-sm font-semibold text-slate-700">Routing Strategy Mix</h3>
-                            <p className="text-xs text-slate-400 mt-0.5">Strategy used per payment</p>
+                            <h3 className="text-sm font-semibold text-slate-700">Routing Mode Used</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">How your payments were routed</p>
                         </div>
                         {routingDistribution.length === 0 ? (
                             <p className="text-center text-sm text-slate-400 py-4">No data</p>
                         ) : (
-                            <DonutChart data={routingDistribution} />
+                            <StrategyBreakdown data={routingDistribution} environment={environment} />
                         )}
                     </div>
 

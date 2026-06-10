@@ -13,6 +13,7 @@ final readonly class ApiKeysDTO
         public string $id,
         public string $merchant_id,
         public string $hash,
+        public string $environment,
         public string $status,
         public CarbonInterface $created_at,
     ) {}
@@ -23,13 +24,14 @@ final readonly class ApiKeysDTO
             id: $apiKey->id,
             merchant_id: $apiKey->merchant_id,
             hash: $apiKey->hash,
+            environment: $apiKey->environment,
             status: $apiKey->status->label(),
             created_at: $apiKey->created_at,
         );
     }
 
     /**
-     * @return array{id: string, merchant_id: string, hash: string, status: string, created_at: string}
+     * @return array{id: string, merchant_id: string, hash: string, environment: string, status: string, created_at: string}
      */
     public function toArray(): array
     {
@@ -37,6 +39,7 @@ final readonly class ApiKeysDTO
             'id' => $this->id,
             'merchant_id' => $this->merchant_id,
             'hash' => $this->hash,
+            'environment' => $this->environment,
             'status' => $this->status,
             'created_at' => $this->created_at->toISOString(),
         ];
