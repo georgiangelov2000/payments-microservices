@@ -1,28 +1,12 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
+import { fmt, fmtDate } from '@/utils';
 import {
     ArrowLeft, CreditCard, CheckCircle2, XCircle, Clock, Zap,
     AlertTriangle, RefreshCcw, SkipForward, Globe, Hash,
     Calendar, Tag, MapPin, Monitor, Smartphone,
 } from 'lucide-react';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function fmt(n, decimals = 2) {
-    return Number(n ?? 0).toLocaleString(undefined, {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals,
-    });
-}
-
-function fmtDate(s) {
-    if (!s) return '—';
-    return new Date(s).toLocaleString(undefined, {
-        month: 'short', day: 'numeric', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-    });
-}
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 

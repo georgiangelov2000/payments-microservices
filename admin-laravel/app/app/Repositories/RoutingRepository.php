@@ -91,4 +91,9 @@ final class RoutingRepository implements RoutingRepositoryInterface
             ->limit($limit)
             ->get();
     }
+
+    public function createAuditLog(array $data): void
+    {
+        RoutingAuditLog::query()->create($data);
+    }
 }

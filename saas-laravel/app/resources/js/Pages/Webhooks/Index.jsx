@@ -1,30 +1,13 @@
 import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import Badge from '@/Components/Badge';
 import {
     Webhook, Plus, Trash2, Play, CheckCircle2, XCircle,
     Clock, ExternalLink, AlertTriangle, Code2, ScrollText,
     ChevronDown, ChevronUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function Badge({ children, variant = 'default' }) {
-    const colors = {
-        success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        error:   'bg-red-50 text-red-600 border-red-200',
-        warning: 'bg-amber-50 text-amber-700 border-amber-200',
-        default: 'bg-slate-100 text-slate-600 border-slate-200',
-    };
-    return (
-        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${colors[variant]}`}>
-            {children}
-        </span>
-    );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Signing secret verification snippet

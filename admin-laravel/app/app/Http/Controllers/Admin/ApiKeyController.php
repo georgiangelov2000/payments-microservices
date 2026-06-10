@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Contracts\Merchants\MerchantRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreApiKeyRequest;
 use App\Http\Requests\Admin\UpdateApiKeyRequest;
 use App\Models\MerchantApiKey;
-use App\Repositories\MerchantRepository;
 use App\Services\ApiKeyService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ApiKeyController extends Controller
+final class ApiKeyController extends Controller
 {
     public function __construct(
         private readonly ApiKeyService $apiKeyService,
-        private readonly MerchantRepository $merchantRepository,
+        private readonly MerchantRepositoryInterface $merchantRepository,
     ) {}
 
     public function index(): Response

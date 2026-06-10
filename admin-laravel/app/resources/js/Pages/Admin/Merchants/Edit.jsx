@@ -2,41 +2,12 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import ProviderBrand from '@/Components/ProviderBrand';
 import AdminLayout from '@/Layouts/AdminLayout';
+import FormSection from '@/Components/FormSection';
+import Field from '@/Components/Field';
 import {
-    AlertTriangle, CheckCircle2, XCircle, Clock, Circle, Plus,
+    CheckCircle2, XCircle, Clock, Circle, Plus,
     Copy, ChevronDown, ChevronRight, CreditCard, Key, GitBranch,
 } from 'lucide-react';
-
-// ─── Shared primitives ────────────────────────────────────────────────────────
-
-function FormSection({ title, description, children, actions }) {
-    return (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
-                <div>
-                    <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-                    {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
-                </div>
-                {actions && <div className="shrink-0">{actions}</div>}
-            </div>
-            <div className="px-6 py-5 space-y-5">{children}</div>
-        </div>
-    );
-}
-
-function Field({ label, hint, error, required, children }) {
-    return (
-        <div>
-            <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-slate-700">
-                {label}
-                {required && <span className="text-red-500">*</span>}
-            </label>
-            {children}
-            {hint && !error && <p className="mt-1.5 text-xs text-slate-400">{hint}</p>}
-            {error && <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600"><AlertTriangle size={12} strokeWidth={2} /> {error}</p>}
-        </div>
-    );
-}
 
 function TextInput({ error, className = '', ...props }) {
     return (

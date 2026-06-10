@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Contracts\Analytics\AnalyticsRepositoryInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-final class AnalyticsRepository
+final class AnalyticsRepository implements AnalyticsRepositoryInterface
 {
     public function providerStats(string $environment = 'test', ?string $merchantId = null): Collection
     {

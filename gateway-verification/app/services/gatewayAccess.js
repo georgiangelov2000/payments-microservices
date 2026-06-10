@@ -12,6 +12,21 @@ export function hashApiKey(apiKey) {
   return crypto.createHmac("sha256", env.GATEWAY_HMAC_SECRET).update(apiKey).digest("hex")
 }
 
+/**
+ * Evict a cached gateway profile by its pre-computed API key hash.
+ * Called by the internal invalidation endpoint when an API key is revoked
+ * or suspended so the 15-minute cache TTL is not honoured for revoked keys.
+ */
+export async function invalidateCacheForHash(apiKeyHash) {
+  const cacheKey = `${CACHE_PREFIX}${apiKeyHash}`
+  const invalidKey = `${INVALID_PREFIX}${apiKeyHash}`
+
+  await safeRedisDel(cacheKey)
+  // Write the negative-cache marker so subsequent requests skip the DB
+  // lookup and fail immediately instead of re-caching the (now revoked) profile.
+  await safeRedisSetEx(invalidKey, env.GATEWAY_NEGATIVE_CACHE_TTL_SECONDS, "1")
+}
+
 export async function getGatewayAccess(apiKey) {
   const apiKeyHash = hashApiKey(apiKey)
   const cacheKey = `${CACHE_PREFIX}${apiKeyHash}`

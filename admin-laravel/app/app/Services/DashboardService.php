@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Repositories\DashboardRepository;
+use App\Contracts\Dashboard\DashboardRepositoryInterface;
 
 final class DashboardService
 {
     public function __construct(
-        private readonly DashboardRepository $dashboardRepository,
+        private readonly DashboardRepositoryInterface $dashboardRepository,
     ) {}
 
     public function getMetrics(): array

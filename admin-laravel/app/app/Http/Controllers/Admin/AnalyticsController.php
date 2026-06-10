@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Contracts\Analytics\AnalyticsRepositoryInterface;
 use App\Http\Controllers\Controller;
-use App\Repositories\AnalyticsRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class AnalyticsController extends Controller
+final class AnalyticsController extends Controller
 {
     public function __construct(
-        private readonly AnalyticsRepository $analytics,
+        private readonly AnalyticsRepositoryInterface $analytics,
     ) {}
 
     public function index(Request $request): Response

@@ -11,6 +11,7 @@ use App\Models\MerchantProviderCredential;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 final class MerchantService
 {
@@ -47,12 +48,9 @@ final class MerchantService
 
     public function assignProvider(User $merchant, array $data): MerchantProviderCredential
     {
-        return MerchantProviderCredential::query()->updateOrCreate(
-            [
-                'merchant_id' => $merchant->id,
-                'provider_id' => $data['provider_id'],
-                'environment' => $data['environment'],
-            ],
+        return $this->merchantRepository->upsertProviderCredential(
+            $merchant->id,
+            ['provider_id' => $data['provider_id'], 'environment' => $data['environment']],
             [
                 'display_name' => $data['display_name'] ?: null,
                 'public_key' => $data['public_key'] ?: null,
@@ -84,9 +82,7 @@ final class MerchantService
             $updates['last_rotated_at'] = now();
         }
 
-        $credential->update($updates);
-
-        return $credential->fresh();
+        return $this->merchantRepository->updateProviderCredential($credential, $updates);
     }
 
     public function serialize(User $merchant): array

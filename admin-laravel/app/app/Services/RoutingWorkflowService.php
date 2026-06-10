@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Provider;
+use App\Contracts\Routing\RoutingRepositoryInterface;
 use App\Models\ProviderRoutingConfiguration;
-use App\Models\RoutingAuditLog;
 use App\Models\RoutingWorkflow;
 use App\Models\RoutingWorkflowVersion;
-use App\Repositories\RoutingRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 final class RoutingWorkflowService
 {
     public function __construct(
-        private readonly RoutingRepository $routingRepository,
+        private readonly RoutingRepositoryInterface $routingRepository,
     ) {}
 
     public function createWorkflow(array $data): RoutingWorkflow
@@ -507,7 +505,7 @@ final class RoutingWorkflowService
 
     private function audit(string $action, RoutingWorkflow $workflow, ?array $before, array $after): void
     {
-        RoutingAuditLog::query()->create([
+        $this->routingRepository->createAuditLog([
             'actor_id' => Auth::id(),
             'merchant_id' => $workflow->merchant_id,
             'actor_type' => 'admin',

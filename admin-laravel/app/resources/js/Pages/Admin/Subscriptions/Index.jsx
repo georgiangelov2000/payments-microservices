@@ -1,17 +1,7 @@
 import { Head } from '@inertiajs/react';
 import Pagination from '@/Components/Pagination';
 import AdminLayout from '@/Layouts/AdminLayout';
-
-function fmtCurrency(value) {
-    return Number(value || 0).toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-}
-
-function fmtCount(value) {
-    return Number(value || 0).toLocaleString();
-}
+import { fmtCurrency, fmtCount } from '@/utils';
 
 // ── Plan Card ─────────────────────────────────────────────────────────────────
 

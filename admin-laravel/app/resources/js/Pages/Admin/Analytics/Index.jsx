@@ -1,15 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { fmt, fmtRate, fmtMs } from '@/utils';
 import {
     CheckCircle2, XCircle, Clock, Zap, BarChart2,
     AlertTriangle, TrendingUp, Activity, ArrowRight,
 } from 'lucide-react';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function fmt(n) { return Number(n ?? 0).toLocaleString(); }
-function fmtRate(n) { return `${Number(n ?? 0).toFixed(1)}%`; }
-function fmtMs(n) { return n != null ? `${fmt(n)} ms` : '—'; }
 
 function rateColor(rate) {
     if (rate >= 95) return 'text-green-600';

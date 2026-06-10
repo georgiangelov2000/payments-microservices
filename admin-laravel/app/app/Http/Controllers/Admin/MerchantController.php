@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\IndexMerchantsRequest;
 use App\Http\Requests\Admin\StoreMerchantRequest;
 use App\Http\Requests\Admin\StoreProviderCredentialRequest;
 use App\Http\Requests\Admin\UpdateMerchantRequest;
@@ -14,22 +15,18 @@ use App\Models\Provider;
 use App\Models\User;
 use App\Services\MerchantService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class MerchantController extends Controller
+final class MerchantController extends Controller
 {
     public function __construct(
         private readonly MerchantService $merchantService,
     ) {}
 
-    public function index(Request $request): Response
+    public function index(IndexMerchantsRequest $request): Response
     {
-        $filters = $request->validate([
-            'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'in:pending,active,inactive,suspended'],
-        ]);
+        $filters = $request->validated();
 
         return Inertia::render('Admin/Merchants/Index', [
             'availableProviders' => Provider::query()->orderBy('name')->get(['id', 'name', 'alias']),

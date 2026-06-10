@@ -1,6 +1,7 @@
 import express from "express"
 import helmet from "helmet"
 import payments from "./routes/payments.js"
+import internal from "./routes/internal.js"
 import { requestId } from "./middlewares/requestId.js"
 import { health } from "./health.js"
 import { env } from "./config/env.js"
@@ -22,6 +23,7 @@ app.use(
 app.use(requestId)
 
 app.use("/api/v1/payments", payments)
+app.use("/internal", internal)
 app.get("/health", health)
 
 app.listen(env.PORT, "0.0.0.0", () => {

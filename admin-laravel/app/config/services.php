@@ -44,6 +44,8 @@ return [
 
     'gateway' => [
         'hmac_secret' => env('GATEWAY_HMAC_SECRET'),
+        'verification_url' => env('GATEWAY_VERIFICATION_URL', 'http://gateway-verification:3000'),
+        'internal_secret' => env('GATEWAY_INTERNAL_SECRET'),
     ],
 
     'static_site' => [

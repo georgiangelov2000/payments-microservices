@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { fmt, fmtCurrency, fmtMs } from '@/utils';
 import {
     TrendingUp, TrendingDown, Minus,
     CheckCircle2, XCircle, Zap, Clock,
@@ -11,20 +12,6 @@ import {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function fmt(n, decimals = 0) {
-    if (n == null) return '—';
-    return Number(n).toLocaleString('en-US', { maximumFractionDigits: decimals });
-}
-
-function fmtCurrency(n, currency = 'USD') {
-    if (n == null) return '—';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(n);
-}
-
-function fmtMs(ms) {
-    if (ms == null) return '—';
-    return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
-}
 
 function Delta({ value, suffix = 'pp', reverse = false }) {
     if (value == null) return null;

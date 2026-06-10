@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
 import { Plus, X, Copy, Check, RotateCcw, XCircle } from 'lucide-react';
 
@@ -12,36 +13,6 @@ const scopesMeta = [
     { id: 'routing:test',    label: 'routing:test',    desc: 'Test routing rules' },
     { id: 'webhooks:manage', label: 'webhooks:manage', desc: 'Configure webhooks' },
 ];
-
-function Badge({ value, size = 'md' }) {
-    const colors = {
-        active: 'bg-green-100 text-green-700 border-green-200',
-        validated: 'bg-green-100 text-green-700 border-green-200',
-        healthy: 'bg-green-100 text-green-700 border-green-200',
-        succeeded: 'bg-green-100 text-green-700 border-green-200',
-        published: 'bg-green-100 text-green-700 border-green-200',
-        pending: 'bg-amber-100 text-amber-700 border-amber-200',
-        degraded: 'bg-amber-100 text-amber-700 border-amber-200',
-        inactive: 'bg-slate-100 text-slate-600 border-slate-200',
-        disabled: 'bg-slate-100 text-slate-600 border-slate-200',
-        draft: 'bg-blue-100 text-blue-700 border-blue-200',
-        suspended: 'bg-red-100 text-red-700 border-red-200',
-        failed: 'bg-red-100 text-red-700 border-red-200',
-        unhealthy: 'bg-red-100 text-red-700 border-red-200',
-        timeout: 'bg-orange-100 text-orange-700 border-orange-200',
-        test: 'bg-slate-100 text-slate-600 border-slate-200',
-        live: 'bg-violet-100 text-violet-700 border-violet-200',
-        sandbox: 'bg-slate-100 text-slate-600 border-slate-200',
-        production: 'bg-violet-100 text-violet-700 border-violet-200',
-        revoked: 'bg-red-100 text-red-700 border-red-200',
-    };
-    const sz = size === 'sm' ? 'px-1.5 py-0.5 text-xs' : 'px-2.5 py-0.5 text-xs';
-    return (
-        <span className={`inline-flex items-center rounded-full border font-medium capitalize ${sz} ${colors[value] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-            {value || 'unknown'}
-        </span>
-    );
-}
 
 function Modal({ show, title, onClose, children }) {
     if (!show) return null;

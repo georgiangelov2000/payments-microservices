@@ -1,34 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { AlertTriangle, CheckCircle2, XCircle, Clock, Circle, ChevronRight } from 'lucide-react';
-
-// ─── Shared form primitives ───────────────────────────────────────────────────
-
-function FormSection({ title, description, children }) {
-    return (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 px-6 py-5">
-                <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-                {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
-            </div>
-            <div className="px-6 py-5 space-y-5">{children}</div>
-        </div>
-    );
-}
-
-function Field({ label, hint, error, required, children }) {
-    return (
-        <div>
-            <label className="mb-1.5 flex items-center gap-1 text-sm font-medium text-slate-700">
-                {label}
-                {required && <span className="text-red-500">*</span>}
-            </label>
-            {children}
-            {hint && !error && <p className="mt-1.5 text-xs text-slate-400">{hint}</p>}
-            {error && <p className="mt-1.5 flex items-center gap-1 text-xs text-red-600"><AlertTriangle size={12} strokeWidth={2} /> {error}</p>}
-        </div>
-    );
-}
+import FormSection from '@/Components/FormSection';
+import Field from '@/Components/Field';
+import { CheckCircle2, XCircle, Clock, Circle, ChevronRight } from 'lucide-react';
 
 function TextInput({ error, ...props }) {
     return (

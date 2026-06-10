@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\Contracts\Merchants\MerchantRepositoryInterface;
 use App\Enums\Role;
+use App\Models\MerchantProviderCredential;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -54,5 +55,20 @@ final class MerchantRepository implements MerchantRepositoryInterface
         $merchant->update($data);
 
         return $merchant->fresh();
+    }
+
+    public function upsertProviderCredential(string $merchantId, array $match, array $values): MerchantProviderCredential
+    {
+        return MerchantProviderCredential::query()->updateOrCreate(
+            array_merge(['merchant_id' => $merchantId], $match),
+            $values
+        );
+    }
+
+    public function updateProviderCredential(MerchantProviderCredential $credential, array $data): MerchantProviderCredential
+    {
+        $credential->update($data);
+
+        return $credential->fresh();
     }
 }

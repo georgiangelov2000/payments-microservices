@@ -8,6 +8,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
+import Badge from '@/Components/Badge'
 import { getProviderMeta, ProviderIcon } from '@/Components/ProviderBrand'
 import {
     GitBranch, Activity, Shield, CheckCircle2, XCircle,
@@ -27,26 +28,6 @@ const fmt = (v) => {
 }
 
 const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
-
-function Badge({ children, variant = 'default' }) {
-    const cls = {
-        published: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        draft:     'bg-amber-50 text-amber-700 border-amber-200',
-        archived:  'bg-slate-100 text-slate-500 border-slate-200',
-        healthy:   'bg-emerald-50 text-emerald-700 border-emerald-200',
-        unhealthy: 'bg-red-50 text-red-600 border-red-200',
-        degraded:  'bg-amber-50 text-amber-700 border-amber-200',
-        disabled:  'bg-slate-100 text-slate-500 border-slate-200',
-        success:   'bg-emerald-50 text-emerald-700 border-emerald-200',
-        failed:    'bg-red-50 text-red-600 border-red-200',
-        default:   'bg-slate-100 text-slate-600 border-slate-200',
-    }[variant] ?? 'bg-slate-100 text-slate-600 border-slate-200'
-    return (
-        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${cls}`}>
-            {children}
-        </span>
-    )
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ProviderFlow — visual pill chain built from nodes/edges

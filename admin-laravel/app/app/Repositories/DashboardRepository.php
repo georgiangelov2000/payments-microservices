@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Contracts\Dashboard\DashboardRepositoryInterface;
 use App\Enums\MerchantAPIKeyStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\Role;
@@ -16,7 +17,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
-final class DashboardRepository
+final class DashboardRepository implements DashboardRepositoryInterface
 {
     public function getMetrics(): array
     {

@@ -2,6 +2,13 @@
 set -e
 
 COMPOSE="docker compose"
+CLEAN=false
+
+for arg in "$@"; do
+  case $arg in
+    --clean) CLEAN=true ;;
+  esac
+done
 
 # =================================================
 # ENV FILES
@@ -23,15 +30,16 @@ echo ""
 # =================================================
 # STOP & CLEAN
 # =================================================
-echo "STOPPING AND REMOVING CONTAINERS + VOLUMES"
-$COMPOSE down -v
-
-echo ""
-# =================================================
-# CLEAN ALEMBIC
-# =================================================
-echo "REMOVING ALEMBIC VERSIONS (local files)"
-rm -rf payments/alembic/versions/*
+if [ "$CLEAN" = true ]; then
+  echo "STOPPING AND REMOVING CONTAINERS + VOLUMES (--clean flag)"
+  $COMPOSE down -v
+  echo ""
+  echo "REMOVING ALEMBIC VERSIONS (local files)"
+  rm -rf payments/alembic/versions/*
+else
+  echo "STOPPING CONTAINERS (volumes preserved — use --clean to wipe data)"
+  $COMPOSE down
+fi
 
 echo ""
 # =================================================

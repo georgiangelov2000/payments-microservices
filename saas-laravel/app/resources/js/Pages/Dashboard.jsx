@@ -1,21 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
+import { fmt, fmtCurrency } from '@/utils';
 import {
     CreditCard, TrendingUp, CheckCircle2, Clock, XCircle,
     DollarSign, BarChart2, ArrowRight, TrendingDown,
 } from 'lucide-react';
-
-function fmtCurrency(n, currency = 'USD') {
-    if (n == null || n === 0) return '—';
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency', currency, maximumFractionDigits: 0,
-    }).format(n);
-}
-
-function fmt(n) {
-    if (n == null) return '—';
-    return Number(n).toLocaleString('en-US');
-}
 
 function Sparkline({ data, color = '#6366f1' }) {
     if (!data || !data.length) return null;

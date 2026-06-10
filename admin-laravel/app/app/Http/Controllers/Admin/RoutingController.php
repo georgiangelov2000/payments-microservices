@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Contracts\Merchants\MerchantRepositoryInterface;
+use App\Contracts\Routing\RoutingRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreWorkflowRequest;
 use App\Http\Requests\Admin\UpdateWorkflowRequest;
 use App\Models\Provider;
 use App\Models\RoutingWorkflow;
 use App\Models\RoutingWorkflowVersion;
-use App\Repositories\MerchantRepository;
-use App\Repositories\RoutingRepository;
 use App\Services\RoutingWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,12 +19,12 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class RoutingController extends Controller
+final class RoutingController extends Controller
 {
     public function __construct(
         private readonly RoutingWorkflowService $routingService,
-        private readonly RoutingRepository $routingRepository,
-        private readonly MerchantRepository $merchantRepository,
+        private readonly RoutingRepositoryInterface $routingRepository,
+        private readonly MerchantRepositoryInterface $merchantRepository,
     ) {}
 
     public function index(): Response

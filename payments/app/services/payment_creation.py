@@ -159,18 +159,6 @@ class PaymentCreationService:
             )
 
             # --------------------------------------------------
-            # Track billing-period usage
-            # --------------------------------------------------
-            payments_db.execute(
-                UserSubscription.__table__.update()
-                .where(UserSubscription.id == subscription_id)
-                .values(
-                    current_period_transactions=(UserSubscription.current_period_transactions + 1),
-                    current_period_volume=(UserSubscription.current_period_volume + request.price),
-                )
-            )
-
-            # --------------------------------------------------
             # Atomic commit
             # --------------------------------------------------
             payments_db.commit()
@@ -429,7 +417,8 @@ class PaymentCreationService:
                 routing_snapshot=routing_plan.snapshot,
             )
             await self._record_provider_success(
-                merchant_uuid, provider_id, routing_plan.environment, provider_alias
+                merchant_uuid, provider_id, routing_plan.environment, provider_alias,
+                subscription_id=subscription_id, price=request.price,
             )
             break
 
@@ -534,10 +523,23 @@ class PaymentCreationService:
         provider_id: UUID | None,
         environment: str,
         provider_alias: str,
+        *,
+        subscription_id: UUID,
+        price: float,
     ) -> None:
         with payments_session() as payments_db:
             await self.routing_engine.health.record_success(
                 payments_db, merchant_id, provider_id, environment, provider_alias
+            )
+            # Increment billing-period usage only after the provider confirms
+            # a successful checkout — failed attempts must not consume quota.
+            payments_db.execute(
+                UserSubscription.__table__.update()
+                .where(UserSubscription.id == subscription_id)
+                .values(
+                    current_period_transactions=(UserSubscription.current_period_transactions + 1),
+                    current_period_volume=(UserSubscription.current_period_volume + price),
+                )
             )
             payments_db.commit()
 

@@ -1,30 +1,12 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
 import ProviderBrand from '@/Components/ProviderBrand';
 import { Plus, Search, X, Pencil, UserPlus } from 'lucide-react';
 
 const providerStatuses = ['pending', 'active', 'validated', 'disabled'];
-
-function Badge({ value, size = 'md' }) {
-    const map = {
-        active:     'bg-green-100 text-green-700 border-green-200',
-        validated:  'bg-green-100 text-green-700 border-green-200',
-        pending:    'bg-amber-100 text-amber-700 border-amber-200',
-        inactive:   'bg-slate-100 text-slate-600 border-slate-200',
-        disabled:   'bg-slate-100 text-slate-600 border-slate-200',
-        suspended:  'bg-red-100 text-red-700 border-red-200',
-        test:       'bg-slate-100 text-slate-600 border-slate-200',
-        live:       'bg-violet-100 text-violet-700 border-violet-200',
-    };
-    const sz = size === 'sm' ? 'px-1.5 py-0.5 text-xs' : 'px-2.5 py-0.5 text-xs';
-    return (
-        <span className={`inline-flex items-center rounded-full border font-medium capitalize ${sz} ${map[value] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-            {value || '—'}
-        </span>
-    );
-}
 
 function Modal({ show, title, size = 'md', onClose, children }) {
     if (!show) return null;

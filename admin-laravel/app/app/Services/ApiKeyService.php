@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
 use App\Enums\MerchantAPIKeyStatus;
+use App\Services\GatewayCacheService;
 use App\Models\MerchantApiKey;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
@@ -23,6 +24,7 @@ final class ApiKeyService
 
     public function __construct(
         private readonly ApiKeyRepositoryInterface $apiKeyRepository,
+        private readonly GatewayCacheService $gatewayCache,
     ) {}
 
     public function list(): LengthAwarePaginator
@@ -67,20 +69,30 @@ final class ApiKeyService
 
     public function update(MerchantApiKey $apiKey, array $data): MerchantApiKey
     {
-        return $this->apiKeyRepository->update($apiKey, [
+        $updated = $this->apiKeyRepository->update($apiKey, [
             'name' => $data['name'] ?: $apiKey->name,
             'status' => MerchantAPIKeyStatus::fromString($data['status'])->value,
             'scopes' => array_values($data['scopes'] ?? []),
             'revoked_at' => $data['status'] === 'inactive' ? now() : null,
         ]);
+
+        if ($data['status'] === 'inactive') {
+            $this->gatewayCache->invalidateApiKeyHash($apiKey->hash);
+        }
+
+        return $updated;
     }
 
     public function revoke(MerchantApiKey $apiKey): MerchantApiKey
     {
-        return $this->apiKeyRepository->update($apiKey, [
+        $updated = $this->apiKeyRepository->update($apiKey, [
             'status' => MerchantAPIKeyStatus::INACTIVE->value,
             'revoked_at' => now(),
         ]);
+
+        $this->gatewayCache->invalidateApiKeyHash($apiKey->hash);
+
+        return $updated;
     }
 
     public function availableScopes(): array
