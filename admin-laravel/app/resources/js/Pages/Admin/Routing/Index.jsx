@@ -214,7 +214,10 @@ function RouteCard({ workflow, onEdit }) {
                     <p className="mt-0.5 text-sm text-slate-500">
                         {workflow.merchant?.name}
                         <span className="mx-1.5 text-slate-300">·</span>
-                        {workflow.environment === 'live' ? 'Live payments' : 'Test mode'}
+                        {workflow.environment === 'live'
+                            ? <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700"><span className="h-1.5 w-1.5 rounded-full bg-violet-500" />Live payments</span>
+                            : <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600"><span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />Test mode</span>
+                        }
                         <span className="mx-1.5 text-slate-300">·</span>
                         v{workflow.current_version}
                     </p>

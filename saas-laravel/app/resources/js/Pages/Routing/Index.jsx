@@ -747,7 +747,9 @@ function WorkflowCard({ workflow }) {
     const versions    = workflow.versions ?? []
     const visibleVers = showAllVersions ? versions : versions.slice(0, 4)
     const isPublished = workflow.status === 'published'
-    const envLabel    = workflow.environment === 'live' ? 'Live payments' : 'Test mode'
+    const envLabel    = workflow.environment === 'live'
+        ? <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700"><span className="h-1.5 w-1.5 rounded-full bg-violet-500" />Live payments</span>
+        : <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600"><span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />Test mode</span>
     const hasNodes    = (workflow.nodes?.length ?? 0) > 0
 
     return (
