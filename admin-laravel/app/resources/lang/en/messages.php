@@ -6,6 +6,7 @@ return [
     'api_keys' => [
         'updated' => 'API key updated.',
         'revoked' => 'API key revoked.',
+        'deleted' => 'API key deleted.',
     ],
     'routing' => [
         'current_version_delete_forbidden' => 'The current published version cannot be deleted.',

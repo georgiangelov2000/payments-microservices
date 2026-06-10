@@ -64,6 +64,7 @@ export default {
         generatedDescription: 'Copy this key now. It will not be shown again.',
         confirmRotate: 'Rotate this API key? The current key will be invalidated immediately.',
         confirmRevoke: 'Revoke this API key? This action cannot be undone.',
+        confirmDelete: 'Permanently delete this revoked key? This action cannot be undone.',
         stats: {
             total: 'Total keys',
             active: 'Active keys',

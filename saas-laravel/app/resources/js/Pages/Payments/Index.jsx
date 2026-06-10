@@ -264,9 +264,6 @@ export default function Payments({ payments, filters = {} }) {
                       <td className="px-4 py-2 font-medium">{payment.order_id}</td>
                       <td className="px-4 py-2">
                         <div className="tabular-nums font-medium">{payment.currency || 'USD'} {formatNumber(payment.price)}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">
-                          {[payment.channel, payment.country, payment.locale].filter(Boolean).join(' · ') || '—'}
-                        </div>
                       </td>
                       <td className="px-4 py-2">
                         <span

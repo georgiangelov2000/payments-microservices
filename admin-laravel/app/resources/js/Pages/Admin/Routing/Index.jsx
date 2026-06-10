@@ -1,10 +1,11 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     AlertTriangle, CheckCircle2, X, Plus, ChevronDown, GripVertical,
     Play, GitBranch, Scale, RefreshCcw, XCircle, LayoutGrid,
     Globe, ArrowRight, FlaskConical, CreditCard, Trash2, Save,
+    Search, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import Badge from '@/Components/Badge';
 import { ProviderIcon } from '@/Components/ProviderBrand';
@@ -1016,6 +1017,145 @@ function CreateRouteWizard({ merchants, onClose }) {
     );
 }
 
+// ─── Filter bar ───────────────────────────────────────────────────────────────
+
+function FilterBar({ filters, merchants, onChange }) {
+    const [search, setSearch] = useState(filters.search ?? '');
+    const debounceRef = useRef(null);
+
+    const apply = (patch) => onChange({ ...filters, ...patch, page: 1 });
+
+    const handleSearch = (val) => {
+        setSearch(val);
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => apply({ search: val }), 350);
+    };
+
+    const active = (filters.search || filters.environment || filters.status || filters.merchant_id);
+
+    return (
+        <div className="mb-5 flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1 min-w-48">
+                <Search size={14} strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                    value={search}
+                    onChange={e => handleSearch(e.target.value)}
+                    placeholder="Search by name or merchant…"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                />
+            </div>
+
+            {/* Environment */}
+            <select
+                value={filters.environment ?? ''}
+                onChange={e => apply({ environment: e.target.value })}
+                className="rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none"
+            >
+                <option value="">All environments</option>
+                <option value="test">Test mode</option>
+                <option value="live">Live payments</option>
+            </select>
+
+            {/* Status */}
+            <select
+                value={filters.status ?? ''}
+                onChange={e => apply({ status: e.target.value })}
+                className="rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none"
+            >
+                <option value="">All statuses</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+            </select>
+
+            {/* Merchant */}
+            <select
+                value={filters.merchant_id ?? ''}
+                onChange={e => apply({ merchant_id: e.target.value })}
+                className="rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none"
+            >
+                <option value="">All merchants</option>
+                {merchants.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+            </select>
+
+            {/* Clear */}
+            {active && (
+                <button
+                    onClick={() => { setSearch(''); onChange({}); }}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                    <X size={13} strokeWidth={2} />
+                    Clear
+                </button>
+            )}
+        </div>
+    );
+}
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+function Pagination({ meta, onPage }) {
+    if (!meta || meta.last_page <= 1) return null;
+
+    const { current_page, last_page, from, to, total } = meta;
+
+    const pages = [];
+    for (let p = Math.max(1, current_page - 2); p <= Math.min(last_page, current_page + 2); p++) {
+        pages.push(p);
+    }
+
+    return (
+        <div className="mt-6 flex items-center justify-between">
+            <p className="text-sm text-slate-500">
+                Showing {from}–{to} of <span className="font-semibold text-slate-700">{total}</span> workflows
+            </p>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={() => onPage(current_page - 1)}
+                    disabled={current_page === 1}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronLeft size={14} strokeWidth={2} />
+                </button>
+                {pages[0] > 1 && (
+                    <>
+                        <button onClick={() => onPage(1)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm text-slate-600 hover:bg-slate-50">1</button>
+                        {pages[0] > 2 && <span className="px-1 text-slate-400 text-sm">…</span>}
+                    </>
+                )}
+                {pages.map(p => (
+                    <button
+                        key={p}
+                        onClick={() => onPage(p)}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+                            p === current_page
+                                ? 'border-indigo-500 bg-indigo-600 text-white'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        }`}
+                    >
+                        {p}
+                    </button>
+                ))}
+                {pages[pages.length - 1] < last_page && (
+                    <>
+                        {pages[pages.length - 1] < last_page - 1 && <span className="px-1 text-slate-400 text-sm">…</span>}
+                        <button onClick={() => onPage(last_page)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm text-slate-600 hover:bg-slate-50">{last_page}</button>
+                    </>
+                )}
+                <button
+                    onClick={() => onPage(current_page + 1)}
+                    disabled={current_page === last_page}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                    <ChevronRight size={14} strokeWidth={2} />
+                </button>
+            </div>
+        </div>
+    );
+}
+
 // ─── Provider health panel ─────────────────────────────────────────────────────
 
 function ProviderHealthPanel({ health }) {
@@ -1123,21 +1263,30 @@ function humanizeAuditAction(action) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function RoutingIndex({ summary, merchants, providers, workflows, health, configurations, attempts, audits }) {
+export default function RoutingIndex({ summary, merchants, providers, workflows, filters: initialFilters, health, configurations, attempts, audits }) {
     const [editingWorkflow, setEditingWorkflow]   = useState(null);
     const [showCreateWizard, setShowCreateWizard] = useState(false);
     const [activeSection, setActiveSection]       = useState('routes'); // 'routes' | 'health' | 'activity'
+    const [filters, setFilters]                   = useState(initialFilters ?? {});
+
+    const workflowList = workflows?.data ?? [];
+    const paginationMeta = workflows?.meta ?? null;
+
     const currentEditingWorkflow = useMemo(() => {
         if (!editingWorkflow) return null;
+        return workflowList.find((workflow) => workflow.id === editingWorkflow.id) ?? editingWorkflow;
+    }, [editingWorkflow, workflowList]);
 
-        return workflows.find((workflow) => workflow.id === editingWorkflow.id) ?? editingWorkflow;
-    }, [editingWorkflow, workflows]);
+    const applyFilters = (newFilters) => {
+        setFilters(newFilters);
+        router.get(route('admin.routing.index'), newFilters, { preserveState: true, preserveScroll: true, replace: true });
+    };
 
-    // Group routing rules by merchant_id (from configurations metadata)
-    const rulesByMerchant = useMemo(() => {
-        // rules come from provider_routing_rules — not directly passed, derive from configurations
-        return {};
-    }, [configurations]);
+    const goToPage = (page) => {
+        applyFilters({ ...filters, page });
+    };
+
+    const rulesByMerchant = useMemo(() => ({}), []);
 
     const sections = [
         { key: 'routes',   label: 'Payment Routes' },
@@ -1191,24 +1340,42 @@ export default function RoutingIndex({ summary, merchants, providers, workflows,
 
             {/* ── Payment Routes ── */}
             {activeSection === 'routes' && (
-                <div className="space-y-4">
-                    {workflows.length === 0 ? (
-                        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
-                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-3xl">🛤</div>
-                            <h3 className="text-base font-semibold text-slate-800">No payment routes yet</h3>
-                            <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">Create your first payment route to start controlling how customer payments are distributed across Stripe, PayPal, and other processors.</p>
-                            <button
-                                onClick={() => setShowCreateWizard(true)}
-                                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
-                            >
-                                Create your first route
-                            </button>
-                        </div>
-                    ) : (
-                        workflows.map((wf) => (
-                            <RouteCard key={wf.id} workflow={wf} onEdit={setEditingWorkflow} />
-                        ))
-                    )}
+                <div>
+                    <FilterBar filters={filters} merchants={merchants} onChange={applyFilters} />
+
+                    <div className="space-y-4">
+                        {workflowList.length === 0 ? (
+                            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
+                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-3xl">🛤</div>
+                                {(filters.search || filters.environment || filters.status || filters.merchant_id) ? (
+                                    <>
+                                        <h3 className="text-base font-semibold text-slate-800">No routes match your filters</h3>
+                                        <p className="mt-1 text-sm text-slate-500">Try adjusting your search or clearing the filters.</p>
+                                        <button onClick={() => applyFilters({})} className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                                            <X size={13} strokeWidth={2} /> Clear filters
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3 className="text-base font-semibold text-slate-800">No payment routes yet</h3>
+                                        <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">Create your first payment route to start controlling how customer payments are distributed across Stripe, PayPal, and other processors.</p>
+                                        <button
+                                            onClick={() => setShowCreateWizard(true)}
+                                            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
+                                        >
+                                            Create your first route
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        ) : (
+                            workflowList.map((wf) => (
+                                <RouteCard key={wf.id} workflow={wf} onEdit={setEditingWorkflow} />
+                            ))
+                        )}
+                    </div>
+
+                    <Pagination meta={paginationMeta} onPage={goToPage} />
                 </div>
             )}
 

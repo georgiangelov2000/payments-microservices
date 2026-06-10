@@ -38,6 +38,7 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::put('/api-keys/{apiKey}', [ApiKeyController::class, 'update'])->name('admin.api-keys.update');
     Route::post('/api-keys/{apiKey}/rotate', [ApiKeyController::class, 'rotate'])->name('admin.api-keys.rotate');
     Route::post('/api-keys/{apiKey}/revoke', [ApiKeyController::class, 'revoke'])->name('admin.api-keys.revoke');
+    Route::delete('/api-keys/{apiKey}', [ApiKeyController::class, 'destroy'])->name('admin.api-keys.destroy');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
     Route::get('/routing', [RoutingController::class, 'index'])->name('admin.routing.index');
     Route::post('/routing/workflows', [RoutingController::class, 'storeWorkflow'])->name('admin.routing.workflows.store');
@@ -48,6 +49,7 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::put('/routing/workflows/{workflow}/versions/{version}', [RoutingController::class, 'updateWorkflowVersion'])->name('admin.routing.workflows.versions.update');
     Route::delete('/routing/workflows/{workflow}/versions/{version}', [RoutingController::class, 'deleteWorkflowVersion'])->name('admin.routing.workflows.versions.destroy');
     Route::post('/routing/workflows/{workflow}/simulate', [RoutingController::class, 'simulateWorkflow'])->name('admin.routing.workflows.simulate');
+    Route::put('/routing/workflows/{workflow}/canvas-layout', [RoutingController::class, 'saveCanvasLayout'])->name('admin.routing.workflows.canvas-layout');
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('admin.logout');
 });

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
-import { Plus, X, Copy, Check, RotateCcw, XCircle, SlidersHorizontal } from 'lucide-react';
+import { Plus, X, Copy, Check, RotateCcw, XCircle, SlidersHorizontal, Trash2 } from 'lucide-react';
 
 const scopesMeta = [
     { id: 'payments:create', label: 'payments:create', descKey: 'apiKeys.scopes.paymentsCreate' },
@@ -135,6 +135,12 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey, filters
     const revokeKey = (keyId) => {
         if (window.confirm(t('apiKeys.confirmRevoke'))) {
             router.post(route('admin.api-keys.revoke', keyId), {}, { preserveScroll: true });
+        }
+    };
+
+    const deleteKey = (keyId) => {
+        if (window.confirm(t('apiKeys.confirmDelete'))) {
+            router.delete(route('admin.api-keys.destroy', keyId), { preserveScroll: true });
         }
     };
 
@@ -335,6 +341,15 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey, filters
                                                 >
                                                     <XCircle size={12} strokeWidth={2} />
                                                     {t('common.actions.revoke')}
+                                                </button>
+                                            )}
+                                            {apiKey.status === 'inactive' && (
+                                                <button
+                                                    onClick={() => deleteKey(apiKey.id)}
+                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                >
+                                                    <Trash2 size={12} strokeWidth={2} />
+                                                    {t('common.actions.delete')}
                                                 </button>
                                             )}
                                         </div>

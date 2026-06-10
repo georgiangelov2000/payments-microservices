@@ -6,6 +6,7 @@ namespace App\Contracts\Routing;
 
 use App\Models\RoutingWorkflow;
 use App\Models\RoutingWorkflowVersion;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 interface RoutingRepositoryInterface
@@ -13,6 +14,8 @@ interface RoutingRepositoryInterface
     public function summary(): array;
 
     public function recentWorkflows(int $limit = 25): Collection;
+
+    public function paginateWorkflows(array $filters = [], int $perPage = 15): LengthAwarePaginator;
 
     public function createWorkflow(array $data): RoutingWorkflow;
 

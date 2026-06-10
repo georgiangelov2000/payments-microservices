@@ -62,4 +62,13 @@ final class ApiKeyController extends Controller
 
         return back()->with('success', __('messages.api_keys.revoked'));
     }
+
+    public function destroy(MerchantApiKey $apiKey): RedirectResponse
+    {
+        abort_if($apiKey->status !== \App\Enums\MerchantAPIKeyStatus::INACTIVE, 403, 'Only revoked keys can be deleted.');
+
+        $apiKey->delete();
+
+        return back()->with('success', __('messages.api_keys.deleted'));
+    }
 }

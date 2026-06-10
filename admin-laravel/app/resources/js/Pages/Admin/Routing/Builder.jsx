@@ -13,7 +13,7 @@ import { getProviderMeta, ProviderIcon } from '@/Components/ProviderBrand';
 import toast from 'react-hot-toast';
 import {
     Play, GitBranch, Scale, Zap, CheckCircle2, XCircle,
-    Plus, AlertTriangle, FlaskConical,
+    Plus, AlertTriangle, FlaskConical, RotateCcw, Save,
 } from 'lucide-react';
 
 function pm(alias) {
@@ -708,14 +708,23 @@ function normalizeForCanvas(rawNodes) {
     });
 }
 
+function applyCanvasLayout(rawNodes, layout) {
+    if (!layout || Object.keys(layout).length === 0) return normalizeForCanvas(rawNodes);
+    return normalizeForCanvas(rawNodes).map(n => layout[n.id] ? { ...n, position: layout[n.id] } : n);
+}
+
 function WorkflowBuilder({ workflow, providers, merchantProviders }) {
     const [rfInstance, setRfInstance]   = useState(null);
-    const [nodes, setNodes, onNodesChange] = useNodesState(normalizeForCanvas(workflow.nodes));
+    const [nodes, setNodes, onNodesChange] = useNodesState(applyCanvasLayout(workflow.nodes, workflow.canvas_layout));
     const [edges, setEdges, onEdgesChange] = useEdgesState(workflow.edges || []);
     const [selectedNode, setSelectedNode]  = useState(null);
     const [saving, setSaving]              = useState(false);
     const [name, setName]                  = useState(workflow.name);
+    const [isDirty, setIsDirty]            = useState(false);
+    const [saveState, setSaveState]        = useState('idle'); // idle | saving | saved | error
+    const pendingPositions                 = useRef({});
     const dropRef                          = useRef(null);
+    const hasSaved = Object.keys(workflow.canvas_layout ?? {}).length > 0;
 
     const allProviders = useMemo(() => {
         const seen = new Set();
@@ -773,6 +782,47 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
     const onNodeClick = useCallback((_, node) => setSelectedNode(node), []);
     const onPaneClick = useCallback(() => setSelectedNode(null), []);
 
+    const onNodesChangeTracked = useCallback((changes) => {
+        onNodesChange(changes);
+        const hasMoved = changes.some(c => c.type === 'position' && !c.dragging);
+        if (hasMoved) {
+            setNodes(current => {
+                const positions = Object.fromEntries(current.map(n => [n.id, n.position]));
+                pendingPositions.current = positions;
+                setIsDirty(true);
+                setSaveState('idle');
+                return current;
+            });
+        }
+    }, [onNodesChange, setNodes]);
+
+    const handleSave = useCallback(() => {
+        if (!isDirty || saveState === 'saving') return;
+        setSaveState('saving');
+        router.put(
+            route('admin.routing.workflows.canvas-layout', workflow.id),
+            { layout: pendingPositions.current },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setSaveState('saved');
+                    setIsDirty(false);
+                    setTimeout(() => setSaveState('idle'), 2500);
+                },
+                onError: () => setSaveState('error'),
+            }
+        );
+    }, [isDirty, saveState, workflow.id]);
+
+    const handleResetLayout = useCallback(() => {
+        router.put(
+            route('admin.routing.workflows.canvas-layout', workflow.id),
+            { layout: {} },
+            { preserveScroll: true, preserveState: false }
+        );
+    }, [workflow.id]);
+
     const updateNodeData = useCallback((id, data) => {
         setNodes(prev => prev.map(n => n.id === id ? { ...n, data } : n));
     }, [setNodes]);
@@ -827,6 +877,34 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
                 )}
                 <div className="ml-auto flex items-center gap-2">
                     <span className="text-[10px] text-slate-400">{nodes.length} node{nodes.length !== 1 ? 's' : ''} · {edges.length} edge{edges.length !== 1 ? 's' : ''}</span>
+
+                    {hasSaved && !isDirty && (
+                        <button onClick={handleResetLayout}
+                            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors"
+                            title="Reset to automatic layout">
+                            <RotateCcw size={12} strokeWidth={2} />
+                            Reset layout
+                        </button>
+                    )}
+
+                    <button onClick={handleSave} disabled={!isDirty || saveState === 'saving'}
+                        className={[
+                            'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                            saveState === 'saved'
+                                ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                                : saveState === 'error'
+                                    ? 'border border-red-200 bg-red-50 text-red-600'
+                                    : isDirty
+                                        ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                                        : 'border border-slate-200 bg-slate-50 text-slate-400 cursor-default',
+                        ].join(' ')}>
+                        <Save size={12} strokeWidth={2} />
+                        {saveState === 'saving' ? 'Saving…'
+                            : saveState === 'saved' ? 'Layout saved'
+                            : saveState === 'error' ? 'Save failed'
+                            : 'Save layout'}
+                    </button>
+
                     <button onClick={save} disabled={saving}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors">
                         {saving ? 'Saving…' : 'Save draft'}
@@ -869,7 +947,7 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
-                        onNodesChange={onNodesChange}
+                        onNodesChange={onNodesChangeTracked}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
                         onInit={setRfInstance}
@@ -877,7 +955,7 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
                         onPaneClick={onPaneClick}
                         nodeTypes={NODE_TYPES}
                         defaultEdgeOptions={{ type: 'smoothstep' }}
-                        fitView
+                        fitView={!hasSaved}
                         fitViewOptions={{ padding: 0.2 }}
                         deleteKeyCode={['Backspace', 'Delete']}
                     >

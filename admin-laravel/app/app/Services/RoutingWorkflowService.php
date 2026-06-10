@@ -565,6 +565,11 @@ final class RoutingWorkflowService
         return $chain === [] ? $fallback : array_values(array_unique($chain));
     }
 
+    public function saveCanvasLayout(RoutingWorkflow $workflow, array $layout): void
+    {
+        $workflow->update(['canvas_layout' => $layout]);
+    }
+
     private function audit(string $action, RoutingWorkflow $workflow, ?array $before, array $after): void
     {
         $this->routingRepository->createAuditLog([

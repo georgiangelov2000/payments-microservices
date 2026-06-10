@@ -12,6 +12,7 @@ use App\Models\ProviderRoutingRule;
 use App\Models\RoutingAuditLog;
 use App\Models\RoutingWorkflow;
 use App\Models\RoutingWorkflowVersion;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 final class RoutingRepository implements RoutingRepositoryInterface
@@ -37,6 +38,36 @@ final class RoutingRepository implements RoutingRepositoryInterface
             ->get();
     }
 
+    public function paginateWorkflows(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        $query = RoutingWorkflow::query()
+            ->with(['merchant:id,name,email', 'versions'])
+            ->latest();
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhereHas('merchant', fn ($mq) => $mq->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%"));
+            });
+        }
+
+        if (!empty($filters['environment']) && in_array($filters['environment'], ['test', 'live'], true)) {
+            $query->where('environment', $filters['environment']);
+        }
+
+        if (!empty($filters['status']) && in_array($filters['status'], ['draft', 'published'], true)) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['merchant_id'])) {
+            $query->where('merchant_id', $filters['merchant_id']);
+        }
+
+        return $query->paginate($perPage)->withQueryString();
+    }
+
     public function createWorkflow(array $data): RoutingWorkflow
     {
         return RoutingWorkflow::query()->create($data);
@@ -51,10 +82,7 @@ final class RoutingRepository implements RoutingRepositoryInterface
 
     public function createVersion(array $data): RoutingWorkflowVersion
     {
-        return RoutingWorkflowVersion::query()->updateOrCreate(
-            ['workflow_id' => $data['workflow_id'], 'version' => $data['version']],
-            $data
-        );
+        return RoutingWorkflowVersion::query()->create($data);
     }
 
     public function getHealthStatuses(int $limit = 50): Collection

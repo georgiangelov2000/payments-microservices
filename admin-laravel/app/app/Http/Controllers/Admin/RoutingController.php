@@ -27,8 +27,12 @@ final class RoutingController extends Controller
         private readonly MerchantRepositoryInterface $merchantRepository,
     ) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = $request->only(['search', 'environment', 'status', 'merchant_id']);
+
+        $paginated = $this->routingRepository->paginateWorkflows($filters, 12);
+
         return Inertia::render('Admin/Routing/Index', [
             'summary' => $this->routingRepository->summary(),
             'merchants' => $this->merchantRepository->allForSelect()->map(fn ($merchant) => [
@@ -46,9 +50,10 @@ final class RoutingController extends Controller
                     ])->values(),
             ]),
             'providers' => Provider::query()->orderBy('name')->get(['id', 'name', 'alias']),
-            'workflows' => $this->routingRepository->recentWorkflows()->map(
+            'workflows' => $paginated->through(
                 fn ($workflow) => $this->routingService->serializeWorkflow($workflow)
             ),
+            'filters' => $filters,
             'health' => $this->routingRepository->getHealthStatuses(),
             'configurations' => $this->routingRepository->getConfigurations(),
             'attempts' => $this->routingRepository->getAttempts(),
@@ -82,6 +87,7 @@ final class RoutingController extends Controller
                 'current_version' => $workflow->current_version,
                 'nodes' => $workflow->nodes ?? [],
                 'edges' => $workflow->edges ?? [],
+                'canvas_layout' => $workflow->canvas_layout ?? [],
                 'validation_errors' => $workflow->validation_errors ?? [],
                 'merchant' => $merchant ? ['id' => $merchant->id, 'name' => $merchant->name] : null,
                 'versions' => $workflow->versions()
@@ -151,6 +157,14 @@ final class RoutingController extends Controller
         }
 
         return back()->with('success', 'Workflow version deleted.');
+    }
+
+    public function saveCanvasLayout(Request $request, RoutingWorkflow $workflow): RedirectResponse
+    {
+        $data = $request->validate(['layout' => ['present', 'array']]);
+        $this->routingService->saveCanvasLayout($workflow, $data['layout']);
+
+        return back()->with('success', 'Layout saved.');
     }
 
     public function simulateWorkflow(Request $request, RoutingWorkflow $workflow): JsonResponse

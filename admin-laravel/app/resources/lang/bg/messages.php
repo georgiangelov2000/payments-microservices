@@ -6,6 +6,7 @@ return [
     'api_keys' => [
         'updated' => 'API ключът е обновен.',
         'revoked' => 'API ключът е отменен.',
+        'deleted' => 'API ключът е изтрит.',
     ],
     'routing' => [
         'current_version_delete_forbidden' => 'Текущата публикувана версия не може да бъде изтрита.',
