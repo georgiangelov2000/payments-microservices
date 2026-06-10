@@ -15,7 +15,7 @@ class RoutingWorkflow extends Model
 
     protected $fillable = [
         'merchant_id', 'name', 'environment', 'status', 'current_version',
-        'nodes', 'edges', 'validation_errors',
+        'nodes', 'edges', 'validation_errors', 'canvas_layout',
         'created_by', 'updated_by', 'published_by', 'published_at',
     ];
 
@@ -23,6 +23,7 @@ class RoutingWorkflow extends Model
         'nodes'             => 'array',
         'edges'             => 'array',
         'validation_errors' => 'array',
+        'canvas_layout'     => 'array',
         'current_version'   => 'integer',
         'published_at'      => 'datetime',
     ];

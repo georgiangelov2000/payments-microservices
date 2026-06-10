@@ -79,7 +79,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics');
 
-    Route::get('/routing', [RoutingController::class, 'index'])->name('routing.index');
+    Route::prefix('routing')->name('routing.')->group(function () {
+        Route::get('/', [RoutingController::class, 'index'])->name('index');
+        Route::get('/workflows/{workflow}/builder', [RoutingController::class, 'builder'])->name('workflows.builder');
+        Route::put('/workflows/{workflow}/canvas-layout', [RoutingController::class, 'saveCanvasLayout'])->name('workflows.canvas-layout');
+    });
 
     Route::prefix('webhooks')->name('webhooks.')->group(function () {
         Route::get('/', [WebhookController::class, 'index'])->name('index');

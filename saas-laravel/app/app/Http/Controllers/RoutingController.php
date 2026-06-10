@@ -10,6 +10,8 @@ use App\Models\ProviderHealthStatus;
 use App\Models\ProviderRoutingConfiguration;
 use App\Models\ProviderRoutingRule;
 use App\Models\RoutingWorkflow;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,6 +35,7 @@ class RoutingController extends Controller
                 'current_version'  => $w->current_version,
                 'nodes'            => $w->nodes ?? [],
                 'edges'            => $w->edges ?? [],
+                'canvas_layout'    => $w->canvas_layout ?? [],   // ← saved node positions
                 'validation_errors'=> $w->validation_errors ?? [],
                 'published_at'     => $w->published_at?->toIso8601String(),
                 'updated_at'       => $w->updated_at->toIso8601String(),
@@ -165,5 +168,68 @@ class RoutingController extends Controller
                 'total_attempts'       => (int) $grandTotal,
             ],
         ]);
+    }
+
+    /**
+     * Full-screen read-only visual builder page for a single workflow.
+     */
+    public function builder(string $workflow): Response
+    {
+        $merchantId = Auth::id();
+
+        $wf = RoutingWorkflow::query()
+            ->where('id', $workflow)
+            ->where('merchant_id', $merchantId)
+            ->with(['versions' => fn ($q) => $q->orderByDesc('version')->limit(10)])
+            ->firstOrFail();
+
+        return Inertia::render('Routing/Builder', [
+            'workflow' => [
+                'id'              => $wf->id,
+                'name'            => $wf->name,
+                'environment'     => $wf->environment,
+                'status'          => $wf->status,
+                'current_version' => $wf->current_version,
+                'nodes'           => $wf->nodes ?? [],
+                'edges'           => $wf->edges ?? [],
+                'canvas_layout'   => $wf->canvas_layout ?? [],
+                'published_at'    => $wf->published_at?->toIso8601String(),
+                'updated_at'      => $wf->updated_at->toIso8601String(),
+                'versions'        => $wf->versions->map(fn ($v) => [
+                    'id'          => $v->id,
+                    'version'     => $v->version,
+                    'status'      => $v->status,
+                    'published_at'=> $v->published_at?->toIso8601String(),
+                    'created_at'  => $v->created_at?->toIso8601String(),
+                ])->values(),
+            ],
+        ]);
+    }
+
+    /**
+     * Persist the merchant's visual canvas layout for a workflow.
+     *
+     * Accepts: { layout: { [nodeId]: { x: number, y: number } } }
+     * Only updates canvas_layout — routing logic (nodes/edges) is never touched.
+     */
+    public function saveCanvasLayout(Request $request, string $workflow): JsonResponse
+    {
+        $merchantId = Auth::id();
+
+        $wf = RoutingWorkflow::query()
+            ->where('id', $workflow)
+            ->where('merchant_id', $merchantId)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'layout'          => ['required', 'array'],
+            'layout.*'        => ['required', 'array'],
+            'layout.*.x'      => ['required', 'numeric'],
+            'layout.*.y'      => ['required', 'numeric'],
+        ]);
+
+        $wf->update(['canvas_layout' => $validated['layout']]);
+
+        return response()->json(['saved' => true]);
     }
 }
