@@ -301,11 +301,13 @@ function ConfigPanel({ node, providers, onUpdate, onDelete }) {
             </div>
 
             <div className="flex flex-col gap-4 p-4">
-                {/* Label — all node types */}
-                <Field label="Label">
-                    <input value={d.label || ''} onChange={e => set('label', e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-100" />
-                </Field>
+                {/* Label — read-only for provider nodes (set automatically from provider name) */}
+                {node.type !== 'provider' && (
+                    <Field label="Label">
+                        <input value={d.label || ''} onChange={e => set('label', e.target.value)}
+                            className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-100" />
+                    </Field>
+                )}
 
                 {/* Provider-specific */}
                 {node.type === 'provider' && (
