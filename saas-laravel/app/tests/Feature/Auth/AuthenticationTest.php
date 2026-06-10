@@ -33,6 +33,26 @@ class AuthenticationTest extends TestCase
         $response->assertJsonPath('redirect', route('dashboard'));
     }
 
+    public function test_session_endpoint_reports_authenticated_users(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->getJson('/auth/session');
+
+        $response->assertOk();
+        $response->assertJsonPath('authenticated', true);
+        $response->assertJsonPath('redirect', route('dashboard'));
+    }
+
+    public function test_session_endpoint_reports_guest_users(): void
+    {
+        $response = $this->getJson('/auth/session');
+
+        $response->assertOk();
+        $response->assertJsonPath('authenticated', false);
+        $response->assertJsonPath('redirect', null);
+    }
+
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
         $user = User::factory()->create();

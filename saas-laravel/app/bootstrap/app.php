@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
@@ -47,7 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 $loginUrl = config('services.static_site.url').'/login.html';
 
                 if ($request->expectsJson()) {
-                    return response()->json(['message' => 'Unauthenticated.'], 401);
+                    return response()->json(['message' => __('messages.auth.unauthenticated')], 401);
                 }
 
                 return redirect($loginUrl)->withCookie(cookie()->forget('remember_web'));

@@ -8,6 +8,7 @@ use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
 use App\Enums\MerchantAPIKeyStatus;
 use App\Services\GatewayCacheService;
 use App\Models\MerchantApiKey;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 
@@ -27,9 +28,9 @@ final class ApiKeyService
         private readonly GatewayCacheService $gatewayCache,
     ) {}
 
-    public function list(): LengthAwarePaginator
+    public function list(array $filters = []): LengthAwarePaginator
     {
-        return $this->apiKeyRepository->paginate()->through(
+        return $this->apiKeyRepository->paginate(filters: $filters)->through(
             fn (MerchantApiKey $apiKey) => $this->serialize($apiKey)
         );
     }
@@ -38,16 +39,20 @@ final class ApiKeyService
     {
         $plain = $this->generatePlainKey($data['environment']);
 
-        $this->apiKeyRepository->create([
-            'merchant_id' => $data['merchant_id'],
-            'name' => $data['name'] ?: ucfirst($data['environment']).' gateway key',
-            'environment' => $data['environment'],
-            'hash' => $this->hashPlainKey($plain),
-            'key_prefix' => substr($plain, 0, 14),
-            'status' => MerchantAPIKeyStatus::ACTIVE->value,
-            'scopes' => array_values($data['scopes'] ?? ['payments:create', 'payments:read']),
-            'last_rotated_at' => now(),
-        ]);
+        DB::transaction(function () use ($data, $plain) {
+            $this->revokeActiveKeysForEnvironment($data['merchant_id'], $data['environment']);
+
+            $this->apiKeyRepository->create([
+                'merchant_id' => $data['merchant_id'],
+                'name' => $data['name'] ?: ucfirst($data['environment']).' gateway key',
+                'environment' => $data['environment'],
+                'hash' => $this->hashPlainKey($plain),
+                'key_prefix' => substr($plain, 0, 14),
+                'status' => MerchantAPIKeyStatus::ACTIVE->value,
+                'scopes' => array_values($data['scopes'] ?? ['payments:create', 'payments:read']),
+                'last_rotated_at' => now(),
+            ]);
+        });
 
         return ['plain_key' => $plain];
     }
@@ -56,25 +61,43 @@ final class ApiKeyService
     {
         $plain = $this->generatePlainKey($apiKey->environment ?: 'test');
 
-        $this->apiKeyRepository->update($apiKey, [
-            'hash' => $this->hashPlainKey($plain),
-            'key_prefix' => substr($plain, 0, 14),
-            'status' => MerchantAPIKeyStatus::ACTIVE->value,
-            'last_rotated_at' => now(),
-            'revoked_at' => null,
-        ]);
+        DB::transaction(function () use ($apiKey, $plain) {
+            $this->revokeActiveKeysForEnvironment(
+                $apiKey->merchant_id,
+                $apiKey->environment ?: 'test',
+                $apiKey->id,
+            );
+
+            $this->apiKeyRepository->update($apiKey, [
+                'hash' => $this->hashPlainKey($plain),
+                'key_prefix' => substr($plain, 0, 14),
+                'status' => MerchantAPIKeyStatus::ACTIVE->value,
+                'last_rotated_at' => now(),
+                'revoked_at' => null,
+            ]);
+        });
 
         return $plain;
     }
 
     public function update(MerchantApiKey $apiKey, array $data): MerchantApiKey
     {
-        $updated = $this->apiKeyRepository->update($apiKey, [
-            'name' => $data['name'] ?: $apiKey->name,
-            'status' => MerchantAPIKeyStatus::fromString($data['status'])->value,
-            'scopes' => array_values($data['scopes'] ?? []),
-            'revoked_at' => $data['status'] === 'inactive' ? now() : null,
-        ]);
+        $updated = DB::transaction(function () use ($apiKey, $data): MerchantApiKey {
+            if ($data['status'] === 'active') {
+                $this->revokeActiveKeysForEnvironment(
+                    $apiKey->merchant_id,
+                    $apiKey->environment ?: 'test',
+                    $apiKey->id,
+                );
+            }
+
+            return $this->apiKeyRepository->update($apiKey, [
+                'name' => $data['name'] ?: $apiKey->name,
+                'status' => MerchantAPIKeyStatus::fromString($data['status'])->value,
+                'scopes' => array_values($data['scopes'] ?? []),
+                'revoked_at' => $data['status'] === 'inactive' ? now() : null,
+            ]);
+        });
 
         if ($data['status'] === 'inactive') {
             $this->gatewayCache->invalidateApiKeyHash($apiKey->hash);
@@ -133,5 +156,26 @@ final class ApiKeyService
         return $secret
             ? hash_hmac('sha256', $plain, $secret)
             : hash('sha256', $plain);
+    }
+
+    private function revokeActiveKeysForEnvironment(
+        string $merchantId,
+        string $environment,
+        ?string $exceptId = null,
+    ): void {
+        MerchantApiKey::query()
+            ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
+            ->where('status', MerchantAPIKeyStatus::ACTIVE->value)
+            ->when($exceptId, fn ($query) => $query->where('id', '!=', $exceptId))
+            ->get()
+            ->each(function (MerchantApiKey $key): void {
+                $key->update([
+                    'status' => MerchantAPIKeyStatus::INACTIVE->value,
+                    'revoked_at' => now(),
+                ]);
+
+                $this->gatewayCache->invalidateApiKeyHash($key->hash);
+            });
     }
 }

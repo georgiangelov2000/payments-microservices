@@ -1,17 +1,18 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
-import { Plus, X, Copy, Check, RotateCcw, XCircle } from 'lucide-react';
+import { Plus, X, Copy, Check, RotateCcw, XCircle, SlidersHorizontal } from 'lucide-react';
 
 const scopesMeta = [
-    { id: 'payments:create', label: 'payments:create', desc: 'Create payment sessions' },
-    { id: 'payments:read',   label: 'payments:read',   desc: 'Read payment data' },
-    { id: 'refunds:create',  label: 'refunds:create',  desc: 'Issue refunds' },
-    { id: 'customers:read',  label: 'customers:read',  desc: 'Read customer profiles' },
-    { id: 'routing:test',    label: 'routing:test',    desc: 'Test routing rules' },
-    { id: 'webhooks:manage', label: 'webhooks:manage', desc: 'Configure webhooks' },
+    { id: 'payments:create', label: 'payments:create', descKey: 'apiKeys.scopes.paymentsCreate' },
+    { id: 'payments:read',   label: 'payments:read',   descKey: 'apiKeys.scopes.paymentsRead' },
+    { id: 'refunds:create',  label: 'refunds:create',  descKey: 'apiKeys.scopes.refundsCreate' },
+    { id: 'customers:read',  label: 'customers:read',  descKey: 'apiKeys.scopes.customersRead' },
+    { id: 'routing:test',    label: 'routing:test',    descKey: 'apiKeys.scopes.routingTest' },
+    { id: 'webhooks:manage', label: 'webhooks:manage', descKey: 'apiKeys.scopes.webhooksManage' },
 ];
 
 function Modal({ show, title, onClose, children }) {
@@ -33,6 +34,7 @@ function Modal({ show, title, onClose, children }) {
 }
 
 function ScopePills({ scopes, maxVisible = 3 }) {
+    const { t } = useTranslation();
     const [showAll, setShowAll] = useState(false);
     const visible = showAll ? scopes : scopes.slice(0, maxVisible);
     const overflow = scopes.length - maxVisible;
@@ -48,17 +50,25 @@ function ScopePills({ scopes, maxVisible = 3 }) {
                     onClick={() => setShowAll(true)}
                     className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs text-indigo-600 hover:bg-indigo-100"
                 >
-                    +{overflow} more
+                    {t('apiKeys.table.moreScopes', { count: overflow })}
                 </button>
             )}
         </div>
     );
 }
 
-export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
+export default function ApiKeysIndex({ apiKeys, merchants, generatedKey, filters = {} }) {
+    const { t } = useTranslation();
     const [showModal, setShowModal] = useState(false);
     const [showGeneratedKey, setShowGeneratedKey] = useState(!!generatedKey);
     const [copied, setCopied] = useState(false);
+
+    const filterForm = useForm({
+        search: filters.search || '',
+        merchant_id: filters.merchant_id || '',
+        environment: filters.environment || '',
+        status: filters.status || '',
+    });
 
     const form = useForm({
         merchant_id: merchants[0]?.id || '',
@@ -79,6 +89,27 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
         });
     };
 
+    const submitFilters = (e) => {
+        e.preventDefault();
+        router.get(route('admin.api-keys.index'), filterForm.data, {
+            preserveScroll: true,
+            preserveState: true,
+        });
+    };
+
+    const resetFilters = () => {
+        filterForm.setData({
+            search: '',
+            merchant_id: '',
+            environment: '',
+            status: '',
+        });
+        router.get(route('admin.api-keys.index'), {}, {
+            preserveScroll: true,
+            preserveState: false,
+        });
+    };
+
     const toggleScope = (scope) => {
         form.setData('scopes', form.data.scopes.includes(scope)
             ? form.data.scopes.filter((s) => s !== scope)
@@ -96,13 +127,13 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
     };
 
     const rotateKey = (keyId) => {
-        if (window.confirm('Rotate this API key? The current key will be invalidated immediately.')) {
+        if (window.confirm(t('apiKeys.confirmRotate'))) {
             router.post(route('admin.api-keys.rotate', keyId), {}, { preserveScroll: true });
         }
     };
 
     const revokeKey = (keyId) => {
-        if (window.confirm('Revoke this API key? This action cannot be undone.')) {
+        if (window.confirm(t('apiKeys.confirmRevoke'))) {
             router.post(route('admin.api-keys.revoke', keyId), {}, { preserveScroll: true });
         }
     };
@@ -113,16 +144,16 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
     const liveKeys = apiKeys.data.filter((k) => k.environment === 'live').length;
 
     return (
-        <AdminLayout title="API Keys">
-            <Head title="API Key Management" />
+        <AdminLayout title={t('apiKeys.title')}>
+            <Head title={t('apiKeys.managementTitle')} />
 
             {/* Generated key banner */}
             {showGeneratedKey && generatedKey && (
                 <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-green-900">New API Key Generated</p>
-                            <p className="mt-0.5 text-xs text-green-700">Copy this key now — it will not be shown again.</p>
+                            <p className="text-sm font-semibold text-green-900">{t('apiKeys.generatedTitle')}</p>
+                            <p className="mt-0.5 text-xs text-green-700">{t('apiKeys.generatedDescription')}</p>
                             <div className="mt-3 flex items-center gap-2">
                                 <code className="flex-1 block rounded-lg border border-green-200 bg-white px-3 py-2 font-mono text-xs text-green-900 overflow-x-auto">
                                     {generatedKey}
@@ -132,8 +163,8 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
                                     className="inline-flex items-center gap-1.5 flex-shrink-0 rounded-lg border border-green-300 bg-white px-3 py-2 text-xs font-medium text-green-800 hover:bg-green-50 transition-colors"
                                 >
                                     {copied
-                                        ? <><Check size={13} strokeWidth={2.5} />Copied!</>
-                                        : <><Copy size={13} strokeWidth={2} />Copy</>
+                                        ? <><Check size={13} strokeWidth={2.5} />{t('common.actions.copied')}</>
+                                        : <><Copy size={13} strokeWidth={2} />{t('common.actions.copy')}</>
                                     }
                                 </button>
                             </div>
@@ -151,25 +182,25 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
             {/* Page header */}
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-semibold text-slate-900">API Key Management</h1>
-                    <p className="mt-0.5 text-sm text-slate-500">Generate and manage merchant gateway API keys</p>
+                    <h1 className="text-xl font-semibold text-slate-900">{t('apiKeys.managementTitle')}</h1>
+                    <p className="mt-0.5 text-sm text-slate-500">{t('apiKeys.description')}</p>
                 </div>
                 <button
                     onClick={() => setShowModal(true)}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
                 >
                     <Plus size={15} strokeWidth={2.5} />
-                    Generate Key
+                    {t('apiKeys.generate')}
                 </button>
             </div>
 
             {/* Summary chips */}
             <div className="mb-6 flex flex-wrap gap-3">
                 {[
-                    { label: 'Total keys', value: totalKeys, valueClass: 'text-slate-900' },
-                    { label: 'Active keys', value: activeKeys, valueClass: 'text-green-700' },
-                    { label: 'Test keys', value: testKeys, valueClass: 'text-slate-600' },
-                    { label: 'Live keys', value: liveKeys, valueClass: 'text-violet-700' },
+                    { label: t('apiKeys.stats.total'), value: totalKeys, valueClass: 'text-slate-900' },
+                    { label: t('apiKeys.stats.active'), value: activeKeys, valueClass: 'text-green-700' },
+                    { label: t('apiKeys.stats.test'), value: testKeys, valueClass: 'text-slate-600' },
+                    { label: t('apiKeys.stats.live'), value: liveKeys, valueClass: 'text-violet-700' },
                 ].map(({ label, value, valueClass }) => (
                     <div key={label} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                         <span className={`text-2xl font-bold tabular-nums ${valueClass}`}>{value}</span>
@@ -178,50 +209,111 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
                 ))}
             </div>
 
+            {/* Filters */}
+            <form
+                onSubmit={submitFilters}
+                className="mb-6 grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-[1.25fr_1fr_0.75fr_0.75fr_auto_auto]"
+            >
+                <input
+                    type="text"
+                    placeholder={t('apiKeys.filters.search')}
+                    value={filterForm.data.search}
+                    onChange={(e) => filterForm.setData('search', e.target.value)}
+                    className="rounded-lg border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+                <select
+                    value={filterForm.data.merchant_id}
+                    onChange={(e) => filterForm.setData('merchant_id', e.target.value)}
+                    className="rounded-lg border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                    <option value="">{t('apiKeys.filters.allMerchants')}</option>
+                    {merchants.map((merchant) => (
+                        <option key={merchant.id} value={merchant.id}>
+                            {merchant.name} ({merchant.email})
+                        </option>
+                    ))}
+                </select>
+                <select
+                    value={filterForm.data.environment}
+                    onChange={(e) => filterForm.setData('environment', e.target.value)}
+                    className="rounded-lg border-slate-200 text-sm capitalize focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                    <option value="">{t('apiKeys.filters.allEnvironments')}</option>
+                    <option value="test">{t('common.badges.test')}</option>
+                    <option value="live">{t('common.badges.live')}</option>
+                </select>
+                <select
+                    value={filterForm.data.status}
+                    onChange={(e) => filterForm.setData('status', e.target.value)}
+                    className="rounded-lg border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                >
+                    <option value="">{t('apiKeys.filters.allStatuses')}</option>
+                    <option value="active">{t('common.badges.active')}</option>
+                    <option value="inactive">{t('common.badges.inactive')}</option>
+                </select>
+                <button
+                    type="submit"
+                    disabled={filterForm.processing}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
+                >
+                    <SlidersHorizontal size={14} strokeWidth={2} />
+                    {t('common.actions.filter')}
+                </button>
+                <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                    <RotateCcw size={14} strokeWidth={2} />
+                    {t('common.actions.reset')}
+                </button>
+            </form>
+
             {/* Keys table */}
             <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                 <div className="border-b border-slate-200 px-5 py-4">
-                    <h2 className="text-base font-semibold text-slate-900">Merchant Gateway Keys</h2>
+                    <h2 className="text-base font-semibold text-slate-900">{t('apiKeys.table.title')}</h2>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-200 text-sm">
                         <thead className="bg-slate-50">
                             <tr>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Key</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Merchant</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Scopes</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Last Rotated</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.key')}</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.merchant')}</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.environment')}</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.scopes')}</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.status')}</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.lastRotated')}</th>
+                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {apiKeys.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-5 py-14 text-center">
-                                        <div className="text-slate-400 text-sm">No API keys yet. Generate your first key to get started.</div>
+                                    <td colSpan={7} className="px-5 py-14 text-center">
+                                        <div className="text-slate-400 text-sm">{t('apiKeys.table.noKeys')}</div>
                                     </td>
                                 </tr>
                             ) : apiKeys.data.map((apiKey) => (
                                 <tr key={apiKey.id} className="align-top hover:bg-slate-50/60 transition-colors">
                                     <td className="px-5 py-4">
-                                        <span className="block font-medium text-slate-900">{apiKey.name || 'Gateway key'}</span>
+                                        <span className="block font-medium text-slate-900">{apiKey.name || t('apiKeys.table.key')}</span>
                                         <code className="mt-0.5 block text-xs text-slate-500 font-mono">{apiKey.masked_key}</code>
-                                        <div className="mt-1.5">
-                                            <Badge value={apiKey.environment} size="sm" />
-                                        </div>
                                     </td>
                                     <td className="px-5 py-4">
                                         <span className="block font-medium text-slate-900">{apiKey.merchant?.name || 'Unknown'}</span>
                                         <span className="block text-xs text-slate-500">{apiKey.merchant?.email}</span>
                                     </td>
+                                    <td className="px-5 py-4">
+                                        <Badge value={apiKey.environment} label={t(`common.badges.${apiKey.environment}`)} size="sm" />
+                                    </td>
                                     <td className="px-5 py-4 max-w-xs">
                                         <ScopePills scopes={apiKey.scopes || []} />
                                     </td>
                                     <td className="px-5 py-4">
-                                        <Badge value={apiKey.status} />
+                                        <Badge value={apiKey.status} label={t(`common.badges.${apiKey.status}`)} />
                                         {apiKey.revoked_at && (
-                                            <span className="mt-1 block text-xs text-red-500">Revoked {apiKey.revoked_at}</span>
+                                            <span className="mt-1 block text-xs text-red-500">{t('apiKeys.table.revokedAt', { date: apiKey.revoked_at })}</span>
                                         )}
                                     </td>
                                     <td className="px-5 py-4 text-xs text-slate-500 whitespace-nowrap">
@@ -234,7 +326,7 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
                                                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                                             >
                                                 <RotateCcw size={12} strokeWidth={2} />
-                                                Rotate
+                                                {t('common.actions.rotate')}
                                             </button>
                                             {apiKey.status === 'active' && (
                                                 <button
@@ -242,7 +334,7 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
                                                     className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors"
                                                 >
                                                     <XCircle size={12} strokeWidth={2} />
-                                                    Revoke
+                                                    {t('common.actions.revoke')}
                                                 </button>
                                             )}
                                         </div>
@@ -257,17 +349,17 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
             <Pagination links={apiKeys.links} />
 
             {/* Generate Key Modal */}
-            <Modal show={showModal} title="Generate API Key" onClose={() => setShowModal(false)}>
+            <Modal show={showModal} title={t('apiKeys.modal.title')} onClose={() => setShowModal(false)}>
                 <form onSubmit={submit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Merchant</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('apiKeys.modal.merchant')}</label>
                         <select
                             className="w-full min-w-0 rounded-lg border border-slate-200 py-2 pl-3 pr-10 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                             value={form.data.merchant_id}
                             onChange={(e) => form.setData('merchant_id', e.target.value)}
                             required
                         >
-                            <option value="">Select a merchant...</option>
+                            <option value="">{t('apiKeys.filters.allMerchants')}</option>
                             {merchants.map((m) => (
                                 <option key={m.id} value={m.id}>{m.name} ({m.email})</option>
                             ))}
@@ -277,16 +369,16 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
                         )}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Key Name <span className="text-slate-400 font-normal">(optional)</span></label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('apiKeys.modal.name')}</label>
                         <input
                             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="e.g. Production integration"
+                            placeholder={t('apiKeys.modal.namePlaceholder')}
                             value={form.data.name}
                             onChange={(e) => form.setData('name', e.target.value)}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Environment</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t('apiKeys.modal.environment')}</label>
                         <div className="flex gap-2">
                             {['test', 'live'].map((env) => (
                                 <button
@@ -299,15 +391,15 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
                                             : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                                     }`}
                                 >
-                                    {env}
+                                    {t(`common.badges.${env}`)}
                                 </button>
                             ))}
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Scopes</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{t('apiKeys.modal.scopes')}</label>
                         <div className="grid grid-cols-2 gap-2">
-                            {scopesMeta.map(({ id, label, desc }) => (
+                            {scopesMeta.map(({ id, label, descKey }) => (
                                 <label
                                     key={id}
                                     className={`flex cursor-pointer flex-col gap-0.5 rounded-lg border p-3 transition-colors ${
@@ -325,7 +417,7 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
                                         />
                                         <span className="text-xs font-mono font-medium text-slate-800">{label}</span>
                                     </div>
-                                    <span className="ml-5 text-xs text-slate-500">{desc}</span>
+                                    <span className="ml-5 text-xs text-slate-500">{t(descKey)}</span>
                                 </label>
                             ))}
                         </div>
@@ -339,14 +431,14 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey }) {
                             onClick={() => setShowModal(false)}
                             className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                         >
-                            Cancel
+                            {t('common.actions.cancel')}
                         </button>
                         <button
                             type="submit"
                             disabled={form.processing || !form.data.merchant_id}
                             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors"
                         >
-                            {form.processing ? 'Generating...' : 'Generate Key'}
+                            {form.processing ? `${t('common.actions.generate', { defaultValue: 'Generate' })}...` : t('apiKeys.modal.create')}
                         </button>
                     </div>
                 </form>

@@ -1,9 +1,10 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     AlertTriangle, CheckCircle2, X, Plus, ChevronDown, GripVertical,
     Play, GitBranch, Scale, RefreshCcw, XCircle, LayoutGrid,
-    Globe, ArrowRight, FlaskConical, CreditCard,
+    Globe, ArrowRight, FlaskConical, CreditCard, Trash2, Save,
 } from 'lucide-react';
 import Badge from '@/Components/Badge';
 import { ProviderIcon } from '@/Components/ProviderBrand';
@@ -355,6 +356,7 @@ function humanizeRule(rule) {
 // ─── Route editor drawer ──────────────────────────────────────────────────────
 
 function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onClose }) {
+    const { t } = useTranslation();
     // Normalize nodes from both React Flow format and legacy flat format
     const [nodes, setNodes]       = useState((workflow?.nodes ?? []).map(flatNode));
     const [edges, setEdges]       = useState(workflow?.edges ?? []);
@@ -364,6 +366,13 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
     });
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [draggedId, setDraggedId]       = useState(null);
+
+    useEffect(() => {
+        setNodes((workflow?.nodes ?? []).map(flatNode));
+        setEdges(workflow?.edges ?? []);
+        const hasWeights = (workflow?.nodes ?? []).some((n) => Number(flatNode(n).weight) > 0);
+        setMode(hasWeights ? 'split' : 'order');
+    }, [workflow?.id, workflow?.updated_at]);
 
     // Which providers are available for this workflow's merchant
     const merchantObj      = merchants.find((m) => m.id === workflow?.merchant_id);
@@ -482,6 +491,22 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
         router.post(route('admin.routing.workflows.rollback', [workflow.id, version.id]), {}, {
             preserveScroll: true,
             onSuccess: onClose,
+        });
+    };
+
+    const renameVersion = (version, name) => {
+        router.put(route('admin.routing.workflows.versions.update', [workflow.id, version.id]), { name }, {
+            preserveScroll: true,
+            preserveState: true,
+        });
+    };
+
+    const deleteVersion = (version) => {
+        if (!window.confirm(t('routing.versions.confirmDelete'))) return;
+
+        router.delete(route('admin.routing.workflows.versions.destroy', [workflow.id, version.id]), {
+            preserveScroll: true,
+            preserveState: true,
         });
     };
 
@@ -736,25 +761,17 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                     {/* Section 3 — Version history */}
                     {workflow?.versions?.length > 0 && (
                         <div className="px-6 py-4">
-                            <p className="text-sm font-semibold text-slate-900 mb-3">Version history</p>
+                            <p className="text-sm font-semibold text-slate-900 mb-3">{t('routing.versions.history')}</p>
                             <div className="space-y-2">
                                 {workflow.versions.map((v) => (
-                                    <div key={v.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
-                                        <div className="flex items-center gap-2">
-                                            <Badge value={v.status} size="sm" />
-                                            <span className="text-sm text-slate-700">Version {v.version}</span>
-                                            {v.published_at && <span className="text-xs text-slate-400">Published {v.published_at}</span>}
-                                        </div>
-                                        {v.status !== 'published' && (
-                                            <button
-                                                type="button"
-                                                onClick={() => rollback(v)}
-                                                className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
-                                            >
-                                                Restore this version
-                                            </button>
-                                        )}
-                                    </div>
+                                    <VersionHistoryRow
+                                        key={v.id}
+                                        version={v}
+                                        currentVersion={workflow.current_version}
+                                        onRename={renameVersion}
+                                        onDelete={deleteVersion}
+                                        onRollback={rollback}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -772,7 +789,7 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                             onClick={save}
                             className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
                         >
-                            Save as draft
+                            {t('routing.versions.saveDraft')}
                         </button>
                         <button
                             type="button"
@@ -781,14 +798,87 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                             className="inline-flex items-center justify-center gap-1.5 flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <Globe size={15} strokeWidth={2} />
-                            Make it live
+                            {t('routing.versions.makeLive')}
                         </button>
                     </div>
                     <p className="mt-2 text-center text-xs text-slate-400">
-                        "Make it live" activates this route immediately for real payments.
+                        {t('routing.versions.makeLiveHint')}
                     </p>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function VersionHistoryRow({ version, currentVersion, onRename, onDelete, onRollback }) {
+    const { t } = useTranslation();
+    const [name, setName] = useState(version.name || '');
+    const displayName = version.name || t('routing.versions.version', { version: version.version });
+    const isPublished = version.status === 'published';
+    const isCurrent = version.version === currentVersion;
+    const canDelete = !isPublished && !isCurrent;
+    const canRestore = !isPublished;
+    const nameChanged = name !== (version.name || '');
+
+    return (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Badge value={version.status} label={t(`common.badges.${version.status}`)} size="sm" />
+                        <span className="text-sm font-semibold text-slate-800">{displayName}</span>
+                        <span className="text-xs text-slate-400">v{version.version}</span>
+                    </div>
+                    {version.published_at && (
+                        <p className="mt-1 text-xs text-slate-400">{t('routing.versions.publishedAt', { date: version.published_at })}</p>
+                    )}
+                    {version.created_at && !version.published_at && (
+                        <p className="mt-1 text-xs text-slate-400">{t('routing.versions.createdAt', { date: version.created_at })}</p>
+                    )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    {canRestore && (
+                        <button
+                            type="button"
+                            onClick={() => onRollback(version)}
+                            className="rounded-lg border border-indigo-200 bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                        >
+                            {t('routing.versions.restore')}
+                        </button>
+                    )}
+                    {canDelete && (
+                        <button
+                            type="button"
+                            onClick={() => onDelete(version)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+                        >
+                            <Trash2 size={12} strokeWidth={2} />
+                            {t('routing.versions.delete')}
+                        </button>
+                    )}
+                </div>
+            </div>
+            <div className="flex gap-2">
+                <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={t('routing.versions.nameVersion', { version: version.version })}
+                    className="min-w-0 flex-1 rounded-lg border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+                <button
+                    type="button"
+                    disabled={!nameChanged}
+                    onClick={() => onRename(version, name)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <Save size={12} strokeWidth={2} />
+                    {t('common.actions.save')}
+                </button>
+            </div>
+            {!canDelete && !isPublished && (
+                <p className="mt-2 text-xs text-slate-400">{t('routing.versions.currentDraftDeleteForbidden')}</p>
+            )}
         </div>
     );
 }
@@ -1034,6 +1124,11 @@ export default function RoutingIndex({ summary, merchants, providers, workflows,
     const [editingWorkflow, setEditingWorkflow]   = useState(null);
     const [showCreateWizard, setShowCreateWizard] = useState(false);
     const [activeSection, setActiveSection]       = useState('routes'); // 'routes' | 'health' | 'activity'
+    const currentEditingWorkflow = useMemo(() => {
+        if (!editingWorkflow) return null;
+
+        return workflows.find((workflow) => workflow.id === editingWorkflow.id) ?? editingWorkflow;
+    }, [editingWorkflow, workflows]);
 
     // Group routing rules by merchant_id (from configurations metadata)
     const rulesByMerchant = useMemo(() => {
@@ -1133,9 +1228,9 @@ export default function RoutingIndex({ summary, merchants, providers, workflows,
             )}
 
             {/* ── Route editor drawer ── */}
-            {editingWorkflow && (
+            {currentEditingWorkflow && (
                 <RouteEditorDrawer
-                    workflow={editingWorkflow}
+                    workflow={currentEditingWorkflow}
                     providers={providers}
                     merchants={merchants}
                     merchantRules={[]}

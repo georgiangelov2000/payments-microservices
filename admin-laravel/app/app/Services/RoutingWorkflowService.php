@@ -134,6 +134,41 @@ final class RoutingWorkflowService
         return $workflow->fresh();
     }
 
+    public function renameVersion(
+        RoutingWorkflow $workflow,
+        RoutingWorkflowVersion $version,
+        ?string $name,
+    ): RoutingWorkflowVersion {
+        abort_unless($version->workflow_id === $workflow->id, 404);
+
+        $before = $version->toArray();
+
+        $version->update([
+            'name' => filled($name) ? trim((string) $name) : null,
+        ]);
+
+        $this->audit('workflow.version.renamed', $workflow, $before, $version->fresh()->toArray());
+
+        return $version->fresh();
+    }
+
+    public function deleteVersion(RoutingWorkflow $workflow, RoutingWorkflowVersion $version): void
+    {
+        abort_unless($version->workflow_id === $workflow->id, 404);
+
+        if ($version->status === 'published' || $version->version === $workflow->current_version) {
+            throw new \DomainException(__('messages.routing.current_version_delete_forbidden'));
+        }
+
+        $before = $version->toArray();
+        $version->delete();
+
+        $this->audit('workflow.version.deleted', $workflow, $before, [
+            'deleted_version' => $before['version'] ?? null,
+            'deleted_version_id' => $before['id'] ?? null,
+        ]);
+    }
+
     public function simulate(array $nodes, array $edges, array $input): array
     {
         $nodeMap = collect($nodes)->keyBy('id')->all();
@@ -144,7 +179,7 @@ final class RoutingWorkflowService
 
         $start = collect($nodes)->firstWhere('type', 'start');
         if (! $start) {
-            return ['outcome' => 'error', 'error' => 'No start node found', 'path' => []];
+            return ['outcome' => 'error', 'error' => __('messages.routing.no_start_node'), 'path' => []];
         }
 
         $path = [];
@@ -160,19 +195,19 @@ final class RoutingWorkflowService
             $step = ['node_id' => $id, 'type' => $type, 'label' => $data['label'] ?? $type, 'decision' => null];
 
             if ($type === 'success') {
-                $step['decision'] = 'Payment routed successfully';
+                $step['decision'] = __('messages.routing.payment_routed_successfully');
                 $path[] = $step;
                 break;
             }
             if ($type === 'failure') {
-                $step['decision'] = 'Payment routing failed';
+                $step['decision'] = __('messages.routing.payment_routing_failed');
                 $path[] = $step;
                 break;
             }
 
             if ($type === 'provider') {
                 $alias = $data['provider_alias'] ?? 'unknown';
-                $step['decision'] = "Route to {$alias}";
+                $step['decision'] = __('messages.routing.route_to_provider', ['provider' => $alias]);
                 $step['provider'] = $alias;
                 $path[] = $step;
                 $next = collect($outgoing)->firstWhere('handle', 'success') ?? $outgoing[0] ?? null;
@@ -409,6 +444,7 @@ final class RoutingWorkflowService
             'versions' => $workflow->versions->map(fn (RoutingWorkflowVersion $version) => [
                 'id' => $version->id,
                 'version' => $version->version,
+                'name' => $version->name,
                 'status' => $version->status,
                 'published_at' => $version->published_at?->toDateTimeString(),
                 'created_at' => $version->created_at?->toDateTimeString(),
@@ -461,6 +497,9 @@ final class RoutingWorkflowService
         $this->routingRepository->createVersion([
             'workflow_id' => $workflow->id,
             'version' => $workflow->current_version,
+            'name' => $status === 'published'
+                ? "Published version {$workflow->current_version}"
+                : "Draft version {$workflow->current_version}",
             'status' => $status,
             'nodes' => $workflow->nodes ?: [],
             'edges' => $workflow->edges ?: [],

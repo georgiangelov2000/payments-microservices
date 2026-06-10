@@ -67,6 +67,6 @@ final class ApiKeyController extends Controller
 
         return redirect()
             ->route('api-keys.index')
-            ->with('success', 'API key revoked successfully.');
+            ->with('success', __('messages.api_keys.revoked'));
     }
 }

@@ -59,7 +59,7 @@ const dotClasses = {
     indigo: 'bg-indigo-500',
 };
 
-export default function Badge({ value = '', size = 'md', dot = false, className = '' }) {
+export default function Badge({ value = '', label: labelOverride, size = 'md', dot = false, className = '' }) {
     const key = String(value).toLowerCase().trim();
     const color = colorMap[key] ?? 'slate';
     const theme = themeClasses[color];
@@ -69,9 +69,9 @@ export default function Badge({ value = '', size = 'md', dot = false, className 
         ? 'px-2 py-0.5 text-xs'
         : 'px-2.5 py-0.5 text-xs';
 
-    const label = value
+    const label = labelOverride ?? (value
         ? String(value).charAt(0).toUpperCase() + String(value).slice(1).toLowerCase()
-        : '';
+        : '');
 
     return (
         <span className={[

@@ -1,6 +1,8 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Toaster } from 'react-hot-toast';
+import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import {
     LayoutDashboard,
     CreditCard,
@@ -20,13 +22,13 @@ import {
 // ── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-    { label: 'Dashboard',    routeName: 'dashboard',           pattern: 'dashboard',          Icon: LayoutDashboard },
-    { label: 'Payments',     routeName: 'payments.index',      pattern: 'payments.*',         Icon: CreditCard },
-    { label: 'Analytics',    routeName: 'analytics',           pattern: 'analytics',          Icon: BarChart2 },
-    { label: 'Routing',      routeName: 'routing.index',       pattern: 'routing.*',          Icon: GitBranch },
-    { label: 'API Keys',     routeName: 'api-keys.index',      pattern: 'api-keys.*',         Icon: Key },
-    { label: 'Subscriptions',routeName: 'subscriptions.index', pattern: 'subscriptions.*',    Icon: Package },
-    { label: 'Webhooks',     routeName: 'webhooks.index',      pattern: 'webhooks.*',         Icon: Webhook },
+    { labelKey: 'common.nav.dashboard',     routeName: 'dashboard',           pattern: 'dashboard',          Icon: LayoutDashboard },
+    { labelKey: 'common.nav.payments',      routeName: 'payments.index',      pattern: 'payments.*',         Icon: CreditCard },
+    { labelKey: 'common.nav.analytics',     routeName: 'analytics',           pattern: 'analytics',          Icon: BarChart2 },
+    { labelKey: 'common.nav.routing',       routeName: 'routing.index',       pattern: 'routing.*',          Icon: GitBranch },
+    { labelKey: 'common.nav.apiKeys',       routeName: 'api-keys.index',      pattern: 'api-keys.*',         Icon: Key },
+    { labelKey: 'common.nav.subscriptions', routeName: 'subscriptions.index', pattern: 'subscriptions.*',    Icon: Package },
+    { labelKey: 'common.nav.webhooks',      routeName: 'webhooks.index',      pattern: 'webhooks.*',         Icon: Webhook },
 ];
 
 // ── Nav Item ─────────────────────────────────────────────────────────────────
@@ -34,11 +36,13 @@ const NAV_ITEMS = [
 function NavItem({ item, collapsed }) {
     const isActive = route().current(item.pattern);
     const { Icon } = item;
+    const { t } = useTranslation();
+    const label = t(item.labelKey);
 
     return (
         <Link
             href={route(item.routeName)}
-            title={collapsed ? item.label : undefined}
+            title={collapsed ? label : undefined}
             className={[
                 'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150',
                 collapsed ? 'justify-center' : '',
@@ -48,7 +52,7 @@ function NavItem({ item, collapsed }) {
             ].join(' ')}
         >
             <Icon size={18} strokeWidth={1.75} className="shrink-0" />
-            {!collapsed && <span className="truncate">{item.label}</span>}
+            {!collapsed && <span className="truncate">{label}</span>}
         </Link>
     );
 }
@@ -57,6 +61,7 @@ function NavItem({ item, collapsed }) {
 
 function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {
     const user = usePage().props.auth.user;
+    const { t } = useTranslation();
     const initials = (user?.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
     return (
@@ -97,7 +102,7 @@ function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {
                     <button
                         onClick={onToggleCollapse}
                         className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
-                        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        title={collapsed ? t('common.layout.expandSidebar') : t('common.layout.collapseSidebar')}
                     >
                         {collapsed
                             ? <ChevronRight size={14} strokeWidth={2} />
@@ -118,7 +123,7 @@ function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {
                 <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2 space-y-0.5">
                     {!collapsed && (
                         <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-slate-500 select-none">
-                            Menu
+                            {t('common.layout.menu')}
                         </p>
                     )}
                     {NAV_ITEMS.map(item => (
@@ -153,14 +158,14 @@ function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {
                     {/* Logout */}
                     <button
                         onClick={() => router.post(route('logout'))}
-                        title={collapsed ? 'Log out' : undefined}
+                        title={collapsed ? t('common.layout.logout') : undefined}
                         className={[
                             'w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700/60 hover:text-white transition-colors duration-150',
                             collapsed ? 'justify-center' : '',
                         ].join(' ')}
                     >
                         <LogOut size={18} strokeWidth={1.75} className="shrink-0" />
-                        {!collapsed && <span>Log out</span>}
+                        {!collapsed && <span>{t('common.layout.logout')}</span>}
                     </button>
                 </div>
             </aside>
@@ -212,7 +217,17 @@ export default function AuthenticatedLayout({ header, children }) {
                     {/* Optional page header */}
                     {header && (
                         <div className="border-b border-gray-200 bg-white px-6 py-4">
-                            {header}
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="min-w-0 flex-1">{header}</div>
+                                <LanguageSwitcher />
+                            </div>
+                        </div>
+                    )}
+                    {!header && (
+                        <div className="border-b border-gray-200 bg-white px-6 py-3">
+                            <div className="flex justify-end">
+                                <LanguageSwitcher />
+                            </div>
                         </div>
                     )}
 

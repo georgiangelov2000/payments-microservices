@@ -34,6 +34,16 @@ class AuthApiController extends Controller
         return response()->json(['redirect' => route('dashboard')]);
     }
 
+    public function session(Request $request): JsonResponse
+    {
+        $authenticated = Auth::check();
+
+        return response()->json([
+            'authenticated' => $authenticated,
+            'redirect' => $authenticated ? route('dashboard') : null,
+        ]);
+    }
+
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([

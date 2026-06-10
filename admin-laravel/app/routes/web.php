@@ -10,7 +10,10 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\RoutingController;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\LocaleController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 Route::middleware('guest:admin')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -42,6 +45,8 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::put('/routing/workflows/{workflow}', [RoutingController::class, 'updateWorkflow'])->name('admin.routing.workflows.update');
     Route::post('/routing/workflows/{workflow}/publish', [RoutingController::class, 'publishWorkflow'])->name('admin.routing.workflows.publish');
     Route::post('/routing/workflows/{workflow}/rollback/{version}', [RoutingController::class, 'rollbackWorkflow'])->name('admin.routing.workflows.rollback');
+    Route::put('/routing/workflows/{workflow}/versions/{version}', [RoutingController::class, 'updateWorkflowVersion'])->name('admin.routing.workflows.versions.update');
+    Route::delete('/routing/workflows/{workflow}/versions/{version}', [RoutingController::class, 'deleteWorkflowVersion'])->name('admin.routing.workflows.versions.destroy');
     Route::post('/routing/workflows/{workflow}/simulate', [RoutingController::class, 'simulateWorkflow'])->name('admin.routing.workflows.simulate');
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('admin.logout');

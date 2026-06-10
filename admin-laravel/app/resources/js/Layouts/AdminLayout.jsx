@@ -8,6 +8,8 @@
  */
 import { useState, useEffect } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from '@/Components/LanguageSwitcher';
 import {
     LayoutDashboard,
     Users,
@@ -27,13 +29,13 @@ import {
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
 const navItems = [
-    { label: 'Dashboard',     routeName: 'admin.dashboard',           pattern: 'admin.dashboard',        Icon: LayoutDashboard },
-    { label: 'Merchants',     routeName: 'admin.merchants.index',     pattern: 'admin.merchants.*',      Icon: Users },
-    { label: 'Payments',      routeName: 'admin.payments.index',      pattern: 'admin.payments.*',       Icon: CreditCard },
-    { label: 'Subscriptions', routeName: 'admin.subscriptions.index', pattern: 'admin.subscriptions.*',  Icon: Package },
-    { label: 'API Keys',      routeName: 'admin.api-keys.index',      pattern: 'admin.api-keys.*',       Icon: Key },
-    { label: 'Routing',       routeName: 'admin.routing.index',       pattern: 'admin.routing.*',        Icon: GitBranch },
-    { label: 'Analytics',     routeName: 'admin.analytics.index',     pattern: 'admin.analytics.*',      Icon: BarChart2 },
+    { labelKey: 'common.nav.dashboard',     routeName: 'admin.dashboard',           pattern: 'admin.dashboard',        Icon: LayoutDashboard },
+    { labelKey: 'common.nav.merchants',     routeName: 'admin.merchants.index',     pattern: 'admin.merchants.*',      Icon: Users },
+    { labelKey: 'common.nav.payments',      routeName: 'admin.payments.index',      pattern: 'admin.payments.*',       Icon: CreditCard },
+    { labelKey: 'common.nav.subscriptions', routeName: 'admin.subscriptions.index', pattern: 'admin.subscriptions.*',  Icon: Package },
+    { labelKey: 'common.nav.apiKeys',       routeName: 'admin.api-keys.index',      pattern: 'admin.api-keys.*',       Icon: Key },
+    { labelKey: 'common.nav.routing',       routeName: 'admin.routing.index',       pattern: 'admin.routing.*',        Icon: GitBranch },
+    { labelKey: 'common.nav.analytics',     routeName: 'admin.analytics.index',     pattern: 'admin.analytics.*',      Icon: BarChart2 },
 ];
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────
@@ -41,11 +43,13 @@ const navItems = [
 function NavItem({ item, collapsed }) {
     const active = route().current(item.pattern);
     const { Icon } = item;
+    const { t } = useTranslation();
+    const label = t(item.labelKey);
 
     return (
         <Link
             href={route(item.routeName)}
-            title={collapsed ? item.label : undefined}
+            title={collapsed ? label : undefined}
             className={[
                 'flex items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition-colors',
                 collapsed ? 'justify-center px-2' : 'px-3',
@@ -55,7 +59,7 @@ function NavItem({ item, collapsed }) {
             ].join(' ')}
         >
             <Icon size={18} strokeWidth={1.75} className="shrink-0" />
-            {!collapsed && <span className="truncate">{item.label}</span>}
+            {!collapsed && <span className="truncate">{label}</span>}
         </Link>
     );
 }
@@ -63,6 +67,7 @@ function NavItem({ item, collapsed }) {
 // ─── Sidebar inner content ────────────────────────────────────────────────────
 
 function SidebarContent({ collapsed, onCollapse, user }) {
+    const { t } = useTranslation();
     const initials = user?.name
         ? user.name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
         : 'A';
@@ -94,7 +99,7 @@ function SidebarContent({ collapsed, onCollapse, user }) {
             ].join(' ')}>
                 {!collapsed && (
                     <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-slate-600 select-none">
-                        Platform
+                        {t('common.layout.platform')}
                     </p>
                 )}
                 {navItems.map((item) => (
@@ -131,21 +136,21 @@ function SidebarContent({ collapsed, onCollapse, user }) {
                 <button
                     type="button"
                     onClick={() => router.post(route('admin.logout'))}
-                    title={collapsed ? 'Log out' : undefined}
+                    title={collapsed ? t('common.layout.logout') : undefined}
                     className={[
                         'flex w-full items-center gap-2 rounded-lg text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-white',
                         collapsed ? 'justify-center p-2' : 'px-3 py-2',
                     ].join(' ')}
                 >
                     <LogOut size={16} strokeWidth={1.75} className="shrink-0" />
-                    {!collapsed && <span>Log out</span>}
+                    {!collapsed && <span>{t('common.layout.logout')}</span>}
                 </button>
 
                 {/* Collapse toggle */}
                 <button
                     type="button"
                     onClick={onCollapse}
-                    title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    title={collapsed ? t('common.layout.expandSidebar') : t('common.layout.collapseSidebar')}
                     className={[
                         'flex w-full items-center gap-2 rounded-lg text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-white',
                         collapsed ? 'justify-center p-2' : 'px-3 py-2',
@@ -153,7 +158,7 @@ function SidebarContent({ collapsed, onCollapse, user }) {
                 >
                     {collapsed
                         ? <ChevronRight size={16} strokeWidth={2} className="shrink-0" />
-                        : <><ChevronLeft size={16} strokeWidth={2} className="shrink-0" /><span>Collapse</span></>
+                        : <><ChevronLeft size={16} strokeWidth={2} className="shrink-0" /><span>{t('common.layout.collapse')}</span></>
                     }
                 </button>
             </div>
@@ -165,6 +170,7 @@ function SidebarContent({ collapsed, onCollapse, user }) {
 
 export default function AdminLayout({ title, children, actions }) {
     const { auth } = usePage().props;
+    const { t } = useTranslation();
     const user = auth?.user;
 
     const [collapsed, setCollapsed] = useState(() => {
@@ -234,7 +240,7 @@ export default function AdminLayout({ title, children, actions }) {
                             </button>
                             <div className="min-w-0">
                                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                                    Admin Panel
+                                    {t('common.layout.adminPanel')}
                                 </p>
                                 <h1 className="truncate text-xl font-semibold text-slate-900">{title}</h1>
                             </div>
@@ -244,6 +250,7 @@ export default function AdminLayout({ title, children, actions }) {
                             {actions && (
                                 <div className="flex items-center gap-2">{actions}</div>
                             )}
+                            <LanguageSwitcher />
                             <div className="hidden text-right sm:block">
                                 <p className="text-sm font-medium text-slate-900">{user?.name}</p>
                                 <p className="text-xs text-slate-500">{user?.email}</p>

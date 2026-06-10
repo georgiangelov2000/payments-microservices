@@ -15,6 +15,7 @@ class RoutingWorkflowVersion extends Model
     protected $fillable = [
         'workflow_id',
         'version',
+        'name',
         'status',
         'nodes',
         'edges',

@@ -25,6 +25,28 @@ class ApiKeysBuilder
         return $this;
     }
 
+    public function whereEnvironment(?string $environment): self
+    {
+        if ($environment) {
+            $this->query->where('environment', $environment);
+        }
+
+        return $this;
+    }
+
+    public function whereHash(?string $hash): self
+    {
+        if ($hash) {
+            $this->query->where(function (Builder $query) use ($hash): void {
+                $query
+                    ->where('hash', 'ilike', "%{$hash}%")
+                    ->orWhere('key_prefix', 'ilike', "%{$hash}%");
+            });
+        }
+
+        return $this;
+    }
+
     public function forMerchant(?string $merchantId): self
     {
         if ($merchantId === null) {

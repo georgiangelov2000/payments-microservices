@@ -31,6 +31,8 @@ class ApiKeyRequest extends FormRequest
     {
         return [
             'merchant_id' => ['required', 'uuid'],
+            'hash' => ['nullable', 'string', 'max:255'],
+            'environment' => ['nullable', 'in:test,live'],
             'per_page' => ['integer', 'min:1', 'max:100'],
             'status' => ['nullable'],
         ];

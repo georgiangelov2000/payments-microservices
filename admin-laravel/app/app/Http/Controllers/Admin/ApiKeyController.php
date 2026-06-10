@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\UpdateApiKeyRequest;
 use App\Models\MerchantApiKey;
 use App\Services\ApiKeyService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,12 +22,16 @@ final class ApiKeyController extends Controller
         private readonly MerchantRepositoryInterface $merchantRepository,
     ) {}
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $filters = $request->only(['search', 'merchant_id', 'environment', 'status']);
+        $filters = array_filter($filters, fn ($value) => filled($value));
+
         return Inertia::render('Admin/ApiKeys/Index', [
             'generatedKey' => session('generated_api_key'),
             'merchants' => $this->merchantRepository->allForSelect(),
-            'apiKeys' => $this->apiKeyService->list(),
+            'apiKeys' => $this->apiKeyService->list($filters),
+            'filters' => $filters,
         ]);
     }
 
@@ -41,7 +46,7 @@ final class ApiKeyController extends Controller
     {
         $this->apiKeyService->update($apiKey, $request->validated());
 
-        return back()->with('success', 'API key updated.');
+        return back()->with('success', __('messages.api_keys.updated'));
     }
 
     public function rotate(MerchantApiKey $apiKey): RedirectResponse
@@ -55,6 +60,6 @@ final class ApiKeyController extends Controller
     {
         $this->apiKeyService->revoke($apiKey);
 
-        return back()->with('success', 'API key revoked.');
+        return back()->with('success', __('messages.api_keys.revoked'));
     }
 }

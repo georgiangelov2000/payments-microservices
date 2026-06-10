@@ -14,12 +14,15 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ContactFormController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoutingController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 /*
  * Guest routes — login/register redirect to the static marketing site;
@@ -40,6 +43,7 @@ Route::middleware('guest')->group(function () {
  * Exempt from CSRF (see bootstrap/app.php) to allow cross-origin requests with credentials.
  */
 Route::prefix('auth')->group(function () {
+    Route::get('/session', [AuthApiController::class, 'session'])->name('auth.api.session');
     Route::post('/login', [AuthApiController::class, 'login'])->name('auth.api.login');
     Route::post('/register', [AuthApiController::class, 'register'])->name('auth.api.register');
 });

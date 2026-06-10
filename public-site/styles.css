@@ -955,6 +955,9 @@ pre {
   padding: 48px 20px;
   background: var(--soft);
 }
+.auth-checking .auth-wrap {
+  visibility: hidden;
+}
 .auth-panel {
   width: min(100%,1050px);
   display: grid;
@@ -1858,4 +1861,3 @@ pre {
   .wf-node-provider { min-width: 130px; }
   .wf-log-row { grid-template-columns: 60px 1fr auto; gap: 10px; }
 }
-

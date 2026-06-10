@@ -86,7 +86,7 @@ final class RoutingController extends Controller
                 'merchant' => $merchant ? ['id' => $merchant->id, 'name' => $merchant->name] : null,
                 'versions' => $workflow->versions()
                     ->orderByDesc('version')
-                    ->get(['id', 'version', 'status', 'published_at', 'created_at'])
+                    ->get(['id', 'version', 'name', 'status', 'published_at', 'created_at'])
                     ->toArray(),
             ],
             'providers' => Provider::query()->orderBy('name')->get(['id', 'name', 'alias'])->toArray(),
@@ -124,6 +124,33 @@ final class RoutingController extends Controller
         $this->routingService->rollbackWorkflow($workflow, $version);
 
         return back()->with('success', 'Workflow rolled back as a new draft.');
+    }
+
+    public function updateWorkflowVersion(
+        Request $request,
+        RoutingWorkflow $workflow,
+        RoutingWorkflowVersion $version,
+    ): RedirectResponse {
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->routingService->renameVersion($workflow, $version, $data['name'] ?? null);
+
+        return back()->with('success', 'Workflow version renamed.');
+    }
+
+    public function deleteWorkflowVersion(
+        RoutingWorkflow $workflow,
+        RoutingWorkflowVersion $version,
+    ): RedirectResponse {
+        try {
+            $this->routingService->deleteVersion($workflow, $version);
+        } catch (\DomainException $e) {
+            return back()->withErrors(['version' => $e->getMessage()]);
+        }
+
+        return back()->with('success', 'Workflow version deleted.');
     }
 
     public function simulateWorkflow(Request $request, RoutingWorkflow $workflow): JsonResponse

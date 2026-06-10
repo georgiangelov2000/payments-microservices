@@ -1,13 +1,16 @@
 import { useForm, Head, Link, usePage, router } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { Plus, SlidersHorizontal, RotateCcw, Key } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function ApiKeys({ keys, filters = {} }) {
+  const { t } = useTranslation()
   const { flash } = usePage().props
   const rows = keys.data ?? []
 
   const { data, setData, get, processing } = useForm({
     hash: filters.hash || '',
+    environment: filters.environment || '',
     status: filters.status || '',
   })
 
@@ -17,7 +20,7 @@ export default function ApiKeys({ keys, filters = {} }) {
   }
 
   const resetFilters = () => {
-    setData({ hash: '', status: '' })
+    setData({ hash: '', environment: '', status: '' })
     router.get(route('api-keys.index'), {}, {
       preserveScroll: true,
       preserveState: false,
@@ -32,24 +35,24 @@ export default function ApiKeys({ keys, filters = {} }) {
 
   return (
     <AuthenticatedLayout>
-      <Head title="API Keys" />
+      <Head title={t('apiKeys.title')} />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">API Keys</h1>
+          <h1 className="text-2xl font-semibold">{t('apiKeys.title')}</h1>
           <button
             type="button"
             onClick={generateKey}
             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shadow-sm"
           >
             <Plus size={15} strokeWidth={2.5} />
-            Generate API Key
+            {t('apiKeys.generate')}
           </button>
         </div>
 
         {flash?.generated_api_key && (
           <div className="rounded border border-green-200 bg-green-50 p-4 text-sm text-green-900">
-            <div className="font-medium">New API key</div>
+            <div className="font-medium">{t('apiKeys.generatedTitle')}</div>
             <div className="mt-2 break-all font-mono text-xs">
               {flash.generated_api_key}
             </div>
@@ -63,20 +66,30 @@ export default function ApiKeys({ keys, filters = {} }) {
         >
           <input
             type="text"
-            placeholder="Key hash"
+            placeholder={t('apiKeys.filters.hash')}
             value={data.hash}
             onChange={(e) => setData('hash', e.target.value)}
             className="rounded border-gray-300 text-sm"
           />
 
           <select
+            value={data.environment}
+            onChange={(e) => setData('environment', e.target.value)}
+            className="rounded border-gray-300 text-sm"
+          >
+            <option value="">{t('apiKeys.filters.allEnvironments')}</option>
+            <option value="test">{t('common.badges.test')}</option>
+            <option value="live">{t('common.badges.live')}</option>
+          </select>
+
+          <select
             value={data.status}
             onChange={(e) => setData('status', e.target.value)}
             className="rounded border-gray-300 text-sm"
           >
-            <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Expired</option>
+            <option value="">{t('apiKeys.filters.allStatuses')}</option>
+            <option value="active">{t('common.badges.active')}</option>
+            <option value="inactive">{t('common.badges.expired')}</option>
           </select>
 
           <div className="flex gap-2 md:col-span-2">
@@ -86,7 +99,7 @@ export default function ApiKeys({ keys, filters = {} }) {
               className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
               <SlidersHorizontal size={14} strokeWidth={2} />
-              Filter
+              {t('common.actions.filter')}
             </button>
 
             <button
@@ -95,7 +108,7 @@ export default function ApiKeys({ keys, filters = {} }) {
               className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
             >
               <RotateCcw size={14} strokeWidth={2} />
-              Reset
+              {t('common.actions.reset')}
             </button>
           </div>
         </form>
@@ -103,14 +116,11 @@ export default function ApiKeys({ keys, filters = {} }) {
         {/* SUMMARY */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
           <div>
-            Showing <span className="font-medium">{keys.from ?? 0}</span>–
-            <span className="font-medium">{keys.to ?? 0}</span> of{' '}
-            <span className="font-medium">{keys.total}</span> keys
+            {t('apiKeys.table.showing', { from: keys.from ?? 0, to: keys.to ?? 0, total: keys.total })}
           </div>
 
           <div>
-            Page <span className="font-medium">{keys.current_page}</span> of{' '}
-            <span className="font-medium">{keys.last_page}</span>
+            {t('apiKeys.table.page', { current: keys.current_page, last: keys.last_page })}
           </div>
         </div>
 
@@ -119,9 +129,9 @@ export default function ApiKeys({ keys, filters = {} }) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left">Key Hash</th>
-                <th className="px-4 py-3 text-left">Environment</th>
-                <th className="px-4 py-3 text-left">Status</th>
+                <th className="px-4 py-3 text-left">{t('apiKeys.table.keyHash')}</th>
+                <th className="px-4 py-3 text-left">{t('apiKeys.table.environment')}</th>
+                <th className="px-4 py-3 text-left">{t('apiKeys.table.status')}</th>
               </tr>
             </thead>
 
@@ -131,7 +141,7 @@ export default function ApiKeys({ keys, filters = {} }) {
                   <td colSpan="3" className="px-4 py-14 text-center">
                     <div className="flex flex-col items-center gap-2 text-slate-400">
                       <Key size={32} strokeWidth={1.25} />
-                      <span className="text-sm font-medium">No API keys found</span>
+                      <span className="text-sm font-medium">{t('apiKeys.table.noKeys')}</span>
                     </div>
                   </td>
                 </tr>
@@ -151,7 +161,7 @@ export default function ApiKeys({ keys, filters = {} }) {
                               : 'bg-indigo-100 text-indigo-700'
                           }`}
                       >
-                        {key.environment === 'live' ? 'Live' : 'Test'}
+                        {key.environment === 'live' ? t('common.badges.live') : t('common.badges.test')}
                       </span>
                     </td>
 
@@ -164,7 +174,7 @@ export default function ApiKeys({ keys, filters = {} }) {
                               : 'bg-red-100 text-red-700'
                           }`}
                       >
-                        {key.status === 'active' ? 'Active' : 'Expired'}
+                        {key.status === 'active' ? t('common.badges.active') : t('common.badges.expired')}
                       </span>
                     </td>
                   </tr>

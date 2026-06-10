@@ -43,7 +43,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => 'These credentials do not match an active admin account.',
+                'email' => trans('auth.failed'),
             ]);
         }
 

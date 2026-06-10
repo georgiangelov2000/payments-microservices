@@ -1,6 +1,7 @@
 const LARAVEL_URL = "http://localhost";
 const AUTH_LOGIN_URL    = `${LARAVEL_URL}/auth/login`;
 const AUTH_REGISTER_URL = `${LARAVEL_URL}/auth/register`;
+const AUTH_SESSION_URL  = `${LARAVEL_URL}/auth/session`;
 
 // ─── Routing workflow animation ───────────────────────────────────
 (function () {
@@ -215,8 +216,29 @@ if (contactForm) {
 const loginForm    = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
 
-if (loginForm)    wireAuthForm(loginForm,    AUTH_LOGIN_URL,    "login-error",    "Signing in…");
+if (loginForm)    redirectAuthenticatedLogin();
 if (registerForm) wireAuthForm(registerForm, AUTH_REGISTER_URL, "register-error", "Creating account…");
+
+async function redirectAuthenticatedLogin() {
+  try {
+    const res = await fetch(AUTH_SESSION_URL, {
+      headers: { "Accept": "application/json" },
+      credentials: "include",
+    });
+
+    const json = await res.json().catch(() => ({}));
+
+    if (res.ok && json.authenticated) {
+      window.location.replace(json.redirect ?? `${LARAVEL_URL}/dashboard`);
+      return;
+    }
+  } catch {
+    // If the session check cannot complete, keep normal guest login available.
+  }
+
+  document.documentElement.classList.remove("auth-checking");
+  wireAuthForm(loginForm, AUTH_LOGIN_URL, "login-error", "Signing in…");
+}
 
 function wireAuthForm(form, endpoint, errorBoxId, loadingText) {
   const errorBox = document.getElementById(errorBoxId);

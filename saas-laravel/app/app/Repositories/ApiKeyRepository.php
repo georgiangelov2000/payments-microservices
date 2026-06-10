@@ -16,9 +16,13 @@ class ApiKeyRepository implements ApiKeyRepositoryInterface
     {
         $merchantId = $params['merchant_id'] ?? null;
         $status = $params['status'] ?? null;
+        $environment = $params['environment'] ?? null;
+        $hash = $params['hash'] ?? null;
 
         return (new ApiKeysBuilder)
             ->forMerchant($merchantId)
+            ->whereHash($hash)
+            ->whereEnvironment($environment)
             ->whereStatus($status)
             ->getQuery();
     }

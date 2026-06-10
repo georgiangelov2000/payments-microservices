@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { fmt, fmtCurrency, fmtMs, fmtRate } from '@/utils';
 import {
@@ -209,6 +210,7 @@ function rateBarColor(rate) {
 }
 
 function ProviderCard({ provider }) {
+    const { t } = useTranslation();
     const rate = Number(provider.success_rate ?? 0);
     const name = provider.provider ?? provider.provider_alias ?? 'Unknown';
     return (
@@ -221,12 +223,12 @@ function ProviderCard({ provider }) {
                     </div>
                     <div>
                         <p className="font-semibold capitalize text-slate-900">{name}</p>
-                        <p className="text-xs text-slate-400">{fmt(provider.total ?? provider.total_attempts)} attempts</p>
+                        <p className="text-xs text-slate-400">{t('analytics.attempts', { count: fmt(provider.total ?? provider.total_attempts) })}</p>
                     </div>
                 </div>
                 <div className="text-right">
                     <p className={`text-2xl font-bold ${rateColor(rate)}`}>{fmtRate(rate)}</p>
-                    <p className="text-xs text-slate-400">approval rate</p>
+                    <p className="text-xs text-slate-400">{t('analytics.approvalRate')}</p>
                 </div>
             </div>
 
@@ -241,10 +243,10 @@ function ProviderCard({ provider }) {
             {/* Stats grid */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                    { label: 'Succeeded', value: fmt(provider.succeeded),       Icon: CheckCircle2, color: 'text-green-600 bg-green-50'   },
-                    { label: 'Failed',    value: fmt(provider.failed),           Icon: XCircle,      color: 'text-red-600 bg-red-50'       },
-                    { label: 'Timeouts',  value: fmt(provider.timeouts ?? 0),    Icon: Clock,        color: 'text-amber-600 bg-amber-50'   },
-                    { label: 'Avg latency', value: fmtMs(provider.avg_latency_ms), Icon: Zap,        color: 'text-indigo-600 bg-indigo-50' },
+                    { label: t('analytics.succeeded'), value: fmt(provider.succeeded),       Icon: CheckCircle2, color: 'text-green-600 bg-green-50'   },
+                    { label: t('analytics.failed'),    value: fmt(provider.failed),           Icon: XCircle,      color: 'text-red-600 bg-red-50'       },
+                    { label: t('analytics.timeouts'),  value: fmt(provider.timeouts ?? 0),    Icon: Clock,        color: 'text-amber-600 bg-amber-50'   },
+                    { label: t('analytics.avgLatency'), value: fmtMs(provider.avg_latency_ms), Icon: Zap,        color: 'text-indigo-600 bg-indigo-50' },
                 ].map(({ label, value, Icon: I, color }) => (
                     <div key={label} className={`rounded-lg px-3 py-2 ${color.split(' ')[1]}`}>
                         <div className="flex items-center gap-1 mb-0.5">
@@ -259,7 +261,7 @@ function ProviderCard({ provider }) {
             {/* Latency range */}
             {provider.min_latency_ms != null && (
                 <p className="mt-3 text-xs text-slate-400">
-                    Latency range: {fmtMs(provider.min_latency_ms)} – {fmtMs(provider.max_latency_ms)}
+                    {t('analytics.latencyRange', { min: fmtMs(provider.min_latency_ms), max: fmtMs(provider.max_latency_ms) })}
                 </p>
             )}
         </div>
@@ -276,6 +278,7 @@ const ENV_TABS = [
 ]
 
 function EnvSelector({ current, days }) {
+    const { t } = useTranslation();
     return (
         <div className="flex items-center gap-3">
             {ENV_TABS.map(({ key, label, Icon, activeCls, dotCls }) => {
@@ -293,10 +296,10 @@ function EnvSelector({ current, days }) {
                     >
                         {isActive && <span className={`h-2 w-2 rounded-full ${dotCls}`} />}
                         <Icon size={15} strokeWidth={2} />
-                        {label}
+                        {t(`common.badges.${key}`)}
                         {isActive && (
                             <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${key === 'test' ? 'bg-indigo-100 text-indigo-600' : 'bg-violet-100 text-violet-600'}`}>
-                                Active
+                                {t('analytics.active')}
                             </span>
                         )}
                     </button>
@@ -363,17 +366,18 @@ const STRATEGY_COPY = {
 };
 
 function StrategyBreakdown({ data, environment }) {
+    const { t } = useTranslation();
     const total = data.reduce((sum, row) => sum + Number(row.count ?? 0), 0);
-    if (!total) return <p className="text-center text-sm text-slate-400 py-6">No routing data yet</p>;
+    if (!total) return <p className="text-center text-sm text-slate-400 py-6">{t('analytics.noRoutingData')}</p>;
 
     return (
         <div className="space-y-4">
             {data.map((row) => {
                 const strategy = row.strategy ?? 'unknown';
-                const copy = STRATEGY_COPY[strategy] ?? {
-                    label: `${strategy.charAt(0).toUpperCase()}${strategy.slice(1)} routing`,
-                    description: 'Payments used this routing mode.',
-                };
+                const fallbackLabel = `${strategy.charAt(0).toUpperCase()}${strategy.slice(1)} routing`;
+                const copy = STRATEGY_COPY[strategy] ?? { label: fallbackLabel, description: t('analytics.strategies.unknown.description') };
+                const translatedLabel = t(`analytics.strategies.${strategy}.label`, { defaultValue: copy.label });
+                const translatedDescription = t(`analytics.strategies.${strategy}.description`, { defaultValue: copy.description });
                 const count = Number(row.count ?? 0);
                 const pct = total > 0 ? (count / total) * 100 : 0;
                 const color = STRATEGY_COLORS[strategy] ?? '#64748b';
@@ -384,13 +388,13 @@ function StrategyBreakdown({ data, environment }) {
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-                                    <p className="text-sm font-semibold text-slate-800">{copy.label}</p>
+                                    <p className="text-sm font-semibold text-slate-800">{translatedLabel}</p>
                                 </div>
-                                <p className="mt-1 text-xs leading-5 text-slate-500">{copy.description}</p>
+                                <p className="mt-1 text-xs leading-5 text-slate-500">{translatedDescription}</p>
                             </div>
                             <div className="shrink-0 text-right">
                                 <p className="text-sm font-bold text-slate-900">{fmt(count)}</p>
-                                <p className="text-[11px] text-slate-400">payments</p>
+                                <p className="text-[11px] text-slate-400">{t('analytics.payments')}</p>
                             </div>
                         </div>
                         <div className="mt-3 flex items-center gap-3">
@@ -408,7 +412,7 @@ function StrategyBreakdown({ data, environment }) {
                 );
             })}
             <p className="text-xs text-slate-400">
-                Based on {fmt(total)} payments in the selected {environment} environment.
+                {t('analytics.basedOnPayments', { total: fmt(total), environment })}
             </p>
         </div>
     );
@@ -428,6 +432,7 @@ export default function Analytics({
     routingDistribution,
     latencyBuckets,
 }) {
+    const { t } = useTranslation();
     const maxDecline = topDeclineCodes[0]?.count ?? 1;
     const maxLatency = Math.max(...latencyBuckets.map(b => b.count), 1);
 
@@ -439,12 +444,12 @@ export default function Analytics({
         <AuthenticatedLayout
             header={
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-800">Analytics</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">{t('analytics.title')}</h2>
                     <PeriodSelector current={days} env={environment} />
                 </div>
             }
         >
-            <Head title="Analytics" />
+            <Head title={t('analytics.title')} />
 
             <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto">
 
@@ -454,7 +459,7 @@ export default function Analytics({
                 {/* KPI row */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                     <KpiCard
-                        label="Success Rate"
+                        label={t('analytics.successRate')}
                         value={`${overview.success_rate}%`}
                         delta={overview.delta_rate}
                         suffix="pp"
@@ -462,28 +467,28 @@ export default function Analytics({
                         accentColor={overview.success_rate >= 90 ? 'bg-emerald-500' : overview.success_rate >= 70 ? 'bg-amber-500' : 'bg-red-500'}
                     />
                     <KpiCard
-                        label={`Volume (${days}d)`}
+                        label={t('analytics.volumeDays', { days })}
                         value={fmtCurrency(overview.volume, overview.currency)}
                         delta={overview.delta_volume}
                         Icon={DollarSign}
                         accentColor="bg-indigo-500"
                     />
                     <KpiCard
-                        label="Total Payments"
+                        label={t('analytics.totalPayments')}
                         value={fmt(overview.total)}
                         delta={overview.delta_total}
                         Icon={Activity}
                         accentColor="bg-blue-500"
                     />
                     <KpiCard
-                        label="Succeeded"
+                        label={t('analytics.succeeded')}
                         value={fmt(overview.succeeded)}
-                        sub={`${overview.succeeded} of ${overview.total}`}
+                        sub={t('analytics.succeededOfTotal', { succeeded: overview.succeeded, total: overview.total })}
                         Icon={CheckCircle2}
                         accentColor="bg-emerald-500"
                     />
                     <KpiCard
-                        label="Failed"
+                        label={t('analytics.failed')}
                         value={fmt(overview.failed)}
                         Icon={XCircle}
                         accentColor="bg-red-500"
@@ -493,7 +498,7 @@ export default function Analytics({
                 {/* Latency KPI */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <KpiCard
-                        label="Avg Latency"
+                        label={t('analytics.avgLatency')}
                         value={fmtMs(overview.avg_latency_ms)}
                         Icon={Clock}
                         accentColor="bg-slate-400"
@@ -502,12 +507,12 @@ export default function Analytics({
 
                 {/* Provider performance cards */}
                 <section>
-                    <h3 className="mb-3 text-base font-semibold text-slate-900">Provider Performance</h3>
+                    <h3 className="mb-3 text-base font-semibold text-slate-900">{t('analytics.providerPerformance')}</h3>
                     {providerPerformance.length === 0 ? (
                         <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
                             <BarChart2 size={32} strokeWidth={1.25} className="mx-auto mb-2 text-slate-300" />
-                            <p className="text-sm text-slate-400">No routing attempts recorded yet for <strong>{environment}</strong> environment.</p>
-                            <p className="mt-1 text-xs text-slate-400">Process some payments to see analytics here.</p>
+                            <p className="text-sm text-slate-400" dangerouslySetInnerHTML={{ __html: t('analytics.noProviderAttempts', { environment: `<strong>${environment}</strong>` }) }} />
+                            <p className="mt-1 text-xs text-slate-400">{t('analytics.noProviderAttemptsHint')}</p>
                         </div>
                     ) : (
                         <div className="grid gap-4 lg:grid-cols-2">
@@ -523,7 +528,7 @@ export default function Analytics({
                     <AreaChart
                         data={dailyTrend}
                         dataKey="success_rate"
-                        label="Success Rate Trend (%)"
+                        label={t('analytics.successRateTrend')}
                         color="#6366f1"
                         formatter={v => `${v.toFixed(0)}%`}
                         yMin={successRateMin}
@@ -532,7 +537,7 @@ export default function Analytics({
                     <AreaChart
                         data={dailyTrend}
                         dataKey="volume"
-                        label="Payment Volume Trend"
+                        label={t('analytics.paymentVolumeTrend')}
                         color="#06b6d4"
                         formatter={v => fmtCurrency(v)}
                         yMin={0}
@@ -544,7 +549,7 @@ export default function Analytics({
                 <AreaChart
                     data={dailyTrend}
                     dataKey="total"
-                    label="Daily Payment Count"
+                    label={t('analytics.dailyPaymentCount')}
                     color="#f59e0b"
                     formatter={v => fmt(v, 0)}
                     yMin={0}
@@ -557,11 +562,11 @@ export default function Analytics({
                     {/* Decline codes */}
                     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
                         <div>
-                            <h3 className="text-sm font-semibold text-slate-700">Top Decline Codes</h3>
-                            <p className="text-xs text-slate-400 mt-0.5">Most frequent error codes across all attempts</p>
+                            <h3 className="text-sm font-semibold text-slate-700">{t('analytics.topDeclineCodes')}</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">{t('analytics.topDeclineCodesHint')}</p>
                         </div>
                         {topDeclineCodes.length === 0 ? (
-                            <p className="text-center text-sm text-slate-400 py-4">No declines recorded</p>
+                            <p className="text-center text-sm text-slate-400 py-4">{t('analytics.noDeclines')}</p>
                         ) : (
                             topDeclineCodes.map((d, i) => (
                                 <HorizontalBar
@@ -578,11 +583,11 @@ export default function Analytics({
                     {/* Routing strategy distribution */}
                     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div className="mb-4">
-                            <h3 className="text-sm font-semibold text-slate-700">Routing Mode Used</h3>
-                            <p className="text-xs text-slate-400 mt-0.5">How your payments were routed</p>
+                            <h3 className="text-sm font-semibold text-slate-700">{t('analytics.routingStrategyBreakdown')}</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">{t('analytics.routingStrategyHint')}</p>
                         </div>
                         {routingDistribution.length === 0 ? (
-                            <p className="text-center text-sm text-slate-400 py-4">No data</p>
+                            <p className="text-center text-sm text-slate-400 py-4">{t('analytics.noData')}</p>
                         ) : (
                             <StrategyBreakdown data={routingDistribution} environment={environment} />
                         )}
@@ -591,11 +596,11 @@ export default function Analytics({
                     {/* Latency buckets */}
                     <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
                         <div>
-                            <h3 className="text-sm font-semibold text-slate-700">Latency Distribution</h3>
-                            <p className="text-xs text-slate-400 mt-0.5">Routing attempt response times</p>
+                            <h3 className="text-sm font-semibold text-slate-700">{t('analytics.latencyDistribution')}</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">{t('analytics.latencyDistributionHint')}</p>
                         </div>
                         {latencyBuckets.every(b => b.count === 0) ? (
-                            <p className="text-center text-sm text-slate-400 py-4">No latency data</p>
+                            <p className="text-center text-sm text-slate-400 py-4">{t('analytics.noLatencyData')}</p>
                         ) : (
                             latencyBuckets.map((b, i) => (
                                 <HorizontalBar

@@ -9,7 +9,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface ApiKeyRepositoryInterface
 {
-    public function paginate(int $perPage = 15): LengthAwarePaginator;
+    public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator;
 
     public function find(string $id): MerchantApiKey;
 
