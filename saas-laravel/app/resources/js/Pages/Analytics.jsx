@@ -1,12 +1,12 @@
 import { Head, router } from '@inertiajs/react';
 import { useMemo } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { fmt, fmtCurrency, fmtMs } from '@/utils';
+import { fmt, fmtCurrency, fmtMs, fmtRate } from '@/utils';
 import {
     TrendingUp, TrendingDown, Minus,
     CheckCircle2, XCircle, Zap, Clock,
     DollarSign, Activity, AlertTriangle,
-    FlaskConical, Globe,
+    FlaskConical, Globe, BarChart2,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,6 +188,80 @@ function RateBar({ rate }) {
                 <div className="h-2 rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
             </div>
             <span className="text-xs font-semibold tabular-nums" style={{ color }}>{pct.toFixed(1)}%</span>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rich Provider Performance Card (matches admin panel style)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function rateColor(rate) {
+    if (rate >= 95) return 'text-green-600';
+    if (rate >= 80) return 'text-amber-600';
+    return 'text-red-600';
+}
+
+function rateBarColor(rate) {
+    if (rate >= 95) return 'bg-green-500';
+    if (rate >= 80) return 'bg-amber-500';
+    return 'bg-red-500';
+}
+
+function ProviderCard({ provider }) {
+    const rate = Number(provider.success_rate ?? 0);
+    const name = provider.provider_alias ?? provider.provider ?? 'Unknown';
+    return (
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white uppercase">
+                        {name.slice(0, 1)}
+                    </div>
+                    <div>
+                        <p className="font-semibold capitalize text-slate-900">{name}</p>
+                        <p className="text-xs text-slate-400">{fmt(provider.total_attempts)} attempts</p>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <p className={`text-2xl font-bold ${rateColor(rate)}`}>{fmtRate(rate)}</p>
+                    <p className="text-xs text-slate-400">approval rate</p>
+                </div>
+            </div>
+
+            {/* Rate bar */}
+            <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                    className={`h-full rounded-full transition-all ${rateBarColor(rate)}`}
+                    style={{ width: `${Math.min(rate, 100)}%` }}
+                />
+            </div>
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                    { label: 'Succeeded', value: fmt(provider.succeeded),       Icon: CheckCircle2, color: 'text-green-600 bg-green-50'   },
+                    { label: 'Failed',    value: fmt(provider.failed),           Icon: XCircle,      color: 'text-red-600 bg-red-50'       },
+                    { label: 'Timeouts',  value: fmt(provider.timeouts ?? 0),    Icon: Clock,        color: 'text-amber-600 bg-amber-50'   },
+                    { label: 'Avg latency', value: fmtMs(provider.avg_latency_ms), Icon: Zap,        color: 'text-indigo-600 bg-indigo-50' },
+                ].map(({ label, value, Icon: I, color }) => (
+                    <div key={label} className={`rounded-lg px-3 py-2 ${color.split(' ')[1]}`}>
+                        <div className="flex items-center gap-1 mb-0.5">
+                            <I size={11} strokeWidth={2} className={color.split(' ')[0]} />
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+                        </div>
+                        <p className={`text-sm font-bold ${color.split(' ')[0]}`}>{value}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Latency range */}
+            {provider.min_latency_ms != null && (
+                <p className="mt-3 text-xs text-slate-400">
+                    Latency range: {fmtMs(provider.min_latency_ms)} – {fmtMs(provider.max_latency_ms)}
+                </p>
+            )}
         </div>
     );
 }
@@ -388,7 +462,7 @@ export default function Analytics({
                     />
                 </div>
 
-                {/* Latency KPI inline */}
+                {/* Latency KPI */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <KpiCard
                         label="Avg Latency"
@@ -396,16 +470,6 @@ export default function Analytics({
                         Icon={Clock}
                         accentColor="bg-slate-400"
                     />
-                    {providerPerformance.slice(0, 3).map(p => (
-                        <KpiCard
-                            key={p.provider_alias}
-                            label={`${p.provider_alias} rate`}
-                            value={`${p.success_rate}%`}
-                            sub={`${fmt(p.total_attempts)} attempts`}
-                            Icon={Zap}
-                            accentColor={p.success_rate >= 90 ? 'bg-emerald-500' : p.success_rate >= 70 ? 'bg-amber-500' : 'bg-red-500'}
-                        />
-                    ))}
                 </div>
 
                 {/* Trend charts */}
@@ -441,45 +505,26 @@ export default function Analytics({
                     yMax={Math.max(...dailyTrend.map(d => d.total), 1)}
                 />
 
-                {/* Provider performance table */}
-                <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-100">
-                        <h3 className="text-sm font-semibold text-slate-700">Provider Performance</h3>
-                        <p className="text-xs text-slate-400 mt-0.5">Auth rates, attempt counts and latency per provider</p>
+                {/* Provider performance cards */}
+                <section>
+                    <div className="mb-3">
+                        <h3 className="text-base font-semibold text-slate-900">Provider Performance</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">Approval rates, attempt counts and latency per provider</p>
                     </div>
                     {providerPerformance.length === 0 ? (
-                        <p className="px-5 py-8 text-center text-sm text-slate-400">No routing attempts recorded yet</p>
+                        <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
+                            <BarChart2 size={32} strokeWidth={1.25} className="mx-auto mb-2 text-slate-300" />
+                            <p className="text-sm text-slate-400">No routing attempts recorded yet for the <strong>{environment}</strong> environment.</p>
+                            <p className="mt-1 text-xs text-slate-400">Process some payments to see provider analytics here.</p>
+                        </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                        <th className="px-5 py-3 text-left">Provider</th>
-                                        <th className="px-5 py-3 text-right">Attempts</th>
-                                        <th className="px-5 py-3 text-right">Succeeded</th>
-                                        <th className="px-5 py-3 text-right">Failed</th>
-                                        <th className="px-5 py-3 text-left w-48">Auth Rate</th>
-                                        <th className="px-5 py-3 text-right">Avg Latency</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {providerPerformance.map(p => (
-                                        <tr key={p.provider_alias} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-5 py-3 font-medium text-slate-800 capitalize">{p.provider_alias}</td>
-                                            <td className="px-5 py-3 text-right tabular-nums text-slate-600">{fmt(p.total_attempts)}</td>
-                                            <td className="px-5 py-3 text-right tabular-nums text-emerald-600 font-medium">{fmt(p.succeeded)}</td>
-                                            <td className="px-5 py-3 text-right tabular-nums text-red-500">{fmt(p.failed)}</td>
-                                            <td className="px-5 py-3 w-48">
-                                                <RateBar rate={p.success_rate} />
-                                            </td>
-                                            <td className="px-5 py-3 text-right tabular-nums text-slate-500">{fmtMs(p.avg_latency_ms)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="grid gap-4 lg:grid-cols-2">
+                            {providerPerformance.map(p => (
+                                <ProviderCard key={p.provider_alias} provider={p} />
+                            ))}
                         </div>
                     )}
-                </div>
+                </section>
 
                 {/* Bottom row: decline codes + routing distribution + latency buckets */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
