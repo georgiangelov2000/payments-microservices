@@ -8,6 +8,7 @@ import {
     ChevronDown, ChevronUp,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { fmtDate } from '@/utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Signing secret verification snippet
@@ -225,7 +226,7 @@ function WebhookRow({ webhook }) {
                 {webhook.last_used_at && (
                     <span className="flex items-center gap-1 ml-auto">
                         <Clock size={12} />
-                        Last delivery {new Date(webhook.last_used_at).toLocaleDateString()}
+                        Last delivery {fmtDate(webhook.last_used_at)}
                     </span>
                 )}
                 <span className="font-mono text-slate-400">{webhook.secret_hint}</span>

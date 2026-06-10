@@ -6,12 +6,9 @@ import {
     ChevronDown, ChevronUp, SlidersHorizontal, ArrowLeft,
     AlertTriangle, Send, RefreshCw,
 } from 'lucide-react'
+import { fmtDate } from '@/utils'
 
-const fmt = (value) => {
-    if (!value) return '—'
-    const d = new Date(value)
-    return Number.isNaN(d.getTime()) ? value : d.toLocaleString('sv-SE')
-}
+const fmt = fmtDate
 
 const EVENT_COLORS = {
     'payment.succeeded': 'bg-emerald-50 text-emerald-700 border-emerald-200',

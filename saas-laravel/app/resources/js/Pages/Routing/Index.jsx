@@ -17,16 +17,13 @@ import {
     Play, Scale, Zap, ArrowLeft, Save, RotateCcw,
     FlaskConical, Globe,
 } from 'lucide-react'
+import { fmtDate } from '@/utils'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-const fmt = (v) => {
-    if (!v) return '—'
-    const d = new Date(v)
-    return Number.isNaN(d.getTime()) ? v : d.toLocaleString('sv-SE')
-}
+const fmt = fmtDate
 
 const capitalize = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : ''
 

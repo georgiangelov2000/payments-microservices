@@ -5,16 +5,9 @@ import { Head, Link, useForm, usePage, router } from '@inertiajs/react'
 import toast from 'react-hot-toast'
 import React from 'react'
 import { Download, SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp, CreditCard, Info, Copy, Check } from 'lucide-react'
+import { fmtDate } from '@/utils'
 
-const formatDateTime = (value) => {
-  if (!value) return 'Not available'
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime())
-    ? value
-    : date.toLocaleString('sv-SE')
-}
+const formatDateTime = (value) => fmtDate(value) === '—' ? 'Not available' : fmtDate(value)
 
 const formatNumber = (value, decimals = 2) => {
   const number = Number(value)

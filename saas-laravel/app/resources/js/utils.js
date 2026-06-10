@@ -13,7 +13,11 @@ export function fmtCurrency(n, currency = 'USD') {
 export function fmtDate(s) {
     if (!s) return '—';
     const d = new Date(s);
-    return Number.isNaN(d.getTime()) ? String(s) : d.toLocaleString('sv-SE');
+    if (Number.isNaN(d.getTime())) return String(s);
+    return new Intl.DateTimeFormat('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+    }).format(d);
 }
 
 export function fmtMs(ms) {
