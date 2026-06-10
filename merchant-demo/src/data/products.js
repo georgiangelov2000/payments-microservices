@@ -24,16 +24,6 @@ export const products = [
   },
   {
     id: 3,
-    name: "USB-C Hub 7-in-1",
-    price: 49.99,
-    description: "Expand connectivity with HDMI 4K, 3× USB-A, SD/TF slots and 100W PD",
-    provider: "stripe",
-    emoji: "🔌",
-    category: "Accessories",
-    badge: null,
-  },
-  {
-    id: 4,
     name: "HD Webcam 1080p",
     price: 69.99,
     description: "Crystal-clear 1080p video calls with built-in noise-cancelling mic",
@@ -43,7 +33,7 @@ export const products = [
     badge: "Popular",
   },
   {
-    id: 5,
+    id: 4,
     name: "LED Desk Lamp",
     price: 34.99,
     description: "Adjustable brightness & colour temperature with USB-A charging port",
@@ -51,15 +41,5 @@ export const products = [
     emoji: "💡",
     category: "Lighting",
     badge: null,
-  },
-  {
-    id: 6,
-    name: "XL Mouse Pad",
-    price: 24.99,
-    description: "Extended 90×40 cm gaming surface with anti-slip rubber base",
-    provider: "paypal",
-    emoji: "🖱️",
-    category: "Accessories",
-    badge: "New",
   },
 ]
