@@ -6,6 +6,7 @@ import {
     TrendingUp, TrendingDown, Minus,
     CheckCircle2, XCircle, Zap, Clock,
     DollarSign, Activity, AlertTriangle,
+    FlaskConical, Globe,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -195,7 +196,43 @@ function RateBar({ rate }) {
 // Period selector
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PeriodSelector({ current }) {
+const ENV_TABS = [
+    { key: 'test', label: 'Test', Icon: FlaskConical, activeCls: 'border-indigo-500 bg-indigo-50 text-indigo-700', dotCls: 'bg-indigo-400' },
+    { key: 'live', label: 'Live', Icon: Globe,        activeCls: 'border-violet-500 bg-violet-50 text-violet-700', dotCls: 'bg-violet-400' },
+]
+
+function EnvSelector({ current, days }) {
+    return (
+        <div className="flex items-center gap-3">
+            {ENV_TABS.map(({ key, label, Icon, activeCls, dotCls }) => {
+                const isActive = current === key
+                return (
+                    <button
+                        key={key}
+                        onClick={() => router.get(route('analytics'), { days, env: key }, { preserveScroll: false })}
+                        className={[
+                            'flex items-center gap-2.5 rounded-xl border px-5 py-3 text-sm font-semibold transition-all',
+                            isActive
+                                ? activeCls + ' shadow-sm'
+                                : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700',
+                        ].join(' ')}
+                    >
+                        {isActive && <span className={`h-2 w-2 rounded-full ${dotCls}`} />}
+                        <Icon size={15} strokeWidth={2} />
+                        {label}
+                        {isActive && (
+                            <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${key === 'test' ? 'bg-indigo-100 text-indigo-600' : 'bg-violet-100 text-violet-600'}`}>
+                                Active
+                            </span>
+                        )}
+                    </button>
+                )
+            })}
+        </div>
+    )
+}
+
+function PeriodSelector({ current, env }) {
     const options = [
         { label: '7d',  value: 7 },
         { label: '30d', value: 30 },
@@ -206,7 +243,7 @@ function PeriodSelector({ current }) {
             {options.map(o => (
                 <button
                     key={o.value}
-                    onClick={() => router.get(route('analytics'), { days: o.value }, { preserveScroll: false })}
+                    onClick={() => router.get(route('analytics'), { days: o.value, env }, { preserveScroll: false })}
                     className={[
                         'px-3 py-1.5 text-xs font-semibold transition-colors',
                         current === o.value
@@ -281,6 +318,7 @@ function DonutChart({ data }) {
 
 export default function Analytics({
     days,
+    environment,
     overview,
     dailyTrend,
     providerPerformance,
@@ -300,13 +338,16 @@ export default function Analytics({
             header={
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-gray-800">Analytics</h2>
-                    <PeriodSelector current={days} />
+                    <PeriodSelector current={days} env={environment} />
                 </div>
             }
         >
             <Head title="Analytics" />
 
             <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto">
+
+                {/* Environment switcher */}
+                <EnvSelector current={environment} days={days} />
 
                 {/* KPI row */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">

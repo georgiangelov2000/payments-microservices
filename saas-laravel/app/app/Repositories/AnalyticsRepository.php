@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\DB;
 class AnalyticsRepository
 {
     /**
-     * Top-level KPI summary for the selected period.
+     * Top-level KPI summary for the selected period and environment.
      */
-    public function getOverview(string $merchantId, int $days = 30): array
+    public function getOverview(string $merchantId, int $days = 30, string $environment = 'test'): array
     {
         $since = Carbon::now()->subDays($days)->startOfDay();
 
@@ -30,11 +30,13 @@ class AnalyticsRepository
                 PaymentStatus::FINISHED->value,
             ])
             ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
             ->where('created_at', '>=', $since)
             ->first();
 
         $avgLatency = DB::table('payment_routing_attempts')
             ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
             ->where('created_at', '>=', $since)
             ->whereNotNull('latency_ms')
             ->avg('latency_ms');
@@ -51,6 +53,7 @@ class AnalyticsRepository
                 PaymentStatus::FINISHED->value,
             ])
             ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
             ->whereBetween('created_at', [$prevSince, $since])
             ->first();
 
@@ -82,7 +85,7 @@ class AnalyticsRepository
     /**
      * Per-day breakdown: total, succeeded, volume, success_rate.
      */
-    public function getDailyTrend(string $merchantId, int $days = 30): array
+    public function getDailyTrend(string $merchantId, int $days = 30, string $environment = 'test'): array
     {
         $since = Carbon::now()->subDays($days)->startOfDay();
 
@@ -94,6 +97,7 @@ class AnalyticsRepository
                 SUM(price)                                        AS volume
             ', [PaymentStatus::FINISHED->value])
             ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
             ->where('created_at', '>=', $since)
             ->groupByRaw('DATE(created_at)')
             ->orderBy('date')
@@ -122,7 +126,7 @@ class AnalyticsRepository
     /**
      * Provider-level auth-rate, attempt counts, and latency.
      */
-    public function getProviderPerformance(string $merchantId, int $days = 30): array
+    public function getProviderPerformance(string $merchantId, int $days = 30, string $environment = 'test'): array
     {
         $since = Carbon::now()->subDays($days)->startOfDay();
 
@@ -139,6 +143,7 @@ class AnalyticsRepository
                 1)                                                                     AS success_rate
             ")
             ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
             ->where('created_at', '>=', $since)
             ->where('status', '!=', 'skipped')
             ->groupBy('provider_alias')
@@ -158,13 +163,14 @@ class AnalyticsRepository
     /**
      * Most frequent error / decline codes across routing attempts.
      */
-    public function getTopDeclineCodes(string $merchantId, int $days = 30, int $limit = 8): array
+    public function getTopDeclineCodes(string $merchantId, int $days = 30, string $environment = 'test', int $limit = 8): array
     {
         $since = Carbon::now()->subDays($days)->startOfDay();
 
         $rows = DB::table('payment_routing_attempts')
             ->selectRaw('error_code, COUNT(*) AS count')
             ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
             ->whereNotNull('error_code')
             ->where('error_code', '!=', '')
             ->where('created_at', '>=', $since)
@@ -182,13 +188,14 @@ class AnalyticsRepository
     /**
      * Routing strategy breakdown for the period.
      */
-    public function getRoutingDistribution(string $merchantId, int $days = 30): array
+    public function getRoutingDistribution(string $merchantId, int $days = 30, string $environment = 'test'): array
     {
         $since = Carbon::now()->subDays($days)->startOfDay();
 
         $rows = DB::table('payments')
             ->selectRaw('routing_strategy, COUNT(*) AS count')
             ->where('merchant_id', $merchantId)
+            ->where('environment', $environment)
             ->where('created_at', '>=', $since)
             ->whereNotNull('routing_strategy')
             ->groupBy('routing_strategy')
@@ -204,7 +211,7 @@ class AnalyticsRepository
     /**
      * Latency percentile buckets for routing attempts.
      */
-    public function getLatencyBuckets(string $merchantId, int $days = 30): array
+    public function getLatencyBuckets(string $merchantId, int $days = 30, string $environment = 'test'): array
     {
         $since = Carbon::now()->subDays($days)->startOfDay();
 
@@ -220,6 +227,7 @@ class AnalyticsRepository
         foreach ($buckets as $label => [$min, $max]) {
             $query = DB::table('payment_routing_attempts')
                 ->where('merchant_id', $merchantId)
+                ->where('environment', $environment)
                 ->where('created_at', '>=', $since)
                 ->whereNotNull('latency_ms')
                 ->where('latency_ms', '>=', $min);

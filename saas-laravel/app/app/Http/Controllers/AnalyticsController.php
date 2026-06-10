@@ -16,18 +16,21 @@ class AnalyticsController extends Controller
 
     public function index(Request $request): Response
     {
-        $merchantId = Auth::id();
-        $days = (int) $request->get('days', 30);
-        $days = in_array($days, [7, 30, 90]) ? $days : 30;
+        $merchantId  = Auth::id();
+        $days        = (int) $request->get('days', 30);
+        $days        = in_array($days, [7, 30, 90]) ? $days : 30;
+        $environment = $request->get('env', 'test');
+        $environment = in_array($environment, ['test', 'live']) ? $environment : 'test';
 
         return Inertia::render('Analytics', [
             'days'               => $days,
-            'overview'           => $this->analytics->getOverview($merchantId, $days),
-            'dailyTrend'         => $this->analytics->getDailyTrend($merchantId, $days),
-            'providerPerformance'=> $this->analytics->getProviderPerformance($merchantId, $days),
-            'topDeclineCodes'    => $this->analytics->getTopDeclineCodes($merchantId, $days),
-            'routingDistribution'=> $this->analytics->getRoutingDistribution($merchantId, $days),
-            'latencyBuckets'     => $this->analytics->getLatencyBuckets($merchantId, $days),
+            'environment'        => $environment,
+            'overview'           => $this->analytics->getOverview($merchantId, $days, $environment),
+            'dailyTrend'         => $this->analytics->getDailyTrend($merchantId, $days, $environment),
+            'providerPerformance'=> $this->analytics->getProviderPerformance($merchantId, $days, $environment),
+            'topDeclineCodes'    => $this->analytics->getTopDeclineCodes($merchantId, $days, $environment),
+            'routingDistribution'=> $this->analytics->getRoutingDistribution($merchantId, $days, $environment),
+            'latencyBuckets'     => $this->analytics->getLatencyBuckets($merchantId, $days, $environment),
         ]);
     }
 }

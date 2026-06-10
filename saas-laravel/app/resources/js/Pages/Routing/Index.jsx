@@ -15,6 +15,7 @@ import {
     AlertTriangle, ChevronDown, ChevronUp,
     ArrowRight, RefreshCw, Lock, LayoutGrid, X,
     Play, Scale, Zap, ArrowLeft, Save, RotateCcw,
+    FlaskConical, Globe,
 } from 'lucide-react'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -834,13 +835,18 @@ function WorkflowCard({ workflow }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SummaryStrip
+// SummaryStrip — scoped to the active environment
 // ─────────────────────────────────────────────────────────────────────────────
 
-function SummaryStrip({ summary }) {
-    const allHealthy  = (summary.unhealthy_providers ?? 0) === 0
-    const liveRoutes  = summary.published_workflows ?? 0
-    const failedCount = summary.failed_attempts ?? 0
+function SummaryStrip({ workflows, health, attempts, env }) {
+    const envWorkflows  = (workflows ?? []).filter(w => w.environment === env)
+    const envHealth     = (health    ?? []).filter(h => h.environment === env)
+    const envAttempts   = (attempts  ?? []).filter(a => a.environment === env)
+
+    const allHealthy  = envHealth.length === 0 || envHealth.every(h => h.status === 'healthy')
+    const liveRoutes  = envWorkflows.filter(w => w.status === 'published').length
+    const failedCount = envAttempts.filter(a => a.status !== 'succeeded').length
+    const unhealthy   = envHealth.filter(h => h.status !== 'healthy').length
 
     return (
         <div className="grid gap-4 sm:grid-cols-3">
@@ -851,15 +857,19 @@ function SummaryStrip({ summary }) {
                 <div>
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">System Status</p>
                     <p className={`mt-0.5 text-sm font-semibold ${allHealthy ? 'text-emerald-700' : 'text-red-700'}`}>
-                        {allHealthy ? 'All processors running normally' : `${summary.unhealthy_providers} provider${summary.unhealthy_providers > 1 ? 's' : ''} unhealthy`}
+                        {allHealthy
+                            ? envHealth.length === 0 ? 'No activity recorded yet' : 'All processors running normally'
+                            : `${unhealthy} processor${unhealthy > 1 ? 's' : ''} unhealthy`}
                     </p>
                 </div>
             </div>
             <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-2xl font-bold text-indigo-600">{liveRoutes}</span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Live Payment Routes</p>
-                    <p className="mt-0.5 text-sm font-semibold text-slate-700">{liveRoutes === 1 ? '1 route actively routing payments' : `${liveRoutes} routes actively routing payments`}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Active Routes</p>
+                    <p className="mt-0.5 text-sm font-semibold text-slate-700">
+                        {liveRoutes === 0 ? 'No routes published yet' : `${liveRoutes} route${liveRoutes > 1 ? 's' : ''} actively routing`}
+                    </p>
                 </div>
             </div>
             <div className={`flex items-center gap-4 rounded-xl border p-5 ${failedCount > 0 ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white shadow-sm'}`}>
@@ -876,134 +886,84 @@ function SummaryStrip({ summary }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ProviderHealthPanel
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ProviderHealthPanel({ health }) {
-    if (!health?.length) {
-        return (
-            <div className="rounded-xl border-2 border-dashed border-slate-200 py-12 text-center">
-                <Activity size={28} strokeWidth={1} className="mx-auto text-slate-300 mb-2" />
-                <p className="text-sm text-slate-500">No provider health data yet.</p>
-                <p className="text-xs text-slate-400 mt-1">Health records are created automatically when payments are processed.</p>
-            </div>
-        )
-    }
-
-    const statusIcon = (s) => {
-        if (s === 'healthy') return <CheckCircle2 size={14} className="text-emerald-500" strokeWidth={2} />
-        if (s === 'unhealthy' || s === 'disabled') return <XCircle size={14} className="text-red-500" strokeWidth={2} />
-        return <AlertTriangle size={14} className="text-amber-500" strokeWidth={2} />
-    }
-
-    return (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {health.map((h, i) => (
-                <div key={i} className={['rounded-xl border p-4 space-y-2',
-                    h.status === 'unhealthy' || h.status === 'disabled' ? 'border-red-200 bg-red-50/40'
-                    : h.status === 'degraded' ? 'border-amber-200 bg-amber-50/40'
-                    : 'border-slate-200 bg-white'].join(' ')}>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">{statusIcon(h.status)}<span className="font-semibold text-sm text-slate-800">{capitalize(h.provider_alias)}</span></div>
-                        <Badge variant={h.status}>{capitalize(h.status)}</Badge>
-                    </div>
-                    <div className="text-xs text-slate-500 space-y-0.5">
-                        <p>Environment: <span className="font-medium text-slate-700">{capitalize(h.environment)}</span></p>
-                        <p>Consecutive failures: <span className={`font-medium ${h.consecutive_failures > 0 ? 'text-red-600' : 'text-slate-700'}`}>{h.consecutive_failures}</span></p>
-                        {h.failure_rate > 0 && <p>Failure rate: <span className="font-medium text-amber-600">{h.failure_rate}%</span></p>}
-                        {h.disabled_until && <p className="text-red-600">Disabled until: {fmt(h.disabled_until)}</p>}
-                        {h.last_success_at && <p>Last success: {fmt(h.last_success_at)}</p>}
-                        {h.last_failure_at && <p>Last failure: {fmt(h.last_failure_at)}</p>}
-                        {h.last_error && <p className="text-red-600 truncate" title={h.last_error}>Error: {h.last_error}</p>}
-                    </div>
-                </div>
-            ))}
-        </div>
-    )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ActivityFeed
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ActivityFeed({ attempts }) {
-    if (!attempts?.length) {
-        return (
-            <div className="rounded-xl border-2 border-dashed border-slate-200 py-12 text-center">
-                <RefreshCw size={28} strokeWidth={1} className="mx-auto text-slate-300 mb-2" />
-                <p className="text-sm text-slate-500">No routing attempts yet.</p>
-            </div>
-        )
-    }
-
-    return (
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-            <table className="w-full text-sm">
-                <thead className="bg-slate-50 border-b text-xs text-left text-slate-500 uppercase tracking-wide">
-                    <tr>
-                        <th className="px-4 py-2.5 font-semibold">Time</th>
-                        <th className="px-4 py-2.5 font-semibold">Provider</th>
-                        <th className="px-4 py-2.5 font-semibold">Strategy</th>
-                        <th className="px-4 py-2.5 font-semibold text-center">Attempt</th>
-                        <th className="px-4 py-2.5 font-semibold">Status</th>
-                        <th className="px-4 py-2.5 font-semibold text-right">Latency</th>
-                        <th className="px-4 py-2.5 font-semibold">Payment</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                    {attempts.map(a => (
-                        <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">{fmt(a.created_at)}</td>
-                            <td className="px-4 py-2.5"><ProviderPill alias={a.provider_alias} /></td>
-                            <td className="px-4 py-2.5 text-xs text-slate-500">{capitalize(a.strategy)}</td>
-                            <td className="px-4 py-2.5 text-xs text-slate-500 text-center">#{a.attempt_number}</td>
-                            <td className="px-4 py-2.5">
-                                <Badge variant={a.status === 'success' ? 'success' : a.status === 'failed' ? 'failed' : 'default'}>
-                                    {capitalize(a.status)}
-                                </Badge>
-                            </td>
-                            <td className="px-4 py-2.5 text-xs text-slate-500 text-right font-mono">{a.latency_ms != null ? `${a.latency_ms}ms` : '—'}</td>
-                            <td className="px-4 py-2.5">
-                                {a.payment_id
-                                    ? <Link href={route('payments.show', a.payment_id)} className="font-mono text-xs text-indigo-600 hover:text-indigo-800" title={a.payment_id}>{String(a.payment_id).slice(0, 8)}…</Link>
-                                    : '—'}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TABS = ['Payment Routes', 'Processor Health', 'Recent Activity']
+const SECTION_TABS = ['Payment Routes', 'Processor Health', 'Recent Activity']
+
+const ENV_TABS = [
+    { key: 'test', label: 'Test', Icon: FlaskConical, activeCls: 'border-indigo-500 bg-indigo-50 text-indigo-700', dotCls: 'bg-indigo-400' },
+    { key: 'live', label: 'Live', Icon: Globe,        activeCls: 'border-violet-500 bg-violet-50 text-violet-700', dotCls: 'bg-violet-400' },
+]
 
 export default function RoutingIndex({ workflows, health, attempts, summary }) {
+    const [env, setEnv] = useState('test')
     const [tab, setTab] = useState('Payment Routes')
-    const unhealthyCount = summary?.unhealthy_providers ?? 0
+
+    const envWorkflows   = (workflows ?? []).filter(w => w.environment === env)
+    const envHealth      = (health    ?? []).filter(h => h.environment === env)
+    const envAttempts    = (attempts  ?? []).filter(a => a.environment === env)
+    const unhealthyCount = envHealth.filter(h => h.status !== 'healthy').length
 
     return (
         <AuthenticatedLayout>
             <Head title="Routing" />
             <div className="p-6 max-w-7xl mx-auto space-y-6">
+
                 <div>
                     <h1 className="text-2xl font-semibold text-slate-800">Payment Routing</h1>
                     <p className="mt-1 text-sm text-slate-500">Control how customer payments are distributed across your payment processors.</p>
                 </div>
 
-                <SummaryStrip summary={summary ?? {}} />
+                {/* Environment switcher */}
+                <div className="flex items-center gap-3">
+                    {ENV_TABS.map(({ key, label, Icon, activeCls, dotCls }) => {
+                        const isActive = env === key
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => { setEnv(key); setTab('Payment Routes') }}
+                                className={[
+                                    'flex items-center gap-2.5 rounded-xl border px-5 py-3 text-sm font-semibold transition-all',
+                                    isActive
+                                        ? activeCls + ' shadow-sm'
+                                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700',
+                                ].join(' ')}
+                            >
+                                {isActive && <span className={`h-2 w-2 rounded-full ${dotCls}`} />}
+                                <Icon size={15} strokeWidth={2} />
+                                {label}
+                                {isActive && (
+                                    <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${key === 'test' ? 'bg-indigo-100 text-indigo-600' : 'bg-violet-100 text-violet-600'}`}>
+                                        Active
+                                    </span>
+                                )}
+                            </button>
+                        )
+                    })}
+                </div>
 
+                {/* Stats scoped to this environment */}
+                <SummaryStrip workflows={workflows} health={health} attempts={attempts} env={env} />
+
+                {/* Section tabs */}
                 <div className="flex gap-1 border-b border-slate-200">
-                    {TABS.map(t => (
-                        <button key={t} onClick={() => setTab(t)} className={['relative px-4 py-2.5 text-sm font-medium transition-colors',
-                            tab === t ? 'text-indigo-600 after:absolute after:bottom-0 after:inset-x-0 after:h-0.5 after:bg-indigo-600' : 'text-slate-500 hover:text-slate-700'].join(' ')}>
+                    {SECTION_TABS.map(t => (
+                        <button
+                            key={t}
+                            onClick={() => setTab(t)}
+                            className={[
+                                'relative px-4 py-2.5 text-sm font-medium transition-colors',
+                                tab === t
+                                    ? 'text-indigo-600 after:absolute after:bottom-0 after:inset-x-0 after:h-0.5 after:bg-indigo-600'
+                                    : 'text-slate-500 hover:text-slate-700',
+                            ].join(' ')}
+                        >
                             {t}
                             {t === 'Processor Health' && unhealthyCount > 0 && (
-                                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">{unhealthyCount}</span>
+                                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
+                                    {unhealthyCount}
+                                </span>
                             )}
                         </button>
                     ))}
@@ -1011,19 +971,27 @@ export default function RoutingIndex({ workflows, health, attempts, summary }) {
 
                 {tab === 'Payment Routes' && (
                     <div className="space-y-4">
-                        {workflows?.length > 0 ? (
-                            workflows.map(w => <WorkflowCard key={w.id} workflow={w} />)
+                        {envWorkflows.length > 0 ? (
+                            envWorkflows.map(w => <WorkflowCard key={w.id} workflow={w} />)
                         ) : (
                             <div className="rounded-xl border-2 border-dashed border-slate-200 py-14 text-center">
                                 <GitBranch size={30} strokeWidth={1} className="mx-auto text-slate-300 mb-3" />
-                                <p className="text-sm font-medium text-slate-600">No routing workflows configured</p>
-                                <p className="text-xs text-slate-400 mt-1">Your administrator will set up routing workflows for your account.</p>
+                                <p className="text-sm font-medium text-slate-600">
+                                    No {env === 'live' ? 'live' : 'test'} routing workflows configured
+                                </p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {env === 'live'
+                                        ? 'Your administrator will publish a live workflow once testing is complete.'
+                                        : 'Your administrator will set up routing workflows for your account.'}
+                                </p>
                             </div>
                         )}
                     </div>
                 )}
-                {tab === 'Processor Health' && <ProviderHealthPanel health={health} />}
-                {tab === 'Recent Activity' && <ActivityFeed attempts={attempts} />}
+
+                {tab === 'Processor Health' && <ProviderHealthPanel health={envHealth} />}
+                {tab === 'Recent Activity'   && <ActivityFeed attempts={envAttempts} />}
+
             </div>
         </AuthenticatedLayout>
     )
