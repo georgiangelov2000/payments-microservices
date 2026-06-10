@@ -16,6 +16,7 @@ export default {
         },
         badges: {
             active: 'Active',
+            archived: 'Archived',
             draft: 'Draft',
             inactive: 'Inactive',
             live: 'Live',

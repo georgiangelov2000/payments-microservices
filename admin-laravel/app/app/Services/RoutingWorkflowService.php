@@ -494,6 +494,13 @@ final class RoutingWorkflowService
 
     private function snapshot(RoutingWorkflow $workflow, string $status): void
     {
+        // Retire any previously published versions before creating the new one
+        if ($status === 'published') {
+            RoutingWorkflowVersion::where('workflow_id', $workflow->id)
+                ->where('status', 'published')
+                ->update(['status' => 'archived']);
+        }
+
         $this->routingRepository->createVersion([
             'workflow_id' => $workflow->id,
             'version' => $workflow->current_version,

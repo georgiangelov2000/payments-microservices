@@ -16,6 +16,7 @@ export default {
         },
         badges: {
             active: 'Активен',
+            archived: 'Архивиран',
             draft: 'Чернова',
             inactive: 'Неактивен',
             live: 'Live',
