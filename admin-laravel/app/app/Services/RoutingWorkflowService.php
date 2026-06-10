@@ -17,8 +17,24 @@ final class RoutingWorkflowService
         private readonly RoutingRepositoryInterface $routingRepository,
     ) {}
 
+    /**
+     * Create or update the workflow for a given merchant + environment pair.
+     *
+     * Exactly one workflow is allowed per (merchant_id, environment). If one
+     * already exists it is updated in-place (upsert); otherwise a new row is
+     * created. This mirrors the DB-level partial unique index.
+     */
     public function createWorkflow(array $data): RoutingWorkflow
     {
+        $existing = RoutingWorkflow::query()
+            ->where('merchant_id', $data['merchant_id'])
+            ->where('environment', $data['environment'])
+            ->first();
+
+        if ($existing !== null) {
+            return $this->updateWorkflow($existing, $data);
+        }
+
         $workflow = $this->routingRepository->createWorkflow([
             'merchant_id' => $data['merchant_id'],
             'name' => $data['name'],
@@ -41,13 +57,13 @@ final class RoutingWorkflowService
     public function updateWorkflow(RoutingWorkflow $workflow, array $data): RoutingWorkflow
     {
         $before = $workflow->toArray();
-        $nodes = $this->normalizeNodes($data['nodes']);
-        $edges = $this->normalizeEdges($data['edges'] ?? []);
+        $nodes = $this->normalizeNodes($data['nodes'] ?? $workflow->nodes ?? []);
+        $edges = $this->normalizeEdges($data['edges'] ?? $workflow->edges ?? []);
         $validationErrors = $this->validateWorkflow($nodes, $edges);
 
         $updated = $this->routingRepository->updateWorkflow($workflow, [
-            'name' => $data['name'],
-            'environment' => $data['environment'],
+            'name' => $data['name'] ?? $workflow->name,
+            'environment' => $data['environment'] ?? $workflow->environment,
             'status' => $workflow->status === 'published' ? 'draft' : $workflow->status,
             'nodes' => $nodes,
             'edges' => $edges,
