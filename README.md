@@ -10,6 +10,7 @@ Local sandbox payment gateway for SaaS merchant onboarding and real Stripe/PayPa
 - `gateway-verification` — API key auth, active merchant subscription checks, request context injection, proxy to payments.
 - `payments` — FastAPI payment service with Stripe and PayPal sandbox connectors.
 - `merchant-demo` — TechShop frontend at `http://localhost:3001`.
+- `techshop-cms` — separate TechShop CMS and completed-payment webhook receiver at `http://localhost:3002`.
 - `payments-db` — Postgres database for users, subscriptions, API keys, providers, payments, API request audit.
 - `payments-logs-db` — Postgres database for payment timeline logs.
 - `redis` — API key cache and circuit breaker state.
@@ -60,6 +61,7 @@ Use `"paypal"` for PayPal.
 | Admin panel | `http://localhost:8083/login` | Separate Laravel admin app in its own container. |
 | Admin routing dashboard | `http://localhost:8083/routing` | Global routing health, attempts, configs, and audit logs. |
 | TechShop merchant demo | `http://localhost:3001` | Demo storefront using the payment gateway. |
+| TechShop CMS | `http://localhost:3002` | Separate CMS container for TechShop content and completed-payment webhook events. |
 | Public payment API | `http://localhost:8080/api/v1/payments` | Gateway endpoint for creating payments. |
 | Payment service health | `http://localhost:8080/api/v1/payments/ping` | Public gateway health path for payment service reachability. |
 | RabbitMQ management | `http://localhost:15672` | Local RabbitMQ console. |
@@ -101,3 +103,19 @@ Password: guest
 ```
 
 The rebuild seeds only reference subscription plans and provider rows. Merchants and API keys are created through the SaaS onboarding flow.
+
+## TechShop CMS Webhook
+
+Copy `techshop-cms/.env.example` to `techshop-cms/.env`, set `CMS_WEBHOOK_SECRET`, then run:
+
+```bash
+docker compose up -d techshop-cms
+```
+
+Configure the merchant/payment provider completed-payment webhook URL as:
+
+```text
+http://localhost:3002/webhooks/payments/completed
+```
+
+Use `http://techshop-cms:3002/webhooks/payments/completed` for container-to-container callbacks. See `techshop-cms/README.md` for the payload, signature headers, and example request.

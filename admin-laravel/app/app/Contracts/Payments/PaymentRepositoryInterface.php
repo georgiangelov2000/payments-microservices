@@ -9,4 +9,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 interface PaymentRepositoryInterface
 {
     public function paginate(array $filters, int $perPage = 15): LengthAwarePaginator;
+
+    public function merchantActivity(array $filters, int $perPage = 15): array;
 }

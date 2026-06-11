@@ -84,6 +84,17 @@ services:
     depends_on:
       - gateway
 
+  techshop-cms:
+    build: ./techshop-cms
+    container_name: techshop-cms
+    env_file:
+      - techshop-cms/.env
+    ports:
+      - "3002:3002"
+    volumes:
+      - techshop-cms-data:/data
+    restart: unless-stopped
+
   public-site:
     build: ./public-site
     container_name: public-site
@@ -209,3 +220,4 @@ services:
 volumes:
   payments-db-data:
   payments-logs-db-data:
+  techshop-cms-data:

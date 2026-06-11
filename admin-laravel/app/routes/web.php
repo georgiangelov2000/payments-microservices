@@ -32,6 +32,7 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::post('/merchants/{merchant}/providers', [MerchantController::class, 'storeProvider'])->name('admin.merchants.providers.store');
     Route::put('/merchant-provider-credentials/{credential}', [MerchantController::class, 'updateProvider'])->name('admin.merchant-provider-credentials.update');
     Route::get('/payments', [PaymentController::class, 'index'])->name('admin.payments.index');
+    Route::get('/payments/merchants', [PaymentController::class, 'merchants'])->name('admin.payments.merchants');
     Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('admin.subscriptions.index');
     Route::get('/api-keys', [ApiKeyController::class, 'index'])->name('admin.api-keys.index');
     Route::post('/api-keys', [ApiKeyController::class, 'store'])->name('admin.api-keys.store');

@@ -23,6 +23,30 @@ final class PaymentService
         );
     }
 
+    public function merchantActivity(array $filters): array
+    {
+        $activity = $this->repository->merchantActivity($filters, 20);
+
+        $activity['merchants'] = $activity['merchants']->through(fn ($merchant): array => [
+            'id' => $merchant->id,
+            'name' => $merchant->name,
+            'email' => $merchant->email,
+            'payments_count' => (int) $merchant->payments_count,
+            'total_amount' => (float) $merchant->total_amount,
+            'currency' => $merchant->currency ?: 'USD',
+            'currencies_count' => (int) $merchant->currencies_count,
+            'status_counts' => [
+                'paid' => (int) $merchant->paid_count,
+                'pending' => (int) $merchant->pending_count,
+                'failed' => (int) $merchant->failed_count,
+                'refunded' => (int) $merchant->refunded_count,
+            ],
+            'last_payment_at' => $merchant->last_payment_at,
+        ]);
+
+        return $activity;
+    }
+
     public function serialize(Payment $payment): array
     {
         return [

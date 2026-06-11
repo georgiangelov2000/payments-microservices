@@ -40,6 +40,7 @@ export default {
             dashboard: 'Dashboard',
             merchants: 'Merchants',
             payments: 'Payments',
+            merchantPayments: 'Merchant Payments',
             subscriptions: 'Subscriptions',
             apiKeys: 'API Keys',
             routing: 'Routing',

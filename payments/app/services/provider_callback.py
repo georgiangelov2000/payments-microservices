@@ -11,6 +11,7 @@ from app.models.logs import PaymentLog
 from app.models.payments import Payment as PaymentModel
 from app.providers.credential_resolver import CredentialResolver
 from app.providers.paypal import PayPalConnector
+from app.providers.sandbox import SandboxConnector
 from app.providers.stripe import StripeConnector
 from app.schemas.payments import ProviderReturnResponse
 from app.services.webhook_dispatcher import WebhookDispatcher
@@ -156,6 +157,32 @@ class ProviderCallbackService:
             payment_id=payment_id,
             provider="paypal",
             status="PAYMENT_CANCELLED",
+        )
+
+    async def handle_sandbox_return(
+        self,
+        payment_id: str,
+        result: str = "success",
+    ) -> ProviderReturnResponse:
+        payment_uuid = _uuid(payment_id)
+        connector = SandboxConnector()
+        session = await connector.retrieve_checkout_session(result)
+        paid = session.get("payment_status") == "paid"
+        status = PaymentStatus.PAYMENT_FINISHED if paid else PaymentStatus.PAYMENT_FAILED
+
+        await self._finalize_provider_return(
+            payment_id=payment_uuid,
+            status=status,
+            provider_status=str(session.get("payment_status") or session.get("status")),
+            payload=session,
+            event_type=PaymentLogEvent.EVENT_PROVIDER_PAYMENT_ACCEPTED,
+        )
+
+        return ProviderReturnResponse(
+            payment_id=payment_id,
+            provider="sandbox",
+            status=status.name,
+            provider_status=str(session.get("payment_status") or session.get("status")),
         )
 
     async def _finalize_provider_return(

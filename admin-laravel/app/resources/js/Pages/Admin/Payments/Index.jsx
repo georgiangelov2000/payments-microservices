@@ -1,11 +1,11 @@
 import { Fragment, useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ProviderBrand from '@/Components/ProviderBrand';
 import { fmtCurrency, fmtDate } from '@/utils';
-import { ChevronDown, ListTree, Search, X, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, ListTree, Search, X, SlidersHorizontal, ReceiptText } from 'lucide-react';
 
 function cleanLogMessage(message) {
     return (message || '').replace(/^\[[^\]]+\]\s*/, '');
@@ -78,11 +78,20 @@ export default function PaymentsIndex({ payments, filters = {} }) {
             <Head title="Payments" />
 
             {/* Page heading */}
-            <div className="mb-6">
-                <h2 className="text-xl font-semibold text-slate-900">Payment Operations</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                    Browse, search, and filter all payment transactions.
-                </p>
+            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 className="text-xl font-semibold text-slate-900">Payment Operations</h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                        Browse, search, and filter all payment transactions.
+                    </p>
+                </div>
+                <Link
+                    href={route('admin.payments.merchants')}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                >
+                    <ReceiptText size={15} strokeWidth={2} />
+                    Merchant payments
+                </Link>
             </div>
 
             {/* Filter bar */}

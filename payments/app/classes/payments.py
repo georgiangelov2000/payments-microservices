@@ -58,3 +58,10 @@ class Payment:
 
     async def paypal_cancel(self, payment_id: str) -> ProviderReturnResponse:
         return await self._callback.handle_paypal_cancel(payment_id)
+
+    async def sandbox_return(
+        self,
+        payment_id: str,
+        result: str = "success",
+    ) -> ProviderReturnResponse:
+        return await self._callback.handle_sandbox_return(payment_id, result)

@@ -4,11 +4,13 @@ from fastapi import HTTPException
 
 from app.providers.base import PaymentProviderAdapter, ProviderCredentials
 from app.providers.paypal import PayPalConnector
+from app.providers.sandbox import SandboxConnector
 from app.providers.stripe import StripeConnector
 
 ConnectorFactory = Callable[[ProviderCredentials | None], PaymentProviderAdapter]
 
 _REGISTRY: dict[str, ConnectorFactory] = {
+    "sandbox": SandboxConnector,
     "stripe": StripeConnector,
     "paypal": PayPalConnector,
 }

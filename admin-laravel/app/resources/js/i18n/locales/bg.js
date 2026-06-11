@@ -40,6 +40,7 @@ export default {
             dashboard: 'Табло',
             merchants: 'Търговци',
             payments: 'Плащания',
+            merchantPayments: 'Плащания по търговци',
             subscriptions: 'Абонаменти',
             apiKeys: 'API ключове',
             routing: 'Рутиране',

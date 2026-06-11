@@ -14,6 +14,7 @@ import {
     LayoutDashboard,
     Users,
     CreditCard,
+    ReceiptText,
     Package,
     Key,
     GitBranch,
@@ -31,7 +32,8 @@ import {
 const navItems = [
     { labelKey: 'common.nav.dashboard',     routeName: 'admin.dashboard',           pattern: 'admin.dashboard',        Icon: LayoutDashboard },
     { labelKey: 'common.nav.merchants',     routeName: 'admin.merchants.index',     pattern: 'admin.merchants.*',      Icon: Users },
-    { labelKey: 'common.nav.payments',      routeName: 'admin.payments.index',      pattern: 'admin.payments.*',       Icon: CreditCard },
+    { labelKey: 'common.nav.payments',      routeName: 'admin.payments.index',      pattern: 'admin.payments.index',   Icon: CreditCard },
+    { labelKey: 'common.nav.merchantPayments', routeName: 'admin.payments.merchants', pattern: 'admin.payments.merchants', Icon: ReceiptText },
     { labelKey: 'common.nav.subscriptions', routeName: 'admin.subscriptions.index', pattern: 'admin.subscriptions.*',  Icon: Package },
     { labelKey: 'common.nav.apiKeys',       routeName: 'admin.api-keys.index',      pattern: 'admin.api-keys.*',       Icon: Key },
     { labelKey: 'common.nav.routing',       routeName: 'admin.routing.index',       pattern: 'admin.routing.*',        Icon: GitBranch },

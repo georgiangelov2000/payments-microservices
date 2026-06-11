@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TechShop CMS</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">TechShop CMS</p>
+          <h1>Content and Payment Events</h1>
+        </div>
+        <button id="refresh" type="button">Refresh</button>
+      </header>
+
+      <section class="grid">
+        <article>
+          <h2>Storefront Content</h2>
+          <dl id="content"></dl>
+        </article>
+
+        <article>
+          <h2>Webhook Endpoint</h2>
+          <p class="muted">Configure the merchant or payment provider to send completed payment events here:</p>
+          <code id="webhook-url"></code>
+          <p class="muted small">Signed requests use <code>x-techshop-timestamp</code> and <code>x-techshop-signature</code>.</p>
+        </article>
+      </section>
+
+      <section>
+        <div class="section-title">
+          <h2>Recent Completed Payments</h2>
+          <span id="payment-count">0 events</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Payment</th>
+                <th>Merchant</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Received</th>
+              </tr>
+            </thead>
+            <tbody id="payments">
+              <tr>
+                <td colspan="6">Loading payment activity...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const fmtMoney = (amount, currency) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(Number(amount || 0));
+
+      const fmtDate = (value) => {
+        if (!value) return '-';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+      };
+
+      async function loadCms() {
+        const [contentRes, paymentsRes] = await Promise.all([
+          fetch('/api/content'),
+          fetch('/api/payments'),
+        ]);
+
+        const content = await contentRes.json();
+        const payments = await paymentsRes.json();
+
+        document.getElementById('webhook-url').textContent = `${window.location.origin}/webhooks/payments/completed`;
+        document.getElementById('content').innerHTML = Object.entries(content)
+          .map(([key, value]) => `<dt>${key}</dt><dd>${String(value)}</dd>`)
+          .join('');
+
+        const rows = payments.data || [];
+        document.getElementById('payment-count').textContent = `${rows.length} event${rows.length === 1 ? '' : 's'}`;
+        document.getElementById('payments').innerHTML = rows.length
+          ? rows.map((payment) => `
+              <tr>
+                <td>${payment.order_id || '-'}</td>
+                <td>${payment.payment_id || '-'}</td>
+                <td>${payment.merchant_name || payment.merchant_id || '-'}</td>
+                <td>${fmtMoney(payment.amount, payment.currency)}</td>
+                <td><span class="badge">${payment.status || '-'}</span></td>
+                <td>${fmtDate(payment.received_at)}</td>
+              </tr>
+            `).join('')
+          : '<tr><td colspan="6">No completed payment webhooks have been received yet.</td></tr>';
+      }
+
+      document.getElementById('refresh').addEventListener('click', loadCms);
+      loadCms().catch((error) => {
+        document.getElementById('payments').innerHTML = `<tr><td colspan="6">${error.message}</td></tr>`;
+      });
+    </script>
+  </body>
+</html>
