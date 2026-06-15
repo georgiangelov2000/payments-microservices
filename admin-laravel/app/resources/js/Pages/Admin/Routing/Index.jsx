@@ -201,6 +201,7 @@ function RouteCard({ workflow, onEdit }) {
     const nodes     = workflow.nodes ?? [];
     const edges     = workflow.edges ?? [];
     const hasErrors = (workflow.validation_errors ?? []).length > 0;
+    const typeBadge = routingTypeBadge(nodes);
 
     return (
         <div className={`rounded-2xl border bg-white shadow-sm transition-shadow hover:shadow-md ${isLive ? 'border-slate-200' : 'border-dashed border-slate-300'}`}>
@@ -253,6 +254,15 @@ function RouteCard({ workflow, onEdit }) {
             {/* Provider flow */}
             <div className="px-5 py-4">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Payment flow</p>
+                {typeBadge && (
+                    <p className="mb-2 text-xs text-slate-500">
+                        <span className="font-medium text-slate-400">Routing type:</span>{' '}
+                        <span className={`inline-flex items-center gap-1 font-semibold ${typeBadge.cls.replace(/bg-\S+|border-\S+/g, '').trim()}`}>
+                            <typeBadge.Icon size={11} strokeWidth={2.5} />
+                            {typeBadge.label}
+                        </span>
+                    </p>
+                )}
                 <ProviderFlow nodes={nodes} edges={edges} />
 
                 {/* Human-readable summary */}
@@ -276,6 +286,37 @@ function RouteCard({ workflow, onEdit }) {
             )}
         </div>
     );
+}
+
+// Derive a routing-type label + style from node composition
+function routingTypeBadge(nodes) {
+    const all = (nodes ?? []).map(flatNode);
+    const has = (type) => all.some(n => n.type === type);
+    const isVisual = has('start') || has('condition') || has('weighted') || has('failover');
+
+    if (!isVisual) {
+        const providers = all.filter(n => n.type === 'provider').filter(n => n.enabled);
+        if (providers.length === 0) return null;
+        const hasWeights = providers.some(n => n.weight > 0);
+        return hasWeights
+            ? { label: 'Weighted split', cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale }
+            : { label: 'Priority fallback', cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
+    }
+
+    const hasCondition = has('condition');
+    const hasWeighted  = has('weighted');
+    const hasFailover  = has('failover');
+
+    if (hasCondition && hasWeighted) return { label: 'Conditional + weighted', cls: 'bg-amber-50 border-amber-200 text-amber-700', Icon: GitBranch };
+    if (hasCondition) return { label: 'Conditional routing', cls: 'bg-amber-50 border-amber-200 text-amber-700', Icon: GitBranch };
+    if (hasWeighted)  return { label: 'Weighted split', cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale };
+    if (hasFailover)  return { label: 'Failover routing', cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
+    // Visual builder with only provider nodes → priority fallback chain
+    const providers = all.filter(n => n.type === 'provider');
+    const hasWeightsInProviders = providers.some(n => n.weight > 0);
+    return hasWeightsInProviders
+        ? { label: 'Weighted split', cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale }
+        : { label: 'Priority fallback', cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
 }
 
 // Build a plain-English summary of the routing flow
