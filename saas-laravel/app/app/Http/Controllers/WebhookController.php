@@ -164,24 +164,44 @@ class WebhookController extends Controller
     {
         abort_unless($webhook->merchant_id === Auth::id(), 403);
 
-        $payload   = ['event' => 'ping', 'message' => 'Test delivery from PayFlow', 'timestamp' => time()];
-        $body      = json_encode($payload);
+        $eventType = $webhook->events[0] ?? 'payment.succeeded';
         $timestamp = time();
-        $sig       = hash_hmac('sha256', "{$timestamp}.{$body}", $webhook->secret);
+        $testId    = 'test_'.bin2hex(random_bytes(8));
+        $payload   = [
+            'event'      => $eventType,
+            'event_type' => $eventType,
+            'test'       => true,
+            'id'         => $testId,
+            'timestamp'  => $timestamp,
+            'data'       => [
+                'payment_id' => $testId,
+                'order_id'   => 'TEST-ORDER-'.strtoupper(substr($testId, 5, 6)),
+                'amount'     => 1.00,
+                'currency'   => 'USD',
+                'status'     => 'succeeded',
+            ],
+        ];
+        $body = json_encode($payload);
+        $sig  = hash_hmac('sha256', "{$timestamp}.{$body}", $webhook->secret);
 
         try {
             $response = Http::timeout(10)
                 ->withHeaders([
                     'Content-Type'        => 'application/json',
-                    'X-PayFlow-Event'     => 'ping',
+                    'X-PayFlow-Event'     => $eventType,
                     'X-PayFlow-Signature' => "t={$timestamp},v1={$sig}",
                 ])
                 ->post($webhook->url, $payload);
 
-            $type    = $response->successful() ? 'success' : 'error';
-            $message = $response->successful()
-                ? "Test ping delivered (HTTP {$response->status()})."
-                : "Test ping failed: HTTP {$response->status()}.";
+            // Any HTTP response means the endpoint was reached — only network errors are real failures.
+            $status = $response->status();
+            if ($response->successful()) {
+                $type    = 'success';
+                $message = "Test ping delivered (HTTP {$status}).";
+            } else {
+                $type    = 'error';
+                $message = "Endpoint reachable but returned HTTP {$status}. Check that your endpoint accepts the `{$eventType}` event and returns a 2xx response.";
+            }
         } catch (\Throwable $e) {
             $type    = 'error';
             $message = "Test ping failed: {$e->getMessage()}";

@@ -286,6 +286,11 @@ async function handleWebhook(req, res) {
     return sendJson(res, 400, { error: 'invalid_json' });
   }
 
+  if (payload.test === true) {
+    log('info', 'Received test webhook ping', { event_type: payload.event_type || payload.event });
+    return sendJson(res, 200, { ok: true, test: true });
+  }
+
   const { payment, errors } = normalizePaymentPayload(payload);
   if (errors.length > 0) {
     log('warn', 'Rejected invalid payment webhook payload', { errors });
