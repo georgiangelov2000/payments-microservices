@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ProviderBrand, { getProviderMeta } from '@/Components/ProviderBrand';
@@ -97,11 +97,8 @@ function AreaChart({ data, dataKey, label, color, formatter, yMin: yMinProp, yMa
     const area = useMemo(() => areaPath(data, yMin, yMax, dataKey), [data, dataKey, yMin, yMax]);
     const line = useMemo(() => linePath(data, yMin, yMax, dataKey), [data, dataKey, yMin, yMax]);
 
-    // X-axis ticks: show first, mid, last dates
     const tickIdxs = data.length >= 3 ? [0, Math.floor((data.length - 1) / 2), data.length - 1] : [0];
     const xForIdx = i => PAD.left + (i / Math.max(data.length - 1, 1)) * (W - PAD.left - PAD.right);
-
-    // Y-axis ticks
     const yTicks = [yMax, (yMax + yMin) / 2, yMin];
     const yForVal = v => {
         const range = yMax - yMin || 1;
@@ -109,48 +106,91 @@ function AreaChart({ data, dataKey, label, color, formatter, yMin: yMinProp, yMa
     };
 
     const gradId = `grad-${dataKey}`;
+    const svgRef = useRef(null);
+    const [hover, setHover] = useState(null); // { idx, x, y, value, date }
+
+    const handleMouseMove = (e) => {
+        if (!data.length) return;
+        const rect = svgRef.current.getBoundingClientRect();
+        const rawX = ((e.clientX - rect.left) / rect.width) * W;
+        const chartLeft = PAD.left;
+        const chartRight = W - PAD.right;
+        const clamped = Math.max(chartLeft, Math.min(chartRight, rawX));
+        const frac = (clamped - chartLeft) / (chartRight - chartLeft);
+        const idx = Math.round(frac * (data.length - 1));
+        const x = xForIdx(idx);
+        const val = data[idx][dataKey];
+        const y = yForVal(val);
+        setHover({ idx, x, y, value: val, date: data[idx]?.date });
+    };
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="mb-3 text-sm font-semibold text-slate-700">{label}</p>
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 140 }}>
-                <defs>
-                    <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-                        <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-                    </linearGradient>
-                </defs>
-                {/* Grid lines */}
-                {yTicks.map((v, i) => (
-                    <g key={i}>
-                        <line
-                            x1={PAD.left} y1={yForVal(v).toFixed(1)}
-                            x2={W - PAD.right} y2={yForVal(v).toFixed(1)}
-                            stroke="#e2e8f0" strokeWidth="1"
-                        />
-                        <text
-                            x={PAD.left - 6} y={yForVal(v) + 4}
-                            textAnchor="end" fontSize="10" fill="#94a3b8"
-                        >
-                            {formatter ? formatter(v) : fmt(v, 0)}
+            <div className="relative">
+                <svg
+                    ref={svgRef}
+                    viewBox={`0 0 ${W} ${H}`}
+                    className="w-full"
+                    style={{ height: 140 }}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={() => setHover(null)}
+                >
+                    <defs>
+                        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+                            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+                        </linearGradient>
+                    </defs>
+                    {yTicks.map((v, i) => (
+                        <g key={i}>
+                            <line
+                                x1={PAD.left} y1={yForVal(v).toFixed(1)}
+                                x2={W - PAD.right} y2={yForVal(v).toFixed(1)}
+                                stroke="#e2e8f0" strokeWidth="1"
+                            />
+                            <text x={PAD.left - 6} y={yForVal(v) + 4} textAnchor="end" fontSize="10" fill="#94a3b8">
+                                {formatter ? formatter(v) : fmt(v, 0)}
+                            </text>
+                        </g>
+                    ))}
+                    <path d={area} fill={`url(#${gradId})`} />
+                    <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                    {tickIdxs.map(i => (
+                        <text key={i} x={xForIdx(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="#94a3b8">
+                            {data[i]?.date?.slice(5)}
                         </text>
-                    </g>
-                ))}
-                {/* Area fill */}
-                <path d={area} fill={`url(#${gradId})`} />
-                {/* Line */}
-                <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-                {/* X-axis labels */}
-                {tickIdxs.map(i => (
-                    <text
-                        key={i}
-                        x={xForIdx(i)} y={H - 4}
-                        textAnchor="middle" fontSize="10" fill="#94a3b8"
-                    >
-                        {data[i]?.date?.slice(5)}
-                    </text>
-                ))}
-            </svg>
+                    ))}
+                    {/* Crosshair + dot */}
+                    {hover && (
+                        <g>
+                            <line
+                                x1={hover.x} y1={PAD.top}
+                                x2={hover.x} y2={H - PAD.bottom}
+                                stroke={color} strokeWidth="1" strokeDasharray="3 3" opacity="0.6"
+                            />
+                            <circle cx={hover.x} cy={hover.y} r="5" fill="white" stroke={color} strokeWidth="2" />
+                        </g>
+                    )}
+                </svg>
+                {/* Floating tooltip */}
+                {hover && (() => {
+                    const pct = (hover.x - PAD.left) / (W - PAD.left - PAD.right);
+                    return (
+                        <div
+                            className="pointer-events-none absolute z-10 -translate-y-full rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg"
+                            style={{
+                                top: `${(hover.y / H) * 100}%`,
+                                left: `${pct * 100}%`,
+                                transform: `translate(${pct > 0.75 ? '-110%' : '8px'}, -50%)`,
+                            }}
+                        >
+                            <p className="text-[10px] font-medium text-slate-400">{hover.date}</p>
+                            <p className="text-sm font-bold" style={{ color }}>{formatter ? formatter(hover.value) : fmt(hover.value)}</p>
+                        </div>
+                    );
+                })()}
+            </div>
         </div>
     );
 }
