@@ -42,6 +42,40 @@ function ProviderPill({ alias }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// routingTypeBadge — derive routing strategy from node composition
+// ─────────────────────────────────────────────────────────────────────────────
+
+function routingTypeBadge(nodes) {
+    const all = nodes ?? []
+    const has = (type) => all.some(n => n.type === type)
+    const isVisual = has('start') || has('condition') || has('weighted') || has('failover')
+
+    if (!isVisual) {
+        const providers = all.filter(n => n.type === 'provider' && (n.data?.enabled ?? n.enabled) !== false)
+        if (providers.length === 0) return null
+        const hasWeights = providers.some(n => Number(n.data?.weight ?? n.weight ?? 0) > 0)
+        return hasWeights
+            ? { label: 'Weighted split', cls: 'text-purple-700', Icon: Scale }
+            : { label: 'Priority fallback', cls: 'text-orange-600', Icon: RefreshCw }
+    }
+
+    const hasCondition = has('condition')
+    const hasWeighted  = has('weighted')
+    const hasFailover  = has('failover')
+
+    if (hasCondition && hasWeighted) return { label: 'Conditional + weighted', cls: 'text-amber-700', Icon: GitBranch }
+    if (hasCondition) return { label: 'Conditional routing', cls: 'text-amber-700', Icon: GitBranch }
+    if (hasWeighted)  return { label: 'Weighted split', cls: 'text-purple-700', Icon: Scale }
+    if (hasFailover)  return { label: 'Failover routing', cls: 'text-orange-600', Icon: RefreshCw }
+
+    const providers = all.filter(n => n.type === 'provider')
+    const hasWeightsInProviders = providers.some(n => Number(n.data?.weight ?? n.weight ?? 0) > 0)
+    return hasWeightsInProviders
+        ? { label: 'Weighted split', cls: 'text-purple-700', Icon: Scale }
+        : { label: 'Priority fallback', cls: 'text-orange-600', Icon: RefreshCw }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // buildFlowSummary
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -744,6 +778,7 @@ function WorkflowCard({ workflow }) {
         .map(n => n.data?.provider_alias ?? n.provider_alias)
 
     const summary     = buildFlowSummary(workflow.nodes)
+    const typeBadge   = routingTypeBadge(workflow.nodes)
     const versions    = workflow.versions ?? []
     const visibleVers = showAllVersions ? versions : versions.slice(0, 4)
     const isPublished = workflow.status === 'published'
@@ -790,7 +825,18 @@ function WorkflowCard({ workflow }) {
                 {/* Payment Flow */}
                 {providers.length > 0 && (
                     <div className="border-t border-slate-100 px-5 py-4 space-y-2">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Payment Flow</p>
+                        <div className="flex items-center gap-2">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Payment Flow</p>
+                        </div>
+                        {typeBadge && (
+                            <p className="text-xs text-slate-500">
+                                <span className="font-medium text-slate-400">Routing type:</span>{' '}
+                                <span className={`inline-flex items-center gap-1 font-semibold ${typeBadge.cls}`}>
+                                    <typeBadge.Icon size={11} strokeWidth={2.5} />
+                                    {typeBadge.label}
+                                </span>
+                            </p>
+                        )}
                         <div className="flex flex-wrap items-center gap-2">
                             {providers.map((alias, i) => (
                                 <div key={`${alias}-${i}`} className="flex items-center gap-2">
