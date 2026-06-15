@@ -57,38 +57,48 @@ final class PaymentService
         return $activity;
     }
 
+    /**
+     * @return array{ range: array{from: string, to: string, label: string}, rows: array<int, array<string, mixed>> }
+     */
     public function merchantActivityExportRows(array $filters): array
     {
         $activity = $this->repository->merchantActivityExport($filters);
         $merchants = $activity['merchants'];
+        $range = $activity['range'];
         $latestPayments = $this->latestPaymentsByMerchant(
             $merchants->pluck('id')->all(),
-            $activity['range'],
+            $range,
             $filters,
         );
 
-        return $merchants->map(function ($merchant) use ($latestPayments): array {
+        $rows = $merchants->map(function ($merchant) use ($latestPayments): array {
             $latest = $latestPayments[$merchant->id] ?? null;
+            $hasPayments = (int) $merchant->payments_count > 0;
 
             return [
-                'merchant_name' => $merchant->name,
-                'merchant_email' => $merchant->email,
-                'payments_count' => (int) $merchant->payments_count,
-                'total_amount' => (float) $merchant->total_amount,
-                'currency' => $merchant->currency ?: 'USD',
+                'merchant_name'    => $merchant->name,
+                'merchant_email'   => $merchant->email,
+                'payments_count'   => (int) $merchant->payments_count,
+                'total_amount'     => (float) $merchant->total_amount,
+                'currency'         => $merchant->currency ?: 'USD',
                 'currencies_count' => (int) $merchant->currencies_count,
-                'finished_count' => (int) $merchant->paid_count,
-                'pending_count' => (int) $merchant->pending_count,
-                'failed_count' => (int) $merchant->failed_count,
-                'refunded_count' => (int) $merchant->refunded_count,
-                'latest_order_id' => $latest['order_id'] ?? null,
-                'latest_amount' => $latest['amount'] ?? null,
-                'latest_currency' => $latest['currency'] ?? null,
-                'latest_provider' => $latest['provider'] ?? null,
-                'latest_status' => $latest['status'] ?? null,
-                'latest_payment_at' => $latest['created_at'] ?? null,
+                'finished_count'   => (int) $merchant->paid_count,
+                'pending_count'    => (int) $merchant->pending_count,
+                'failed_count'     => (int) $merchant->failed_count,
+                'refunded_count'   => (int) $merchant->refunded_count,
+                'latest_order_id'    => $latest['order_id']    ?? ($hasPayments ? '—' : 'No Payments'),
+                'latest_amount'      => $latest['amount']      ?? 0,
+                'latest_currency'    => $latest['currency']    ?? ($hasPayments ? '—' : '—'),
+                'latest_provider'    => $latest['provider']    ?? ($hasPayments ? '—' : '—'),
+                'latest_status'      => $latest['status']      ?? ($hasPayments ? '—' : 'No Payments'),
+                'latest_payment_at'  => $latest['created_at']  ?? ($hasPayments ? '—' : 'No Payments'),
             ];
         })->values()->all();
+
+        return [
+            'range' => $range,
+            'rows'  => $rows,
+        ];
     }
 
     public function recentMerchantPaymentExports(string $adminUserId): array

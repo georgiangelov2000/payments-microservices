@@ -55,9 +55,11 @@ class MerchantPaymentsExportJob implements ShouldQueue
             $format
         );
         $path = 'admin-exports/merchant-payments/'.$export->id.'/'.$filename;
-        $rows = $payments->merchantActivityExportRows($export->filters ?? []);
+        $result = $payments->merchantActivityExportRows($export->filters ?? []);
+        $rows  = $result['rows'];
+        $range = $result['range'];
 
-        $this->generate($format, $path, $rows);
+        $this->generate($format, $path, $rows, $range);
 
         $export->refresh();
         $export->update([
@@ -94,16 +96,26 @@ class MerchantPaymentsExportJob implements ShouldQueue
         }
     }
 
-    private function generate(string $format, string $path, array $rows): void
+    private function generate(string $format, string $path, array $rows, array $range): void
     {
         if ($format === 'json') {
-            Storage::put($path, json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            Storage::put($path, json_encode([
+                'period' => [
+                    'from'  => $range['from'],
+                    'to'    => $range['to'],
+                    'label' => $range['label'],
+                ],
+                'generated_at' => now()->toDateTimeString(),
+                'total_merchants' => count($rows),
+                'merchants' => $rows,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
             return;
         }
 
         if ($format === 'pdf') {
             $html = view('exports.merchant-payments-pdf', [
-                'rows' => $rows,
+                'rows'        => $rows,
+                'range'       => $range,
                 'generatedAt' => now()->format('Y-m-d H:i:s'),
             ])->render();
 
@@ -121,7 +133,7 @@ class MerchantPaymentsExportJob implements ShouldQueue
 
         $writerType = $format === 'csv' ? ExcelFormat::CSV : ExcelFormat::XLSX;
 
-        Excel::store(new MerchantPaymentsExport($rows), $path, 'local', $writerType);
+        Excel::store(new MerchantPaymentsExport($rows, $range), $path, 'local', $writerType);
     }
 
     private function mime(string $format): string

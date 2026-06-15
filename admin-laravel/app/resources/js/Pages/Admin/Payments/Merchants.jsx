@@ -269,7 +269,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
         setExportingFormat(format);
 
         router.post(route('admin.payments.merchants.exports.store'), {
-            ...filters,
+            ...currentFilterParams(),
             format,
         }, {
             preserveScroll: true,
