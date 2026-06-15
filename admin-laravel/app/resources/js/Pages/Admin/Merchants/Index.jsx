@@ -179,21 +179,21 @@ export default function MerchantsIndex({ merchants, availableProviders, filters 
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm">
-                        <thead className="bg-slate-50">
+                    <table className="w-full divide-y divide-slate-200 text-sm">
+                        <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                             <tr>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Merchant</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Providers</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Activity</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Since</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
+                                <th className="px-4 py-2 font-medium">Merchant</th>
+                                <th className="px-4 py-2 font-medium">Status</th>
+                                <th className="px-4 py-2 font-medium">Providers</th>
+                                <th className="px-4 py-2 font-medium">Activity</th>
+                                <th className="px-4 py-2 font-medium">Since</th>
+                                <th className="px-4 py-2 font-medium">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {merchants.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-5 py-16 text-center">
+                                    <td colSpan={6} className="px-6 py-14 text-center">
                                         <p className="text-sm text-slate-400">
                                             {search ? 'No merchants match your search.' : 'No merchants yet.'}
                                         </p>
@@ -206,28 +206,28 @@ export default function MerchantsIndex({ merchants, availableProviders, filters 
                                 </tr>
                             ) : merchants.data.map((merchant) => (
                                 <tr key={merchant.id} className="align-top hover:bg-slate-50/50 transition-colors">
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2">
                                         <span className="block font-medium text-slate-900">{merchant.name}</span>
                                         <span className="block text-xs text-slate-500">{merchant.email}</span>
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2">
                                         <Badge value={merchant.status} />
                                     </td>
-                                    <td className="px-5 py-4 min-w-[200px]">
+                                    <td className="px-4 py-2 min-w-[200px]">
                                         <ProviderCredentialsList
                                             credentials={merchant.provider_credentials}
                                             onStatusChange={updateProviderStatus}
                                         />
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2">
                                         <div className="flex flex-wrap gap-1.5">
                                             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">{merchant.payments_count} payments</span>
                                             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">{merchant.api_keys_count} keys</span>
                                             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">{merchant.subscriptions_count} subs</span>
                                         </div>
                                     </td>
-                                    <td className="px-5 py-4 text-xs text-slate-500 whitespace-nowrap">{merchant.created_at}</td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">{merchant.created_at}</td>
+                                    <td className="px-4 py-2">
                                         <div className="flex items-center gap-2">
                                             <Link
                                                 href={route('admin.merchants.edit', merchant.id)}

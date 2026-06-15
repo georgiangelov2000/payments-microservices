@@ -226,16 +226,16 @@ export default function PaymentsIndex({ payments, filters = {} }) {
             {/* Table */}
             <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead className="bg-slate-50">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-12">Logs</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-40">Order ID</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-48">Merchant</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-32">Provider</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-44">Amount</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-40">Timing</th>
+                                <th className="px-4 py-2 font-medium w-12">Logs</th>
+                                <th className="px-4 py-2 font-medium w-40">Order ID</th>
+                                <th className="px-4 py-2 font-medium w-48">Merchant</th>
+                                <th className="px-4 py-2 font-medium w-32">Provider</th>
+                                <th className="px-4 py-2 font-medium w-44">Amount</th>
+                                <th className="px-4 py-2 font-medium w-28">Status</th>
+                                <th className="px-4 py-2 font-medium w-40">Timing</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -265,12 +265,12 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                     return (
                                         <Fragment key={payment.id}>
                                             <tr className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-4 py-3.5">
+                                                <td className="px-4 py-2">
                                                     <button
                                                         type="button"
                                                         onClick={() => toggleRow(payment.id)}
                                                         disabled={!hasDetails}
-                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                                                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
                                                         title={hasDetails ? 'Show payment logs' : 'No logs available'}
                                                     >
                                                         <ChevronDown
@@ -280,7 +280,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                         />
                                                     </button>
                                                 </td>
-                                                <td className="px-6 py-3.5">
+                                                <td className="px-4 py-2">
                                                     <span className="font-mono text-sm font-medium text-indigo-700">
                                                         {payment.order_id}
                                                     </span>
@@ -291,7 +291,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="max-w-48 px-4 py-3.5">
+                                                <td className="max-w-48 px-4 py-2">
                                                     <span
                                                         title={payment.merchant?.name || 'Unknown'}
                                                         className="block truncate text-sm font-medium text-slate-900"
@@ -307,14 +307,14 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-3.5">
+                                                <td className="px-4 py-2">
                                             {payment.provider ? (
                                                 <ProviderBrand alias={payment.provider} variant="compact" />
                                             ) : (
                                                 <span className="text-sm text-slate-400">—</span>
                                             )}
                                                 </td>
-                                                <td className="px-6 py-3.5">
+                                                <td className="px-4 py-2">
                                                     <span className="block whitespace-nowrap text-sm font-semibold tabular-nums text-slate-900">
                                                         {payment.currency || 'USD'} {formatNumber(payment.price)}
                                                     </span>
@@ -322,7 +322,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                         {[payment.channel, payment.country, payment.locale].filter(Boolean).join(' · ') || 'No context'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-3.5">
+                                                <td className="px-4 py-2">
                                                     <div className="flex flex-col gap-1">
                                                         <Badge value={payment.status} />
                                                         {isCheckoutExpired(payment.status, payment.created_at) && (
@@ -330,7 +330,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-3.5 text-xs text-slate-500">
+                                                <td className="px-4 py-2 text-xs text-slate-500">
                                                     <div className="font-semibold text-slate-700">
                                                         {payment.timing?.processing_duration ?? '—'}
                                                     </div>
@@ -342,7 +342,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
 
                                             {isExpanded && (
                                                 <tr className="bg-slate-50/70">
-                                                    <td colSpan={7} className="px-6 py-4">
+                                                    <td colSpan={7} className="px-4 py-3">
                                                         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]">
                                                             <div className="rounded-lg border border-slate-200 bg-white p-4">
                                                                 <div className="mb-3 flex items-center justify-between gap-3">

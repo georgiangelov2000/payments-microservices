@@ -111,13 +111,13 @@ export default function SubscriptionsIndex({ subscriptions }) {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead className="bg-slate-50">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                                 <tr>
                                     {['Plan', 'Code', 'Monthly Fee', 'Transaction Fee', 'Included Txns', 'Merchants'].map((col) => (
                                         <th
                                             key={col}
-                                            className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500"
+                                            className="px-4 py-2 font-medium"
                                         >
                                             {col}
                                         </th>
@@ -127,26 +127,26 @@ export default function SubscriptionsIndex({ subscriptions }) {
                             <tbody className="divide-y divide-slate-100">
                                 {plans.map((plan) => (
                                     <tr key={plan.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-3.5">
-                                            <span className="text-sm font-semibold text-slate-900">{plan.name}</span>
+                                        <td className="px-4 py-2">
+                                            <span className="font-medium text-slate-900">{plan.name}</span>
                                         </td>
-                                        <td className="px-6 py-3.5">
+                                        <td className="px-4 py-2">
                                             <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
                                                 {plan.code}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-3.5 text-sm font-semibold text-slate-900">
+                                        <td className="px-4 py-2 font-medium text-slate-900">
                                             ${fmtCurrency(plan.monthly_fee)}
                                         </td>
-                                        <td className="px-6 py-3.5 text-sm text-slate-700">
+                                        <td className="px-4 py-2 text-slate-700">
                                             {Number(plan.transaction_fee_percent || 0).toFixed(2)}%
                                             {' + '}
                                             ${fmtCurrency(plan.transaction_fee_fixed)}
                                         </td>
-                                        <td className="px-6 py-3.5 text-sm text-slate-700">
+                                        <td className="px-4 py-2 text-slate-700">
                                             {fmtCount(plan.included_transactions)}
                                         </td>
-                                        <td className="px-6 py-3.5">
+                                        <td className="px-4 py-2">
                                             <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
                                                 (plan.user_subscriptions_count ?? 0) > 0
                                                     ? 'bg-green-100 text-green-700 border-green-200'

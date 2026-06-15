@@ -281,51 +281,51 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey, filters
                     <h2 className="text-base font-semibold text-slate-900">{t('apiKeys.table.title')}</h2>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm">
-                        <thead className="bg-slate-50">
+                    <table className="w-full divide-y divide-slate-200 text-sm">
+                        <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                             <tr>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.key')}</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.merchant')}</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.environment')}</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.scopes')}</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.status')}</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.lastRotated')}</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{t('apiKeys.table.actions')}</th>
+                                <th className="px-4 py-2 font-medium">{t('apiKeys.table.key')}</th>
+                                <th className="px-4 py-2 font-medium">{t('apiKeys.table.merchant')}</th>
+                                <th className="px-4 py-2 font-medium">{t('apiKeys.table.environment')}</th>
+                                <th className="px-4 py-2 font-medium">{t('apiKeys.table.scopes')}</th>
+                                <th className="px-4 py-2 font-medium">{t('apiKeys.table.status')}</th>
+                                <th className="px-4 py-2 font-medium">{t('apiKeys.table.lastRotated')}</th>
+                                <th className="px-4 py-2 font-medium">{t('apiKeys.table.actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {apiKeys.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="px-5 py-14 text-center">
+                                    <td colSpan={7} className="px-6 py-14 text-center">
                                         <div className="text-slate-400 text-sm">{t('apiKeys.table.noKeys')}</div>
                                     </td>
                                 </tr>
                             ) : apiKeys.data.map((apiKey) => (
                                 <tr key={apiKey.id} className="align-top hover:bg-slate-50/60 transition-colors">
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2">
                                         <span className="block font-medium text-slate-900">{apiKey.name || t('apiKeys.table.key')}</span>
                                         <code className="mt-0.5 block text-xs text-slate-500 font-mono">{apiKey.masked_key}</code>
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2">
                                         <span className="block font-medium text-slate-900">{apiKey.merchant?.name || 'Unknown'}</span>
                                         <span className="block text-xs text-slate-500">{apiKey.merchant?.email}</span>
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2">
                                         <Badge value={apiKey.environment} label={t(`common.badges.${apiKey.environment}`)} size="sm" />
                                     </td>
-                                    <td className="px-5 py-4 max-w-xs">
+                                    <td className="px-4 py-2 max-w-xs">
                                         <ScopePills scopes={apiKey.scopes || []} />
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2">
                                         <Badge value={apiKey.status} label={t(`common.badges.${apiKey.status}`)} />
                                         {apiKey.revoked_at && (
                                             <span className="mt-1 block text-xs text-red-500">{t('apiKeys.table.revokedAt', { date: apiKey.revoked_at })}</span>
                                         )}
                                     </td>
-                                    <td className="px-5 py-4 text-xs text-slate-500 whitespace-nowrap">
+                                    <td className="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">
                                         {apiKey.last_rotated_at || apiKey.created_at}
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2">
                                         <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={() => rotateKey(apiKey.id)}

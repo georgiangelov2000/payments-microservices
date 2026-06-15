@@ -248,27 +248,27 @@ function ErrorTable({ errors }) {
     );
 
     return (
-        <table className="min-w-full text-sm">
-            <thead>
-                <tr className="border-b border-slate-100">
+        <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
+                <tr>
                     {['Provider', 'Error Code', 'Occurrences', 'Last Seen'].map(h => (
-                        <th key={h} className="pb-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
+                        <th key={h} className="px-4 py-2 font-medium">{h}</th>
                     ))}
                 </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
                 {errors.map((e, i) => (
                     <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 pr-4">
+                        <td className="px-4 py-2">
                             <ProviderBrand alias={e.provider} label={e.provider} variant="compact" />
                         </td>
-                        <td className="py-2.5 pr-4">
+                        <td className="px-4 py-2">
                             <span className="rounded bg-red-50 border border-red-100 px-2 py-0.5 text-xs font-mono text-red-700">
                                 {e.error_code}
                             </span>
                         </td>
-                        <td className="py-2.5 pr-4 font-semibold text-slate-700">{fmt(e.occurrences)}</td>
-                        <td className="py-2.5 text-xs text-slate-400">{e.last_seen ?? '—'}</td>
+                        <td className="px-4 py-2 font-medium text-slate-700">{fmt(e.occurrences)}</td>
+                        <td className="px-4 py-2 text-xs text-slate-400">{e.last_seen ?? '—'}</td>
                     </tr>
                 ))}
             </tbody>
