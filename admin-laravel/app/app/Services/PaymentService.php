@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\PaymentLog;
 use App\Models\PaymentRoutingAttempt;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 final class PaymentService
@@ -112,6 +113,7 @@ final class PaymentService
             ] : null,
             'provider' => $payment->provider?->alias,
             'created_at' => $payment->created_at?->toDateTimeString(),
+            'timing' => $this->timingForPayment($payment),
             'logs' => $payment->logs->map(fn (PaymentLog $log) => [
                 'id' => $log->id,
                 'event_type' => $log->event_type?->label(),
@@ -131,5 +133,53 @@ final class PaymentService
                 'created_at' => $attempt->created_at?->toDateTimeString(),
             ])->values()->all(),
         ];
+    }
+
+    /**
+     * @return array{request_started_at: string, last_provider_update_at: string, processing_duration: string, duration_seconds: int|null, state: string}
+     */
+    private function timingForPayment(Payment $payment): array
+    {
+        $startedAt = $payment->created_at;
+        $lastLogAt = $payment->logs
+            ->pluck('created_at')
+            ->filter()
+            ->sortBy(fn (CarbonInterface $timestamp): int => $timestamp->getTimestamp())
+            ->last();
+        $lastProviderUpdate = $lastLogAt ?: $payment->updated_at;
+        $status = strtolower((string) ($payment->status?->label() ?? ''));
+        $endAt = $status === 'pending' ? now() : $lastProviderUpdate;
+        $durationSeconds = $startedAt && $endAt
+            ? (int) max(0, round($startedAt->diffInSeconds($endAt)))
+            : null;
+
+        return [
+            'request_started_at' => $startedAt?->toDateTimeString() ?? '—',
+            'last_provider_update_at' => $lastProviderUpdate?->toDateTimeString() ?? '—',
+            'processing_duration' => $this->humanDuration($durationSeconds),
+            'duration_seconds' => $durationSeconds,
+            'state' => $status,
+        ];
+    }
+
+    private function humanDuration(?int $seconds): string
+    {
+        if ($seconds === null) {
+            return '—';
+        }
+
+        if ($seconds < 60) {
+            return "{$seconds}s";
+        }
+
+        if ($seconds < 3600) {
+            return intdiv($seconds, 60).'m '.($seconds % 60).'s';
+        }
+
+        if ($seconds < 86400) {
+            return intdiv($seconds, 3600).'h '.intdiv($seconds % 3600, 60).'m';
+        }
+
+        return intdiv($seconds, 86400).'d '.intdiv($seconds % 86400, 3600).'h';
     }
 }

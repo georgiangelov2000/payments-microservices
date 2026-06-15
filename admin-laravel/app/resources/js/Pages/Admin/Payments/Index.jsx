@@ -4,14 +4,44 @@ import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ProviderBrand from '@/Components/ProviderBrand';
-import { fmtCurrency, fmtDate } from '@/utils';
-import { ChevronDown, ListTree, Search, X, SlidersHorizontal, ReceiptText } from 'lucide-react';
+import { fmtDate } from '@/utils';
+import { ChevronDown, Clock3, ListTree, Search, X, SlidersHorizontal, ReceiptText } from 'lucide-react';
 
 function cleanLogMessage(message) {
     return (message || '').replace(/^\[[^\]]+\]\s*/, '');
 }
 
+function formatNumber(value, decimals = 2) {
+    const number = Number(value);
+
+    return Number.isFinite(number) ? number.toFixed(decimals) : '0.00';
+}
+
 const STATUS_OPTIONS = ['', 'pending', 'finished', 'failed'];
+const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000;
+
+function isCheckoutExpired(status, createdAt) {
+    const normalizedStatus = (status || '').toLowerCase();
+    if (normalizedStatus !== 'payment_pending' && normalizedStatus !== 'pending') return false;
+
+    const created = new Date(createdAt);
+    return !Number.isNaN(created.getTime()) && (Date.now() - created.getTime()) > CHECKOUT_TTL_MS;
+}
+
+function CheckoutExpiredBadge() {
+    return (
+        <span
+            title="Checkout session expired after 24 hours"
+            aria-label="Checkout link expired"
+            className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold leading-none text-amber-800 shadow-sm shadow-amber-950/[0.04]"
+        >
+            <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                <Clock3 size={11} strokeWidth={2.4} />
+            </span>
+            <span className="whitespace-nowrap">Checkout link expired</span>
+        </span>
+    );
+}
 
 export default function PaymentsIndex({ payments, filters = {} }) {
     const [search, setSearch]   = useState(filters.search   || '');
@@ -201,11 +231,11 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-12">Logs</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-40">Order ID</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Merchant</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-48">Merchant</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-32">Provider</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Amount</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-44">Amount</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-40">Created</th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-40">Timing</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -261,12 +291,18 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-3.5">
-                                                    <span className="block text-sm font-medium text-slate-900">
+                                                <td className="max-w-48 px-4 py-3.5">
+                                                    <span
+                                                        title={payment.merchant?.name || 'Unknown'}
+                                                        className="block truncate text-sm font-medium text-slate-900"
+                                                    >
                                                         {payment.merchant?.name || 'Unknown'}
                                                     </span>
                                                     {payment.merchant?.email && (
-                                                        <span className="block text-xs text-slate-500 mt-0.5">
+                                                        <span
+                                                            title={payment.merchant.email}
+                                                            className="mt-0.5 block truncate text-[11px] text-slate-500"
+                                                        >
                                                             {payment.merchant.email}
                                                         </span>
                                                     )}
@@ -279,18 +315,28 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                             )}
                                                 </td>
                                                 <td className="px-6 py-3.5">
-                                                    <span className="block text-sm font-semibold text-slate-900">
-                                                        {payment.currency || 'USD'} {fmtCurrency(payment.price)}
+                                                    <span className="block whitespace-nowrap text-sm font-semibold tabular-nums text-slate-900">
+                                                        {payment.currency || 'USD'} {formatNumber(payment.price)}
                                                     </span>
-                                                    <span className="mt-0.5 block text-[11px] font-medium text-slate-400">
+                                                    <span className="mt-0.5 block whitespace-nowrap text-[11px] font-medium text-slate-400">
                                                         {[payment.channel, payment.country, payment.locale].filter(Boolean).join(' · ') || 'No context'}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-3.5">
-                                                    <Badge value={payment.status} />
+                                                    <div className="flex flex-col gap-1">
+                                                        <Badge value={payment.status} />
+                                                        {isCheckoutExpired(payment.status, payment.created_at) && (
+                                                            <CheckoutExpiredBadge />
+                                                        )}
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-3.5 text-sm text-slate-500">
-                                                    {fmtDate(payment.created_at)}
+                                                <td className="px-6 py-3.5 text-xs text-slate-500">
+                                                    <div className="font-semibold text-slate-700">
+                                                        {payment.timing?.processing_duration ?? '—'}
+                                                    </div>
+                                                    <div className="mt-0.5 text-slate-400">
+                                                        {fmtDate(payment.timing?.last_provider_update_at)}
+                                                    </div>
                                                 </td>
                                             </tr>
 

@@ -23,7 +23,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
             ->select([
                 'id', 'order_id', 'price', 'status', 'provider_status',
                 'currency', 'country', 'locale', 'channel',
-                'merchant_id', 'provider_id', 'created_at',
+                'merchant_id', 'provider_id', 'created_at', 'updated_at',
             ])
             ->with([
                 'merchant:id,name,email',

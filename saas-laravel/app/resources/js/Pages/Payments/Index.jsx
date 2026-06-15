@@ -4,7 +4,7 @@ import ProviderBrand from '@/Components/ProviderBrand'
 import { Head, Link, useForm, usePage, router } from '@inertiajs/react'
 import toast from 'react-hot-toast'
 import React from 'react'
-import { Download, SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp, CreditCard, Info, Copy, Check } from 'lucide-react'
+import { Download, SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp, CreditCard, Info, Copy, Check, Clock3 } from 'lucide-react'
 import { fmtDate } from '@/utils'
 
 const formatDateTime = (value) => fmtDate(value) === '—' ? 'Not available' : fmtDate(value)
@@ -36,6 +36,29 @@ const statusMeta = (status) => STATUS_META[statusKey(status)] ?? {
 }
 
 const statusClass = (status) => statusMeta(status).color
+
+// Stripe checkout sessions expire 24h after creation (default, no custom expires_at set).
+const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000
+const isCheckoutExpired = (status, createdAt) => {
+  if (statusKey(status) !== 'pending') return false
+  const created = new Date(createdAt)
+  return !Number.isNaN(created.getTime()) && (Date.now() - created.getTime()) > CHECKOUT_TTL_MS
+}
+
+function CheckoutExpiredBadge() {
+  return (
+    <span
+      title="Checkout session expired after 24 hours"
+      aria-label="Checkout link expired"
+      className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold leading-none text-amber-800 shadow-sm shadow-amber-950/[0.04]"
+    >
+      <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+        <Clock3 size={11} strokeWidth={2.4} />
+      </span>
+      <span className="whitespace-nowrap">Checkout link expired</span>
+    </span>
+  )
+}
 
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
@@ -269,13 +292,21 @@ export default function Payments({ payments, filters = {} }) {
                       <td className="px-4 py-2 font-medium">{payment.order_id}</td>
                       <td className="px-4 py-2">
                         <div className="tabular-nums font-medium">{payment.currency || 'USD'} {formatNumber(payment.price)}</div>
+                        <div className="mt-0.5 text-[11px] font-medium text-slate-400">
+                          {[payment.channel, payment.country, payment.locale].filter(Boolean).join(' · ') || 'No context'}
+                        </div>
                       </td>
                       <td className="px-4 py-2">
-                        <span
-                          className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusClass(payment.status)}`}
-                        >
-                          {statusMeta(payment.status).label}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusClass(payment.status)}`}
+                          >
+                            {statusMeta(payment.status).label}
+                          </span>
+                          {isCheckoutExpired(payment.status, payment.created_at) && (
+                            <CheckoutExpiredBadge />
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-2 text-xs text-gray-600">
                         {formatDateTime(payment.created_at)}
