@@ -7,6 +7,7 @@ import Field from '@/Components/Field';
 import {
     CheckCircle2, XCircle, Clock, Circle, Plus,
     Copy, ChevronDown, ChevronRight, CreditCard, Key, GitBranch,
+    Store,
 } from 'lucide-react';
 
 function TextInput({ error, className = '', ...props }) {
@@ -755,8 +756,8 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
 
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 text-xl font-bold">
-                        {merchant.name.charAt(0).toUpperCase()}
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-700">
+                        <Store size={26} strokeWidth={1.8} />
                     </div>
                     <div>
                         <h1 className="text-xl font-semibold text-slate-900">{merchant.name}</h1>

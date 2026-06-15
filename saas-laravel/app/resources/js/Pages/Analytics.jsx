@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import ProviderBrand, { getProviderMeta } from '@/Components/ProviderBrand';
 import { fmt, fmtCurrency, fmtMs, fmtRate } from '@/utils';
 import {
     TrendingUp, TrendingDown, Minus,
@@ -213,16 +214,16 @@ function ProviderCard({ provider }) {
     const { t } = useTranslation();
     const rate = Number(provider.success_rate ?? 0);
     const name = provider.provider ?? provider.provider_alias ?? 'Unknown';
+    const providerMeta = getProviderMeta(name, name);
+
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white uppercase">
-                        {name.slice(0, 1)}
-                    </div>
+                    <ProviderBrand alias={name} label={name} size="md" variant="icon" />
                     <div>
-                        <p className="font-semibold capitalize text-slate-900">{name}</p>
+                        <p className="font-semibold text-slate-900">{providerMeta.label}</p>
                         <p className="text-xs text-slate-400">{t('analytics.attempts', { count: fmt(provider.total ?? provider.total_attempts) })}</p>
                     </div>
                 </div>
