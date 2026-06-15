@@ -205,14 +205,13 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-32">Provider</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Amount</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-28">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-32">Provider Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 w-40">Created</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-14 text-center">
+                                    <td colSpan={7} className="px-6 py-14 text-center">
                                         <div className="flex flex-col items-center gap-2 text-slate-400">
                                             <Search size={32} strokeWidth={1.25} />
                                             <span className="text-sm font-medium">No payments match your filters</span>
@@ -290,9 +289,6 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                 <td className="px-6 py-3.5">
                                                     <Badge value={payment.status} />
                                                 </td>
-                                                <td className="px-6 py-3.5 text-xs text-slate-500">
-                                                    {payment.provider_status || '—'}
-                                                </td>
                                                 <td className="px-6 py-3.5 text-sm text-slate-500">
                                                     {fmtDate(payment.created_at)}
                                                 </td>
@@ -300,7 +296,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
 
                                             {isExpanded && (
                                                 <tr className="bg-slate-50/70">
-                                                    <td colSpan={8} className="px-6 py-4">
+                                                    <td colSpan={7} className="px-6 py-4">
                                                         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]">
                                                             <div className="rounded-lg border border-slate-200 bg-white p-4">
                                                                 <div className="mb-3 flex items-center justify-between gap-3">

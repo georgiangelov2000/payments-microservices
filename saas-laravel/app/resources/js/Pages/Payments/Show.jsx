@@ -11,25 +11,34 @@ import {
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_META = {
-    finished:           { Icon: CheckCircle2, color: 'text-green-600 bg-green-50 border-green-200' },
-    payment_finished:   { Icon: CheckCircle2, color: 'text-green-600 bg-green-50 border-green-200' },
-    failed:             { Icon: XCircle,      color: 'text-red-600   bg-red-50   border-red-200'   },
-    payment_failed:     { Icon: XCircle,      color: 'text-red-600   bg-red-50   border-red-200'   },
-    pending:            { Icon: Clock,        color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    payment_pending:    { Icon: Clock,        color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    cancelled:          { Icon: XCircle,      color: 'text-slate-600 bg-slate-50 border-slate-200' },
-    payment_cancelled:  { Icon: XCircle,      color: 'text-slate-600 bg-slate-50 border-slate-200' },
-    refunded:           { Icon: RefreshCcw,   color: 'text-blue-600  bg-blue-50  border-blue-200'  },
+    finished:             { Icon: CheckCircle2, label: 'Finished',             color: 'text-green-700 bg-green-50 border-green-200' },
+    payment_finished:     { Icon: CheckCircle2, label: 'Finished',             color: 'text-green-700 bg-green-50 border-green-200' },
+    failed:               { Icon: XCircle,      label: 'Failed',               color: 'text-red-700 bg-red-50 border-red-200' },
+    payment_failed:       { Icon: XCircle,      label: 'Failed',               color: 'text-red-700 bg-red-50 border-red-200' },
+    pending:              { Icon: Clock,        label: 'Pending',              color: 'text-amber-700 bg-amber-50 border-amber-200' },
+    payment_pending:      { Icon: Clock,        label: 'Pending',              color: 'text-amber-700 bg-amber-50 border-amber-200' },
+    processing:           { Icon: Clock,        label: 'Processing',           color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
+    payment_processing:   { Icon: Clock,        label: 'Processing',           color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
+    cancelled:            { Icon: XCircle,      label: 'Cancelled',            color: 'text-slate-600 bg-slate-100 border-slate-200' },
+    payment_cancelled:    { Icon: XCircle,      label: 'Cancelled',            color: 'text-slate-600 bg-slate-100 border-slate-200' },
+    refunded:             { Icon: RefreshCcw,   label: 'Refunded',             color: 'text-blue-700 bg-blue-50 border-blue-200' },
+    partially_refunded:   { Icon: RefreshCcw,   label: 'Partially refunded',   color: 'text-blue-700 bg-blue-50 border-blue-200' },
+    disputed:             { Icon: AlertTriangle, label: 'Disputed',            color: 'text-amber-700 bg-amber-50 border-amber-200' },
+    expired:              { Icon: XCircle,      label: 'Expired',              color: 'text-slate-600 bg-slate-100 border-slate-200' },
 };
 
 function StatusBadge({ status }) {
     const key = status?.toLowerCase().replace(/ /g, '_');
-    const meta = STATUS_META[key] ?? { Icon: AlertTriangle, color: 'text-slate-600 bg-slate-50 border-slate-200' };
+    const meta = STATUS_META[key] ?? {
+        Icon: AlertTriangle,
+        label: status ? String(status).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : 'Unknown',
+        color: 'text-slate-600 bg-slate-100 border-slate-200',
+    };
     const { Icon } = meta;
     return (
-        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold capitalize ${meta.color}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${meta.color}`}>
             <Icon size={14} strokeWidth={2} />
-            {status}
+            {meta.label}
         </span>
     );
 }

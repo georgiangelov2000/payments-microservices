@@ -14,6 +14,7 @@ const colorMap = {
     validated:   'green',
     healthy:     'green',
     succeeded:   'green',
+    finished:    'green',
     published:   'green',
     completed:   'green',
     // amber
@@ -22,6 +23,9 @@ const colorMap = {
     // slate/gray
     inactive:    'slate',
     disabled:    'slate',
+    cancelled:   'slate',
+    canceled:    'slate',
+    expired:     'slate',
     unknown:     'slate',
     // red
     suspended:   'red',
@@ -32,11 +36,15 @@ const colorMap = {
     // blue
     draft:       'blue',
     test:        'blue',
+    refunded:    'blue',
+    partially_refunded: 'blue',
+    'partially refunded': 'blue',
     // violet
     live:        'violet',
     production:  'violet',
     // indigo
     processing:  'indigo',
+    disputed:    'amber',
 };
 
 const themeClasses = {
@@ -69,9 +77,12 @@ export default function Badge({ value = '', label: labelOverride, size = 'md', d
         ? 'px-2 py-0.5 text-xs'
         : 'px-2.5 py-0.5 text-xs';
 
-    const label = labelOverride ?? (value
-        ? String(value).charAt(0).toUpperCase() + String(value).slice(1).toLowerCase()
-        : '');
+    const normalizedLabel = String(value || '')
+        .replace(/_/g, ' ')
+        .toLowerCase()
+        .replace(/^\w/, (char) => char.toUpperCase());
+
+    const label = labelOverride ?? normalizedLabel;
 
     return (
         <span className={[

@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 final readonly class PaymentsDTO
 {
     /**
-     * @param  array{label: string, provider_status: string, next_step: string}  $provider_summary
+     * @param  array{label: string, next_step: string}  $provider_summary
      * @param  array{request_started_at: string, last_provider_update_at: string, processing_duration: string, duration_seconds: int|null, state: string, state_label: string}  $timing
      * @param  list<array{timestamp: string, message: string, event_type: string, status: string, technical_response: array|string|null}>  $workflow_timeline
      */
@@ -23,7 +23,6 @@ final readonly class PaymentsDTO
         public int|string $order_id,
         public string $status,
         public string $provider,
-        public ?string $provider_status,
         public ?string $provider_reference,
         public ?string $provider_checkout_url,
         public string $currency,
@@ -51,7 +50,6 @@ final readonly class PaymentsDTO
             order_id: $payment->order_id,
             status: $payment->status->label(),
             provider: $payment->provider?->name ?? 'Unknown provider',
-            provider_status: $payment->provider_status,
             provider_reference: $payment->provider_reference,
             provider_checkout_url: $payment->provider_checkout_url,
             currency: $payment->currency ?? 'USD',
@@ -74,7 +72,6 @@ final readonly class PaymentsDTO
      *     order_id: int|string,
      *     status: string,
      *     provider: string,
-     *     provider_status: string|null,
      *     provider_reference: string|null,
      *     provider_checkout_url: string|null,
      *     currency: string,
@@ -83,7 +80,7 @@ final readonly class PaymentsDTO
      *     channel: string|null,
      *     created_at: string,
      *     updated_at: string,
-     *     provider_summary: array{label: string, provider_status: string, next_step: string},
+     *     provider_summary: array{label: string, next_step: string},
      *     timing: array{request_started_at: string, last_provider_update_at: string, processing_duration: string, duration_seconds: int|null, state: string, state_label: string},
      *     workflow_timeline: list<array{timestamp: string, message: string, event_type: string, status: string, technical_response: array|string|null}>
      * }
@@ -97,7 +94,6 @@ final readonly class PaymentsDTO
             'order_id' => $this->order_id,
             'status' => $this->status,
             'provider' => $this->provider,
-            'provider_status' => $this->provider_status,
             'provider_reference' => $this->provider_reference,
             'provider_checkout_url' => $this->provider_checkout_url,
             'currency' => $this->currency,

@@ -58,18 +58,17 @@ final class PaymentWorkflowFormatter
 
     /**
      * @param  Collection<int, object>  $logs
-     * @return array{label: string, provider_status: string, next_step: string}
+     * @return array{label: string, next_step: string}
      */
     public static function summaryForPayment(Payment $payment, Collection $logs): array
     {
         $provider = $payment->provider?->name ?? 'Provider';
         $latestPayload = self::latestReadablePayload($logs);
-        $providerStatus = strtolower((string) ($payment->provider_status ?? ''));
         $hasCheckoutUrl = filled($payment->provider_checkout_url);
 
         $summary = match ($payment->status->label()) {
             'finished'           => 'Payment approved',
-            'failed'             => self::failureSummary($latestPayload, $providerStatus),
+            'failed'             => self::failureSummary($latestPayload),
             'cancelled'          => 'Customer cancelled checkout',
             'refunded'           => 'Payment refunded',
             'partially_refunded' => 'Payment partially refunded',
@@ -77,12 +76,11 @@ final class PaymentWorkflowFormatter
             'expired'            => 'Checkout session expired',
             default              => $hasCheckoutUrl
                 ? "Redirect customer to {$provider}"
-                : self::pendingSummary($latestPayload, $providerStatus),
+                : self::pendingSummary($latestPayload),
         };
 
         return [
             'label' => $summary,
-            'provider_status' => $payment->provider_status ?: 'No provider status yet',
             'next_step' => self::nextStep($payment->status->label(), $hasCheckoutUrl, $provider),
         ];
     }
@@ -103,15 +101,14 @@ final class PaymentWorkflowFormatter
         $lastProviderUpdate = $lastEventAt ?: self::asCarbon($payment->updated_at);
         $endAt = $payment->status->label() === 'pending' ? Carbon::now() : $lastProviderUpdate;
         $durationSeconds = $startedAt && $endAt ? (int) max(0, round($startedAt->diffInSeconds($endAt))) : null;
-        $isDelayed = $payment->status->label() === 'pending' && $durationSeconds !== null && $durationSeconds > 900;
 
         return [
             'request_started_at' => self::formatTimestamp($startedAt),
             'last_provider_update_at' => self::formatTimestamp($lastProviderUpdate),
             'processing_duration' => self::humanDuration($durationSeconds),
             'duration_seconds' => $durationSeconds,
-            'state' => $isDelayed ? 'delayed' : $payment->status->label(),
-            'state_label' => $isDelayed ? 'Provider response delayed' : self::stateLabel($payment->status->label()),
+            'state' => $payment->status->label(),
+            'state_label' => self::stateLabel($payment->status->label()),
         ];
     }
 
@@ -216,11 +213,11 @@ final class PaymentWorkflowFormatter
             ->first(fn ($payload) => filled($payload));
     }
 
-    private static function failureSummary(array|string|null $payload, string $providerStatus): string
+    private static function failureSummary(array|string|null $payload): string
     {
         $reason = self::payloadValue($payload, ['failure_message', 'decline_code', 'reason', 'message', 'error_description']);
 
-        if ($reason === 'customer_cancelled' || $providerStatus === 'cancelled') {
+        if ($reason === 'customer_cancelled') {
             return 'Customer cancelled checkout';
         }
 
@@ -228,22 +225,18 @@ final class PaymentWorkflowFormatter
             return ucfirst(str_replace('_', ' ', (string) $reason));
         }
 
-        return filled($providerStatus)
-            ? 'Payment failed: '.ucfirst($providerStatus)
-            : 'Provider response received without a readable summary';
+        return 'Payment failed';
     }
 
-    private static function pendingSummary(array|string|null $payload, string $providerStatus): string
+    private static function pendingSummary(array|string|null $payload): string
     {
-        $message = self::payloadValue($payload, ['message', 'status', 'payment_status']);
+        $message = self::payloadValue($payload, ['message']);
 
         if (filled($message)) {
             return 'Waiting for provider update: '.ucfirst(str_replace('_', ' ', (string) $message));
         }
 
-        return filled($providerStatus)
-            ? 'Waiting for customer action'
-            : 'Payment request sent successfully';
+        return 'Payment request sent successfully';
     }
 
     private static function nextStep(string $status, bool $hasCheckoutUrl, string $provider): string

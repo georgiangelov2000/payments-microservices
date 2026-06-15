@@ -92,7 +92,7 @@ function TrendBars({ trend }) {
 
 function StatusBreakdown({ counts }) {
     const items = [
-        ['paid', counts?.paid || 0],
+        ['finished', counts?.paid || 0],
         ['pending', counts?.pending || 0],
         ['failed', counts?.failed || 0],
         ['refunded', counts?.refunded || 0],
@@ -101,7 +101,7 @@ function StatusBreakdown({ counts }) {
     return (
         <div className="flex flex-wrap gap-1.5">
             {items.map(([status, count]) => (
-                <Badge key={status} value={status === 'paid' ? 'completed' : status} label={`${status}: ${fmt(count)}`} size="sm" />
+                <Badge key={status} value={status} label={`${status.charAt(0).toUpperCase() + status.slice(1)}: ${fmt(count)}`} size="sm" />
             ))}
         </div>
     );
@@ -119,7 +119,6 @@ export default function MerchantPayments({ activity, filters = {} }) {
     const merchants = activity.merchants?.data || [];
     const summary = activity.summary || {};
     const range = activity.range || {};
-    const recentPayments = activity.recent_payments || [];
 
     const activeFilterLabel = useMemo(() => {
         if (period === 'yearly') return year;
@@ -314,15 +313,15 @@ export default function MerchantPayments({ activity, filters = {} }) {
                     tone="slate"
                 />
                 <SummaryCard
-                    label="Paid payments"
+                    label="Finished payments"
                     value={fmt(summary.paid_count)}
                     sub={`${fmt(summary.failed_count)} failed · ${fmt(summary.refunded_count)} refunded`}
                     Icon={Activity}
-                    tone="amber"
+                    tone="green"
                 />
             </div>
 
-            <div className="mb-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div className="mb-6">
                 <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
@@ -333,39 +332,13 @@ export default function MerchantPayments({ activity, filters = {} }) {
                     </div>
                     <TrendBars trend={activity.trend || []} />
                 </section>
-
-                <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-100 px-5 py-4">
-                        <h2 className="text-base font-semibold text-slate-900">Recent Payments</h2>
-                        <p className="mt-0.5 text-sm text-slate-500">Latest transactions in this view</p>
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                        {recentPayments.length === 0 ? (
-                            <p className="px-5 py-10 text-center text-sm text-slate-400">No recent payments for this period.</p>
-                        ) : recentPayments.map((payment) => (
-                            <div key={payment.id} className="flex items-center justify-between gap-4 px-5 py-3">
-                                <div className="min-w-0">
-                                    <p className="truncate text-sm font-semibold text-slate-900">{payment.merchant?.name || 'Unknown merchant'}</p>
-                                    <p className="truncate font-mono text-xs text-slate-400">{payment.order_id}</p>
-                                    <p className="text-xs text-slate-400">{fmtDate(payment.created_at)}</p>
-                                </div>
-                                <div className="shrink-0 text-right">
-                                    <p className="text-sm font-semibold text-slate-900">{fmtCurrency(payment.amount, payment.currency)}</p>
-                                    <div className="mt-1 flex justify-end">
-                                        <Badge value={payment.status} size="sm" />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
             </div>
 
             <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                     <div>
-                        <h2 className="text-base font-semibold text-slate-900">Merchant Totals</h2>
-                        <p className="mt-0.5 text-sm text-slate-500">Payment totals and status mix per merchant</p>
+                        <h2 className="text-base font-semibold text-slate-900">Merchant Payment Activity</h2>
+                        <p className="mt-0.5 text-sm text-slate-500">Totals, status mix, and latest payment per merchant</p>
                     </div>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-500">
                         {range.from} to {range.to}
@@ -373,42 +346,77 @@ export default function MerchantPayments({ activity, filters = {} }) {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm">
-                        <thead className="bg-slate-50">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                             <tr>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Merchant</th>
-                                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Total</th>
-                                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Payments</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Status breakdown</th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Last payment</th>
+                                <th className="px-4 py-2 font-medium">Merchant</th>
+                                <th className="px-4 py-2 font-medium text-right">Total</th>
+                                <th className="px-4 py-2 font-medium text-right">Payments</th>
+                                <th className="px-4 py-2 font-medium">Status breakdown</th>
+                                <th className="px-4 py-2 font-medium">Latest payment</th>
+                                <th className="px-4 py-2 font-medium text-right">Latest amount</th>
+                                <th className="px-4 py-2 font-medium">Provider</th>
+                                <th className="px-4 py-2 font-medium">Latest status</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody>
                             {merchants.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-5 py-16 text-center text-sm text-slate-400">
+                                    <td colSpan={8} className="px-6 py-14 text-center text-sm text-slate-400">
                                         No merchants match this payment view.
                                     </td>
                                 </tr>
                             ) : merchants.map((merchant) => (
-                                <tr key={merchant.id} className="hover:bg-slate-50/50">
-                                    <td className="px-5 py-4">
+                                <tr key={merchant.id} className="border-b hover:bg-slate-50 transition-colors">
+                                    <td className="px-4 py-2">
                                         <p className="font-medium text-slate-900">{merchant.name}</p>
                                         <p className="text-xs text-slate-500">{merchant.email}</p>
                                     </td>
-                                    <td className="px-5 py-4 text-right">
-                                        <p className="font-semibold text-slate-900">
+                                    <td className="px-4 py-2 text-right">
+                                        <p className="tabular-nums font-medium text-slate-900">
                                             {fmtCurrency(merchant.total_amount, merchant.currency)}
                                         </p>
                                         {merchant.currencies_count > 1 && (
                                             <p className="text-xs text-amber-600">Mixed currencies</p>
                                         )}
                                     </td>
-                                    <td className="px-5 py-4 text-right font-semibold text-slate-700">{fmt(merchant.payments_count)}</td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-4 py-2 text-right font-medium text-slate-700">{fmt(merchant.payments_count)}</td>
+                                    <td className="px-4 py-2">
                                         <StatusBreakdown counts={merchant.status_counts} />
                                     </td>
-                                    <td className="px-5 py-4 text-xs text-slate-500 whitespace-nowrap">{fmtDate(merchant.last_payment_at)}</td>
+                                    <td className="px-4 py-2">
+                                        {merchant.latest_payment ? (
+                                            <>
+                                                <p className="font-medium text-slate-900">{merchant.latest_payment.order_id}</p>
+                                                <p className="text-xs text-gray-600">{fmtDate(merchant.latest_payment.created_at)}</p>
+                                            </>
+                                        ) : (
+                                            <span className="text-xs text-slate-400">No payment</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-2 text-right">
+                                        {merchant.latest_payment ? (
+                                            <span className="tabular-nums font-medium text-slate-900">
+                                                {fmtCurrency(merchant.latest_payment.amount, merchant.latest_payment.currency)}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-slate-400">—</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        {merchant.latest_payment?.provider ? (
+                                            <ProviderBrand alias={merchant.latest_payment.provider} variant="compact" />
+                                        ) : (
+                                            <span className="text-xs text-slate-400">—</span>
+                                        )}
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        {merchant.latest_payment?.status ? (
+                                            <Badge value={merchant.latest_payment.status} size="sm" />
+                                        ) : (
+                                            <span className="text-xs text-slate-400">—</span>
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

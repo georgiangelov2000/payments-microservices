@@ -137,20 +137,20 @@ export default function Dashboard({ metrics, recentPayments }) {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead className="bg-slate-50">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                             <tr>
                                 {['Order ID', 'Merchant', 'Provider', 'Amount', 'Status', 'Created'].map((col) => (
                                     <th
                                         key={col}
-                                        className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500"
+                                        className="px-4 py-2 font-medium"
                                     >
                                         {col}
                                     </th>
                                 ))}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody>
                             {recentPayments.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-14 text-center">
@@ -162,24 +162,24 @@ export default function Dashboard({ metrics, recentPayments }) {
                                 </tr>
                             ) : (
                                 recentPayments.map((payment) => (
-                                    <tr key={payment.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-3.5">
-                                            <span className="font-mono text-sm font-medium text-slate-800">
+                                    <tr key={payment.id} className="border-b hover:bg-slate-50 transition-colors">
+                                        <td className="px-4 py-2">
+                                            <span className="font-mono text-xs text-slate-500">
                                                 {payment.order_id}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-3.5 text-sm text-slate-700">
+                                        <td className="px-4 py-2 font-medium text-slate-900">
                                             {payment.merchant?.name || payment.merchant || 'Unknown'}
                                         </td>
-                                        <td className="px-6 py-3.5">
+                                        <td className="px-4 py-2">
                                             {payment.provider ? (
                                                 <ProviderBrand alias={payment.provider} variant="compact" />
                                             ) : (
-                                                <span className="text-sm text-slate-400">—</span>
+                                                <span className="text-xs text-slate-400">—</span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-3.5">
-                                            <span className="block text-sm font-semibold text-slate-900">
+                                        <td className="px-4 py-2">
+                                            <span className="block tabular-nums font-medium text-slate-900">
                                                 {payment.currency || 'USD'} {fmtCurrency(payment.price)}
                                             </span>
                                             {payment.channel && (
@@ -188,10 +188,10 @@ export default function Dashboard({ metrics, recentPayments }) {
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-3.5">
+                                        <td className="px-4 py-2">
                                             <Badge value={payment.status} />
                                         </td>
-                                        <td className="px-6 py-3.5 text-sm text-slate-500">
+                                        <td className="px-4 py-2 text-xs text-gray-600">
                                             {fmtDate(payment.created_at)}
                                         </td>
                                     </tr>

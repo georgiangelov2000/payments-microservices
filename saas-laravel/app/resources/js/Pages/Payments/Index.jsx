@@ -16,21 +16,26 @@ const formatNumber = (value, decimals = 2) => {
 }
 
 const STATUS_META = {
-  pending:            { color: 'bg-yellow-100 text-yellow-700',  label: 'Pending',            desc: 'Created — awaiting customer checkout' },
-  processing:         { color: 'bg-blue-100 text-blue-700',      label: 'Processing',         desc: 'Customer submitted — awaiting provider confirmation' },
-  finished:           { color: 'bg-green-100 text-green-700',    label: 'Finished',           desc: 'Captured successfully' },
-  failed:             { color: 'bg-red-100 text-red-700',        label: 'Failed',             desc: 'Declined by provider or all providers failed' },
-  cancelled:          { color: 'bg-slate-100 text-slate-600',    label: 'Cancelled',          desc: 'Cancelled before capture' },
-  refunded:           { color: 'bg-indigo-100 text-indigo-700',  label: 'Refunded',           desc: 'Full refund issued' },
-  partially_refunded: { color: 'bg-indigo-100 text-indigo-600',  label: 'Partial refund',     desc: 'Partial refund issued' },
-  disputed:           { color: 'bg-orange-100 text-orange-700',  label: 'Disputed',           desc: 'Chargeback or dispute open' },
-  expired:            { color: 'bg-gray-100 text-gray-500',      label: 'Expired',            desc: 'Session expired without action' },
+  pending:            { color: 'border-amber-200 bg-amber-50 text-amber-700',  label: 'Pending',              desc: 'Created — awaiting customer checkout' },
+  processing:         { color: 'border-indigo-200 bg-indigo-50 text-indigo-700', label: 'Processing',         desc: 'Customer submitted — awaiting provider confirmation' },
+  finished:           { color: 'border-green-200 bg-green-50 text-green-700',  label: 'Finished',             desc: 'Captured successfully' },
+  failed:             { color: 'border-red-200 bg-red-50 text-red-700',        label: 'Failed',               desc: 'Declined by provider or all providers failed' },
+  cancelled:          { color: 'border-slate-200 bg-slate-100 text-slate-600', label: 'Cancelled',            desc: 'Cancelled before capture' },
+  refunded:           { color: 'border-blue-200 bg-blue-50 text-blue-700',     label: 'Refunded',             desc: 'Full refund issued' },
+  partially_refunded: { color: 'border-blue-200 bg-blue-50 text-blue-700',     label: 'Partially refunded',   desc: 'Partial refund issued' },
+  disputed:           { color: 'border-amber-200 bg-amber-50 text-amber-700',  label: 'Disputed',             desc: 'Chargeback or dispute open' },
+  expired:            { color: 'border-slate-200 bg-slate-100 text-slate-600', label: 'Expired',              desc: 'Session expired without action' },
 }
 
-const statusClass = (status, timingState) => {
-  if (timingState === 'delayed') return 'bg-orange-100 text-orange-700'
-  return STATUS_META[status]?.color ?? 'bg-red-100 text-red-700'
+const statusKey = (status) => String(status || '').toLowerCase().replace(/ /g, '_')
+
+const statusMeta = (status) => STATUS_META[statusKey(status)] ?? {
+  color: 'border-slate-200 bg-slate-100 text-slate-600',
+  label: status ? String(status).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : 'Unknown',
+  desc: 'Unknown payment status',
 }
+
+const statusClass = (status) => statusMeta(status).color
 
 export default function Payments({ payments, filters = {} }) {
   const rows = payments.data ?? []
@@ -134,7 +139,7 @@ export default function Payments({ payments, filters = {} }) {
             <div className="flex flex-col gap-2">
               {Object.entries(STATUS_META).map(([key, { color, label, desc }]) => (
                 <div key={key} className="flex items-center gap-3">
-                  <span className={`w-32 shrink-0 rounded px-2 py-0.5 text-center text-[10px] font-semibold ${color}`}>
+                  <span className={`w-36 shrink-0 rounded border px-2 py-0.5 text-center text-[10px] font-semibold ${color}`}>
                     {label}
                   </span>
                   <span className="text-xs text-slate-500">{desc}</span>
@@ -267,9 +272,9 @@ export default function Payments({ payments, filters = {} }) {
                       </td>
                       <td className="px-4 py-2">
                         <span
-                          className={`px-2 py-0.5 rounded text-xs font-medium ${statusClass(payment.status, payment.timing?.state)}`}
+                          className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusClass(payment.status)}`}
                         >
-                          {payment.status}
+                          {statusMeta(payment.status).label}
                         </span>
                       </td>
                       <td className="px-4 py-2 text-xs text-gray-600">
