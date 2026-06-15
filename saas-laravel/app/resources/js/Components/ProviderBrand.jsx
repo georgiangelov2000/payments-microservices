@@ -56,6 +56,61 @@ const PROVIDERS = {
         },
         mark: 'borica',
     },
+    openai: {
+        label: 'OpenAI',
+        aliases: ['openai', 'open-ai', 'gpt', 'chatgpt'],
+        colors: {
+            bg: 'bg-[#111827]',
+            text: 'text-white',
+            ring: 'ring-slate-300/40',
+            soft: 'bg-slate-100 text-slate-900 border-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700',
+        },
+        mark: 'openai',
+    },
+    anthropic: {
+        label: 'Anthropic',
+        aliases: ['anthropic', 'claude'],
+        colors: {
+            bg: 'bg-[#191919]',
+            text: 'text-white',
+            ring: 'ring-stone-300/40',
+            soft: 'bg-stone-100 text-stone-900 border-stone-200 dark:bg-stone-800 dark:text-stone-100 dark:border-stone-700',
+        },
+        mark: 'anthropic',
+    },
+    google: {
+        label: 'Google',
+        aliases: ['google', 'google-ai', 'gemini', 'vertex-ai'],
+        colors: {
+            bg: 'bg-white',
+            text: 'text-slate-900',
+            ring: 'ring-slate-200',
+            soft: 'bg-white text-slate-800 border-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:border-slate-700',
+        },
+        mark: 'google',
+    },
+    mistral: {
+        label: 'Mistral AI',
+        aliases: ['mistral', 'mistral-ai'],
+        colors: {
+            bg: 'bg-[#ff7000]',
+            text: 'text-white',
+            ring: 'ring-orange-300/40',
+            soft: 'bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-950 dark:text-orange-100 dark:border-orange-800',
+        },
+        mark: 'mistral',
+    },
+    cohere: {
+        label: 'Cohere',
+        aliases: ['cohere'],
+        colors: {
+            bg: 'bg-[#39594d]',
+            text: 'text-white',
+            ring: 'ring-emerald-300/40',
+            soft: 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-800',
+        },
+        mark: 'cohere',
+    },
 };
 
 function normalizeAlias(alias) {
@@ -131,6 +186,60 @@ function ProviderMark({ mark, className = '' }) {
             <svg viewBox="0 0 56 48" aria-hidden="true" className={className}>
                 <path fill="currentColor" d="M12 12h18.2c5.2 0 8.5 2.8 8.5 7.1 0 2.4-1.2 4.5-3.5 5.7 3 1.1 4.8 3.3 4.8 6.3 0 4.6-3.6 7.9-9.5 7.9H12V12Zm15.9 10.5c2.2 0 3.4-.9 3.4-2.5s-1.2-2.5-3.4-2.5h-8.3v5h8.3Zm1 10.9c2.4 0 3.7-1 3.7-2.8s-1.3-2.8-3.7-2.8h-9.3v5.6h9.3Z" />
                 <path fill="currentColor" opacity=".45" d="M42 12h4v27h-4z" />
+            </svg>
+        );
+    }
+
+    if (mark === 'openai') {
+        return (
+            <svg viewBox="0 0 48 48" aria-hidden="true" className={className}>
+                <g fill="none" stroke="currentColor" strokeWidth="4.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M24 7.8c4.6-2.6 10.4-.1 11.5 5.1 4.7.9 7.4 5.9 5.4 10.3 3.4 3.6 2.3 9.6-2.2 11.9-.4 5.2-5.4 8.6-10.3 6.9-4.2 3.1-10.1 1.5-11.8-3.4-5.1-.9-8.2-5.7-6.5-10.6-3.5-3.8-2.2-9.8 2.5-12 1-5.1 6.3-8.2 11.4-8.2Z" opacity=".95" />
+                    <path d="M17.4 14.4 30 21.7v14.6" />
+                    <path d="m30.6 13.9-12.7 7.3-12.4 7.1" />
+                    <path d="M11.8 28.2 24.4 35.5l12.4-7.2" />
+                    <path d="M36.2 19.8 23.6 12.5" />
+                    <path d="M24 20.6v14.2" />
+                </g>
+            </svg>
+        );
+    }
+
+    if (mark === 'anthropic') {
+        return (
+            <svg viewBox="0 0 64 48" aria-hidden="true" className={className}>
+                <path fill="currentColor" d="M12 37 25.8 10h6.4L18.4 37H12Zm23.7 0-3.4-7.1H20.9l2.7-5.4h6.2L25.7 16h6.2L42.2 37h-6.5Zm10.1 0V10h6.2v27h-6.2Z" />
+            </svg>
+        );
+    }
+
+    if (mark === 'google') {
+        return (
+            <svg viewBox="0 0 48 48" aria-hidden="true" className={className}>
+                <path fill="#4285F4" d="M41.6 24.5c0-1.2-.1-2.3-.3-3.4H24v6.5h9.9c-.4 2.3-1.8 4.2-3.8 5.5v4.5h6.1c3.5-3.3 5.4-8.1 5.4-13.6Z" />
+                <path fill="#34A853" d="M24 42c4.9 0 9.1-1.6 12.1-4.4l-6.1-4.5c-1.7 1.1-3.8 1.8-6.1 1.8-4.7 0-8.8-3.2-10.2-7.5H7.5V32c3 5.9 9.1 10 16.5 10Z" />
+                <path fill="#FBBC05" d="M13.8 27.4c-.4-1.1-.6-2.2-.6-3.4s.2-2.3.6-3.4V16H7.5A17.9 17.9 0 0 0 6 24c0 2.9.7 5.6 1.9 8l5.9-4.6Z" />
+                <path fill="#EA4335" d="M24 13.1c2.7 0 5.1.9 7 2.7l5.2-5.2C33.1 7.7 28.9 6 24 6 16.6 6 10.5 10.1 7.5 16l6.3 4.6c1.4-4.3 5.5-7.5 10.2-7.5Z" />
+            </svg>
+        );
+    }
+
+    if (mark === 'mistral') {
+        return (
+            <svg viewBox="0 0 56 48" aria-hidden="true" className={className}>
+                <path fill="#ffd42a" d="M8 8h8v8H8zM40 8h8v8h-8zM16 16h8v8h-8zM32 16h8v8h-8z" />
+                <path fill="#ff7000" d="M8 16h8v24H8zM40 16h8v24h-8zM24 24h8v8h-8z" />
+                <path fill="#111827" d="M16 24h8v16h-8zM32 24h8v16h-8z" opacity=".9" />
+            </svg>
+        );
+    }
+
+    if (mark === 'cohere') {
+        return (
+            <svg viewBox="0 0 48 48" aria-hidden="true" className={className}>
+                <circle cx="18" cy="18" r="10" fill="currentColor" opacity=".95" />
+                <circle cx="31" cy="17" r="6" fill="currentColor" opacity=".62" />
+                <path fill="currentColor" d="M17 28h15c4.5 0 8 3 8 7s-3.5 7-8 7H17V28Z" opacity=".78" />
             </svg>
         );
     }

@@ -5,6 +5,7 @@ import {
     CheckCircle2, XCircle, Clock, Zap, BarChart2,
     AlertTriangle, TrendingUp, Activity, ArrowRight,
 } from 'lucide-react';
+import ProviderBrand, { getProviderMeta } from '@/Components/ProviderBrand';
 
 function rateColor(rate) {
     if (rate >= 95) return 'text-green-600';
@@ -42,16 +43,16 @@ function SummaryCard({ label, value, sub, Icon, iconBg, iconColor, accent }) {
 
 function ProviderCard({ provider }) {
     const rate = Number(provider.success_rate ?? 0);
+    const providerMeta = getProviderMeta(provider.provider, provider.provider);
+
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white uppercase">
-                        {provider.provider.slice(0, 1)}
-                    </div>
+                    <ProviderBrand alias={provider.provider} label={provider.provider} size="md" variant="icon" />
                     <div>
-                        <p className="font-semibold capitalize text-slate-900">{provider.provider}</p>
+                        <p className="font-semibold text-slate-900">{providerMeta.label}</p>
                         <p className="text-xs text-slate-400">{fmt(provider.total)} attempts</p>
                     </div>
                 </div>
@@ -97,20 +98,99 @@ function ProviderCard({ provider }) {
     );
 }
 
-// ─── Strategy distribution ────────────────────────────────────────────────────
+// ─── Routing behavior ────────────────────────────────────────────────────────
 
-function StrategyRow({ row, maxTotal }) {
-    const width = maxTotal > 0 ? (row.total / maxTotal) * 100 : 0;
+const STRATEGY_COLORS = {
+    priority: '#6366f1',
+    weighted: '#06b6d4',
+    conditional: '#f59e0b',
+    failover: '#10b981',
+};
+
+const STRATEGY_COPY = {
+    priority: {
+        label: 'Priority routing',
+        description: 'Payments follow the configured provider order, then use fallback providers when needed.',
+        impact: 'Changing the order changes which provider receives a payment first.',
+    },
+    weighted: {
+        label: 'Traffic distribution',
+        description: 'Payments are split across providers by percentage weights.',
+        impact: 'Changing weights shifts more or less traffic to each provider.',
+    },
+    conditional: {
+        label: 'Rule-based routing',
+        description: 'Payments are routed by rules such as country, currency, payment method, or amount.',
+        impact: 'Changing rules changes which payments qualify for each provider path.',
+    },
+    failover: {
+        label: 'Failover routing',
+        description: 'Payments move to the next provider after a provider error, decline, or timeout.',
+        impact: 'Changing failover paths changes how quickly payments recover from provider issues.',
+    },
+};
+
+function strategyCopy(strategy) {
+    const key = String(strategy || 'unknown').toLowerCase();
+    const fallbackLabel = `${key.charAt(0).toUpperCase()}${key.slice(1)} routing`;
+
+    return STRATEGY_COPY[key] ?? {
+        label: fallbackLabel,
+        description: 'Payments used this routing mode during the selected period.',
+        impact: 'Review this mode before changing routing rules so traffic moves as expected.',
+    };
+}
+
+function RoutingBehavior({ strategies }) {
+    const total = strategies.reduce((sum, row) => sum + Number(row.total ?? 0), 0);
+
+    if (!total) {
+        return (
+            <p className="py-6 text-center text-sm text-slate-400">
+                No routing data yet for this environment.
+            </p>
+        );
+    }
+
     return (
-        <div className="flex items-center gap-3 py-2">
-            <span className="w-24 shrink-0 text-xs font-semibold capitalize text-slate-700">{row.strategy}</span>
-            <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full rounded-full bg-indigo-500" style={{ width: `${width}%` }} />
-            </div>
-            <span className="w-12 text-right text-xs text-slate-500">{fmt(row.total)}</span>
-            <span className={`w-14 text-right text-xs font-semibold ${rateColor(row.success_rate)}`}>
-                {fmtRate(row.success_rate)}
-            </span>
+        <div className="space-y-4">
+            {strategies.map((row) => {
+                const strategy = String(row.strategy || 'unknown').toLowerCase();
+                const copy = strategyCopy(strategy);
+                const count = Number(row.total ?? 0);
+                const pct = total > 0 ? (count / total) * 100 : 0;
+                const color = STRATEGY_COLORS[strategy] ?? '#64748b';
+
+                return (
+                    <div key={strategy} className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+                                    <p className="text-sm font-semibold text-slate-800">{copy.label}</p>
+                                </div>
+                                <p className="mt-1 text-xs leading-5 text-slate-500">{copy.description}</p>
+                                <p className="mt-1 text-xs leading-5 text-slate-400">{copy.impact}</p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                                <p className="text-sm font-bold text-slate-900">{fmt(count)}</p>
+                                <p className="text-[11px] text-slate-400">payments</p>
+                            </div>
+                        </div>
+                        <div className="mt-3 flex items-center gap-3">
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white">
+                                <div
+                                    className="h-full rounded-full"
+                                    style={{ width: `${Math.max(pct, 4)}%`, backgroundColor: color }}
+                                />
+                            </div>
+                            <span className="w-12 text-right text-xs font-semibold tabular-nums text-slate-600">
+                                {pct.toFixed(0)}%
+                            </span>
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -179,7 +259,9 @@ function ErrorTable({ errors }) {
             <tbody className="divide-y divide-slate-100">
                 {errors.map((e, i) => (
                     <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 pr-4 font-medium capitalize text-slate-800">{e.provider}</td>
+                        <td className="py-2.5 pr-4">
+                            <ProviderBrand alias={e.provider} label={e.provider} variant="compact" />
+                        </td>
                         <td className="py-2.5 pr-4">
                             <span className="rounded bg-red-50 border border-red-100 px-2 py-0.5 text-xs font-mono text-red-700">
                                 {e.error_code}
@@ -197,8 +279,6 @@ function ErrorTable({ errors }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnalyticsIndex({ environment, summary, providers, strategies, dailyTrend, topErrors }) {
-    const maxStrategyTotal = Math.max(...(strategies?.map(s => s.total) ?? [0]), 1);
-
     function switchEnv(env) {
         router.get(route('admin.analytics.index'), { environment: env }, { preserveScroll: true });
     }
@@ -287,22 +367,13 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
 
                 {/* Strategy distribution */}
                 <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h2 className="mb-4 text-base font-semibold text-slate-900">Routing Strategy Distribution</h2>
-                    {strategies?.length === 0 ? (
-                        <p className="py-4 text-center text-sm text-slate-400">No data available.</p>
-                    ) : (
-                        <div className="space-y-1">
-                            <div className="flex gap-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                                <span className="w-24">Strategy</span>
-                                <span className="flex-1">Volume</span>
-                                <span className="w-12 text-right">Count</span>
-                                <span className="w-14 text-right">Rate</span>
-                            </div>
-                            {strategies?.map(s => (
-                                <StrategyRow key={s.strategy} row={s} maxTotal={maxStrategyTotal} />
-                            ))}
-                        </div>
-                    )}
+                    <div className="mb-4">
+                        <h2 className="text-base font-semibold text-slate-900">Routing behavior</h2>
+                        <p className="mt-0.5 text-xs text-slate-400">
+                            How payments were routed in {environment}. Use this to see which routing mode handled traffic and what changes would affect.
+                        </p>
+                    </div>
+                    <RoutingBehavior strategies={strategies ?? []} />
                 </section>
 
                 {/* Failover trend */}
