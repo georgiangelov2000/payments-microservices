@@ -209,6 +209,21 @@ services:
       redis:
         condition: service_healthy
 
+  admin-scheduler:
+    build: ./admin-laravel
+    container_name: admin-scheduler
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - ./admin-laravel/app:/var/www
+    restart: unless-stopped
+    depends_on:
+      payments-db:
+        condition: service_healthy
+      payments-logs-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 # Payment service
   payments:
     build: ./payments
