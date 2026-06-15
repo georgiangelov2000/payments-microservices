@@ -112,6 +112,57 @@ final class PaymentRepository implements PaymentRepositoryInterface
         ];
     }
 
+    public function merchantActivityExport(array $filters): array
+    {
+        $range = $this->resolveDateRange($filters);
+        $status = $filters['status'] ?? null;
+        $statusValue = $status ? PaymentStatus::fromString($status)->value : null;
+
+        $merchants = User::query()
+            ->where('users.role', Role::MERCHANT->value)
+            ->when($filters['search'] ?? null, function (Builder $query, string $search) {
+                $query->where(function (Builder $query) use ($search) {
+                    $query->where('users.name', 'ilike', "%{$search}%")
+                        ->orWhere('users.email', 'ilike', "%{$search}%");
+                });
+            })
+            ->leftJoin('payments', function (JoinClause $join) use ($range, $statusValue) {
+                $join->on('payments.merchant_id', '=', 'users.id')
+                    ->whereBetween('payments.created_at', [$range['from'], $range['to']]);
+
+                if ($statusValue !== null) {
+                    $join->where('payments.status', $statusValue);
+                }
+            })
+            ->select([
+                'users.id',
+                'users.name',
+                'users.email',
+                DB::raw('COUNT(payments.id) as payments_count'),
+                DB::raw('COALESCE(SUM(payments.price), 0) as total_amount'),
+                DB::raw("COALESCE(MIN(COALESCE(payments.currency, 'USD')), 'USD') as currency"),
+                DB::raw('COUNT(DISTINCT CASE WHEN payments.id IS NOT NULL THEN COALESCE(payments.currency, \'USD\') END) as currencies_count'),
+                DB::raw('SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN 1 ELSE 0 END) as paid_count'),
+                DB::raw('SUM(CASE WHEN payments.status IN ('.PaymentStatus::PENDING->value.', '.PaymentStatus::PROCESSING->value.') THEN 1 ELSE 0 END) as pending_count'),
+                DB::raw('SUM(CASE WHEN payments.status = '.PaymentStatus::FAILED->value.' THEN 1 ELSE 0 END) as failed_count'),
+                DB::raw('SUM(CASE WHEN payments.status IN ('.PaymentStatus::REFUNDED->value.', '.PaymentStatus::PARTIALLY_REFUNDED->value.') THEN 1 ELSE 0 END) as refunded_count'),
+                DB::raw('MAX(payments.created_at) as last_payment_at'),
+            ])
+            ->groupBy('users.id', 'users.name', 'users.email')
+            ->orderByDesc(DB::raw('COALESCE(SUM(payments.price), 0)'))
+            ->orderBy('users.name')
+            ->get();
+
+        return [
+            'range' => [
+                'from' => $range['from']->toDateString(),
+                'to' => $range['to']->toDateString(),
+                'label' => $range['label'],
+            ],
+            'merchants' => $merchants,
+        ];
+    }
+
     private function resolveDateRange(array $filters): array
     {
         $period = $filters['period'] ?? 'monthly';

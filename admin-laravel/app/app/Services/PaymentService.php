@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Contracts\Payments\PaymentRepositoryInterface;
 use App\Enums\PaymentStatus;
+use App\Models\AdminExportFile;
 use App\Models\Payment;
 use App\Models\PaymentLog;
 use App\Models\PaymentRoutingAttempt;
@@ -54,6 +55,66 @@ final class PaymentService
         ]);
 
         return $activity;
+    }
+
+    public function merchantActivityExportRows(array $filters): array
+    {
+        $activity = $this->repository->merchantActivityExport($filters);
+        $merchants = $activity['merchants'];
+        $latestPayments = $this->latestPaymentsByMerchant(
+            $merchants->pluck('id')->all(),
+            $activity['range'],
+            $filters,
+        );
+
+        return $merchants->map(function ($merchant) use ($latestPayments): array {
+            $latest = $latestPayments[$merchant->id] ?? null;
+
+            return [
+                'merchant_name' => $merchant->name,
+                'merchant_email' => $merchant->email,
+                'payments_count' => (int) $merchant->payments_count,
+                'total_amount' => (float) $merchant->total_amount,
+                'currency' => $merchant->currency ?: 'USD',
+                'currencies_count' => (int) $merchant->currencies_count,
+                'finished_count' => (int) $merchant->paid_count,
+                'pending_count' => (int) $merchant->pending_count,
+                'failed_count' => (int) $merchant->failed_count,
+                'refunded_count' => (int) $merchant->refunded_count,
+                'latest_order_id' => $latest['order_id'] ?? null,
+                'latest_amount' => $latest['amount'] ?? null,
+                'latest_currency' => $latest['currency'] ?? null,
+                'latest_provider' => $latest['provider'] ?? null,
+                'latest_status' => $latest['status'] ?? null,
+                'latest_payment_at' => $latest['created_at'] ?? null,
+            ];
+        })->values()->all();
+    }
+
+    public function recentMerchantPaymentExports(string $adminUserId): array
+    {
+        return AdminExportFile::query()
+            ->where('admin_user_id', $adminUserId)
+            ->where('type', 'merchant_payments')
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(fn (AdminExportFile $export): array => [
+                'id' => $export->id,
+                'format' => $export->format,
+                'status' => $export->status,
+                'filename' => $export->filename,
+                'message' => $export->message,
+                'size' => $export->size,
+                'filters' => $export->filters,
+                'created_at' => $export->created_at?->toDateTimeString(),
+                'completed_at' => $export->completed_at?->toDateTimeString(),
+                'failed_at' => $export->failed_at?->toDateTimeString(),
+                'download_url' => $export->status === 'completed'
+                    ? route('admin.payments.merchants.exports.download', $export)
+                    : null,
+            ])
+            ->all();
     }
 
     /**

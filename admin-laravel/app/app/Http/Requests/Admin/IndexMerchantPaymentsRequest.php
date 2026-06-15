@@ -6,7 +6,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-final class IndexMerchantPaymentsRequest extends FormRequest
+class IndexMerchantPaymentsRequest extends FormRequest
 {
     public function authorize(): bool
     {

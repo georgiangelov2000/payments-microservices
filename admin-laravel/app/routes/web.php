@@ -33,6 +33,8 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::put('/merchant-provider-credentials/{credential}', [MerchantController::class, 'updateProvider'])->name('admin.merchant-provider-credentials.update');
     Route::get('/payments', [PaymentController::class, 'index'])->name('admin.payments.index');
     Route::get('/payments/merchants', [PaymentController::class, 'merchants'])->name('admin.payments.merchants');
+    Route::post('/payments/merchants/exports', [PaymentController::class, 'exportMerchants'])->name('admin.payments.merchants.exports.store');
+    Route::get('/payments/merchants/exports/{export}/download', [PaymentController::class, 'downloadMerchantExport'])->name('admin.payments.merchants.exports.download');
     Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('admin.subscriptions.index');
     Route::get('/api-keys', [ApiKeyController::class, 'index'])->name('admin.api-keys.index');
     Route::post('/api-keys', [ApiKeyController::class, 'store'])->name('admin.api-keys.store');

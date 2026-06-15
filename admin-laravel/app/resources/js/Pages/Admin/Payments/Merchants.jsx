@@ -1,5 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+    Area,
+    Bar,
+    CartesianGrid,
+    ComposedChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
@@ -9,7 +19,9 @@ import {
     Activity,
     CalendarDays,
     CreditCard,
+    Download,
     DollarSign,
+    FileDown,
     Search,
     SlidersHorizontal,
     Users,
@@ -17,6 +29,7 @@ import {
 } from 'lucide-react';
 
 const STATUS_OPTIONS = ['', 'finished', 'pending', 'failed', 'refunded', 'processing', 'cancelled', 'disputed', 'expired'];
+const EXPORT_FORMATS = ['xlsx', 'csv', 'json', 'pdf'];
 
 function currentMonth() {
     return new Date().toISOString().slice(0, 7);
@@ -50,8 +63,27 @@ function SummaryCard({ label, value, sub, Icon, tone = 'indigo' }) {
     );
 }
 
+function TrendTooltip({ active, payload, label }) {
+    if (!active || !payload?.length) return null;
+
+    const amount = payload.find((item) => item.dataKey === 'amount')?.value ?? 0;
+    const payments = payload.find((item) => item.dataKey === 'payments')?.value ?? 0;
+
+    return (
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg shadow-slate-900/10">
+            <p className="mb-1 font-semibold text-slate-900">{label}</p>
+            <p className="tabular-nums text-indigo-700">{fmtCurrency(amount)}</p>
+            <p className="mt-0.5 text-slate-500">{fmt(payments)} payment{Number(payments) === 1 ? '' : 's'}</p>
+        </div>
+    );
+}
+
 function TrendBars({ trend }) {
-    const max = Math.max(...trend.map((row) => Number(row.total_amount || 0)), 1);
+    const chartData = trend.map((row) => ({
+        period: row.period,
+        amount: Number(row.total_amount || 0),
+        payments: Number(row.payments_count || 0),
+    }));
 
     if (!trend.length) {
         return (
@@ -62,29 +94,63 @@ function TrendBars({ trend }) {
     }
 
     return (
-        <div className="overflow-x-auto">
-            <div className="flex h-36 min-w-full items-end gap-1.5" style={{ minWidth: `${trend.length * 36}px` }}>
-                {trend.map((row) => {
-                    const amount = Number(row.total_amount || 0);
-                    const height = Math.max((amount / max) * 100, 5);
-
-                    return (
-                        <div key={row.period} className="group relative flex flex-1 flex-col items-center justify-end">
-                            <div
-                                className="w-full rounded-t bg-indigo-400 transition-colors group-hover:bg-indigo-600"
-                                style={{ height: `${height}%` }}
-                            />
-                            <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 hidden -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block">
-                                <span className="block whitespace-nowrap">{fmtCurrency(amount)}</span>
-                                <span className="block whitespace-nowrap text-slate-300">{fmt(row.payments_count)} payments</span>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            <div className="mt-2 flex justify-between gap-3 text-[11px] text-slate-400">
-                <span className="truncate">{trend[0]?.period}</span>
-                <span className="truncate text-right">{trend[trend.length - 1]?.period}</span>
+        <div>
+            <div className="h-72 rounded-xl border border-slate-200 bg-white px-2 py-3">
+                <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 16, right: 10, bottom: 4, left: 0 }}>
+                        <defs>
+                            <linearGradient id="merchantTrendAmount" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.36} />
+                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0.03} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                        <XAxis
+                            dataKey="period"
+                            axisLine={false}
+                            tickLine={false}
+                            minTickGap={18}
+                            tick={{ fill: '#94a3b8', fontSize: 11 }}
+                        />
+                        <YAxis
+                            yAxisId="amount"
+                            axisLine={false}
+                            tickLine={false}
+                            width={58}
+                            tick={{ fill: '#94a3b8', fontSize: 11 }}
+                            tickFormatter={(value) => `$${Number(value).toFixed(0)}`}
+                        />
+                        <YAxis
+                            yAxisId="payments"
+                            orientation="right"
+                            axisLine={false}
+                            tickLine={false}
+                            width={36}
+                            tick={{ fill: '#94a3b8', fontSize: 11 }}
+                            allowDecimals={false}
+                        />
+                        <Tooltip content={<TrendTooltip />} cursor={{ stroke: '#818cf8', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                        <Bar
+                            yAxisId="payments"
+                            dataKey="payments"
+                            name="Payments"
+                            barSize={18}
+                            radius={[5, 5, 0, 0]}
+                            fill="#c4b5fd"
+                        />
+                        <Area
+                            yAxisId="amount"
+                            type="monotone"
+                            dataKey="amount"
+                            name="Volume"
+                            stroke="#4f46e5"
+                            strokeWidth={2.5}
+                            fill="url(#merchantTrendAmount)"
+                            dot={{ r: 3, strokeWidth: 2, fill: '#ffffff', stroke: '#4f46e5' }}
+                            activeDot={{ r: 5, strokeWidth: 2, fill: '#4f46e5', stroke: '#ffffff' }}
+                        />
+                    </ComposedChart>
+                </ResponsiveContainer>
             </div>
         </div>
     );
@@ -107,7 +173,25 @@ function StatusBreakdown({ counts }) {
     );
 }
 
-export default function MerchantPayments({ activity, filters = {} }) {
+function exportStatusClasses(status) {
+    return {
+        queued: 'border-blue-200 bg-blue-50 text-blue-700',
+        running: 'border-amber-200 bg-amber-50 text-amber-700',
+        completed: 'border-green-200 bg-green-50 text-green-700',
+        failed: 'border-red-200 bg-red-50 text-red-700',
+    }[status] || 'border-slate-200 bg-slate-50 text-slate-600';
+}
+
+function exportStatusLabel(status) {
+    return {
+        queued: 'Started',
+        running: 'In progress',
+        completed: 'Completed',
+        failed: 'Failed',
+    }[status] || status;
+}
+
+export default function MerchantPayments({ activity, filters = {}, exports = [] }) {
     const [period, setPeriod] = useState(filters.period || 'monthly');
     const [month, setMonth] = useState(filters.month || currentMonth());
     const [year, setYear] = useState(String(filters.year || currentYear()));
@@ -115,10 +199,12 @@ export default function MerchantPayments({ activity, filters = {} }) {
     const [dateTo, setDateTo] = useState(filters.date_to || '');
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || '');
+    const [exportingFormat, setExportingFormat] = useState(null);
 
     const merchants = activity.merchants?.data || [];
     const summary = activity.summary || {};
     const range = activity.range || {};
+    const hasActiveExport = exports.some((item) => ['queued', 'running'].includes(item.status));
 
     const activeFilterLabel = useMemo(() => {
         if (period === 'yearly') return year;
@@ -126,9 +212,7 @@ export default function MerchantPayments({ activity, filters = {} }) {
         return range.label || month;
     }, [period, year, month, range.label]);
 
-    function applyFilters(e) {
-        e.preventDefault();
-
+    function currentFilterParams() {
         const params = { period };
         if (period === 'monthly') params.month = month;
         if (period === 'yearly') params.year = year;
@@ -138,6 +222,28 @@ export default function MerchantPayments({ activity, filters = {} }) {
         }
         if (search.trim()) params.search = search.trim();
         if (status) params.status = status;
+
+        return params;
+    }
+
+    useEffect(() => {
+        if (!hasActiveExport) return undefined;
+
+        const timer = window.setInterval(() => {
+            router.reload({
+                only: ['exports'],
+                preserveScroll: true,
+                preserveState: true,
+            });
+        }, 5000);
+
+        return () => window.clearInterval(timer);
+    }, [hasActiveExport]);
+
+    function applyFilters(e) {
+        e.preventDefault();
+
+        const params = currentFilterParams();
 
         router.get(route('admin.payments.merchants'), params, {
             preserveScroll: true,
@@ -159,6 +265,18 @@ export default function MerchantPayments({ activity, filters = {} }) {
         });
     }
 
+    function startExport(format) {
+        setExportingFormat(format);
+
+        router.post(route('admin.payments.merchants.exports.store'), {
+            ...filters,
+            format,
+        }, {
+            preserveScroll: true,
+            onFinish: () => setExportingFormat(null),
+        });
+    }
+
     return (
         <AdminLayout title="Merchant Payments">
             <Head title="Merchant Payments" />
@@ -170,13 +288,30 @@ export default function MerchantPayments({ activity, filters = {} }) {
                         Review merchant payment volume, totals, status mix, and recent transactions.
                     </p>
                 </div>
-                <Link
-                    href={route('admin.payments.index')}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-                >
-                    <CreditCard size={15} strokeWidth={2} />
-                    Transaction list
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
+                        {EXPORT_FORMATS.map((format) => (
+                            <button
+                                key={format}
+                                type="button"
+                                onClick={() => startExport(format)}
+                                disabled={exportingFormat !== null}
+                                className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold uppercase text-slate-600 transition-colors hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                title={`Export current filters as ${format.toUpperCase()}`}
+                            >
+                                <FileDown size={13} strokeWidth={2} />
+                                {exportingFormat === format ? 'Queueing...' : format}
+                            </button>
+                        ))}
+                    </div>
+                    <Link
+                        href={route('admin.payments.index')}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                    >
+                        <CreditCard size={15} strokeWidth={2} />
+                        Transaction list
+                    </Link>
+                </div>
             </div>
 
             <form onSubmit={applyFilters} className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -290,6 +425,59 @@ export default function MerchantPayments({ activity, filters = {} }) {
                     </div>
                 </div>
             </form>
+
+            <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                    <div>
+                        <h2 className="text-sm font-semibold text-slate-900">Merchant payment exports</h2>
+                        <p className="mt-0.5 text-xs text-slate-500">Background exports use the active filters and are emailed when complete.</p>
+                    </div>
+                    {hasActiveExport && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+                            Processing
+                        </span>
+                    )}
+                </div>
+                <div className="divide-y divide-slate-100">
+                    {exports.length === 0 ? (
+                        <div className="px-4 py-5 text-sm text-slate-400">
+                            No exports have been requested yet.
+                        </div>
+                    ) : exports.map((item) => (
+                        <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                            <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-mono text-xs font-semibold uppercase text-slate-700">{item.format}</span>
+                                    <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${exportStatusClasses(item.status)}`}>
+                                        {exportStatusLabel(item.status)}
+                                    </span>
+                                    <span className="text-xs text-slate-400">{item.completed_at || item.failed_at || item.created_at}</span>
+                                </div>
+                                <p className="mt-1 truncate text-xs text-slate-500">
+                                    {item.filename || item.message || 'Waiting for Horizon to start the export...'}
+                                </p>
+                                {item.status === 'failed' && item.message && (
+                                    <p className="mt-1 text-xs text-red-600">{item.message}</p>
+                                )}
+                            </div>
+                            {item.download_url ? (
+                                <a
+                                    href={item.download_url}
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                                >
+                                    <Download size={13} strokeWidth={2} />
+                                    Download
+                                </a>
+                            ) : (
+                                <span className="text-xs text-slate-400">
+                                    {item.status === 'failed' ? 'Retry from export buttons' : 'Download pending'}
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </section>
 
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard

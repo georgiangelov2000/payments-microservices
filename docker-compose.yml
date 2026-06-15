@@ -191,6 +191,23 @@ services:
         condition: service_healthy
       payments-logs-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin-horizon:
+    build: ./admin-laravel
+    container_name: admin-horizon
+    command: ["php", "artisan", "horizon"]
+    volumes:
+      - ./admin-laravel/app:/var/www
+    restart: unless-stopped
+    depends_on:
+      payments-db:
+        condition: service_healthy
+      payments-logs-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 # Payment service
   payments:
