@@ -26,7 +26,7 @@ from app.providers.credential_resolver import CredentialResolver
 from app.providers.registry import provider_connector
 from app.routing import PaymentRoutingEngine
 from app.schemas.payments import CreatePaymentRequest, PaymentCreateResponse
-from app.services.sandbox_simulation import SandboxSimulationService
+from app.services.provider_simulation import ProviderSimulationService
 from app.services.webhook_dispatcher import WebhookDispatcher
 
 _dispatcher = WebhookDispatcher()
@@ -36,7 +36,7 @@ class PaymentCreationService:
     def __init__(self) -> None:
         self.routing_engine = PaymentRoutingEngine()
         self.credential_resolver = CredentialResolver()
-        self.sandbox = SandboxSimulationService()
+        self.provider_simulation = ProviderSimulationService()
 
     async def create(
         self, request: CreatePaymentRequest, merchant_id: str
@@ -230,11 +230,11 @@ class PaymentCreationService:
                 continue
 
             # --------------------------------------------------
-            # Sandbox simulation check (test mode only)
+            # Provider simulation check (test mode only)
             # --------------------------------------------------
             try:
                 with payments_session() as payments_db:
-                    self.sandbox.check(
+                    self.provider_simulation.check(
                         payments_db, merchant_uuid, routing_plan.environment, provider_alias
                     )
             except HTTPException as exc:
@@ -249,13 +249,13 @@ class PaymentCreationService:
                     status="failed",
                     idempotency_key=attempt_idempotency_key,
                     latency_ms=0,
-                    error_code="sandbox_fail",
+                    error_code="test_mode_fail",
                     error_message=str(exc.detail),
                     routing_snapshot=routing_plan.snapshot,
                 )
                 await self._record_provider_failure(
                     merchant_uuid, provider_id, routing_plan.environment,
-                    provider_alias, "sandbox_simulated_failure", timed_out=False,
+                    provider_alias, "test_mode_simulated_failure", timed_out=False,
                 )
                 continue
             except Exception as exc:
@@ -271,13 +271,13 @@ class PaymentCreationService:
                     status="timeout",
                     idempotency_key=attempt_idempotency_key,
                     latency_ms=0,
-                    error_code="sandbox_timeout",
+                    error_code="test_mode_timeout",
                     error_message=str(exc),
                     routing_snapshot=routing_plan.snapshot,
                 )
                 await self._record_provider_failure(
                     merchant_uuid, provider_id, routing_plan.environment,
-                    provider_alias, "sandbox_simulated_timeout", timed_out=True,
+                    provider_alias, "test_mode_simulated_timeout", timed_out=True,
                 )
                 continue
 

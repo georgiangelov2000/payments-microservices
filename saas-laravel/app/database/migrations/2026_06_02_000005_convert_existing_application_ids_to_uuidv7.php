@@ -41,7 +41,6 @@ return new class extends Migration
                 'gateway_access_profiles',
                 'merchant_provider_credentials',
                 'payments',
-                'api_requests',
             ] as $table) {
                 $this->addUuidColumn($table, 'uuid_id');
                 $this->fillUuidIds($table);
@@ -77,13 +76,6 @@ return new class extends Migration
 
             $paymentMap = DB::table('payments')->select('id', 'uuid_id')->get();
 
-            $this->addUuidColumn('api_requests', 'payment_uuid');
-            $this->addUuidColumn('api_requests', 'subscription_uuid');
-            $this->addUuidColumn('api_requests', 'user_uuid');
-            DB::statement('UPDATE api_requests t SET payment_uuid = p.uuid_id FROM payments p WHERE t.payment_id = p.id');
-            DB::statement('UPDATE api_requests t SET subscription_uuid = s.uuid_id FROM subscriptions s WHERE t.subscription_id = s.id');
-            DB::statement('UPDATE api_requests t SET user_uuid = u.uuid_id FROM users u WHERE t.user_id = u.id');
-
             foreach ($this->mainIndexes as $indexes) {
                 foreach ($indexes as $index) {
                     DB::statement("DROP INDEX IF EXISTS {$index}");
@@ -109,11 +101,6 @@ return new class extends Migration
             $this->swapReference('payments', 'merchant_id', 'merchant_uuid');
             $this->swapReference('payments', 'provider_id', 'provider_uuid');
             $this->swapPrimaryKey('payments');
-            $this->swapReference('api_requests', 'payment_id', 'payment_uuid');
-            $this->swapReference('api_requests', 'subscription_id', 'subscription_uuid');
-            $this->swapReference('api_requests', 'user_id', 'user_uuid');
-            $this->swapPrimaryKey('api_requests');
-
             $this->recreateMainIndexes();
 
             $this->convertLogs($paymentMap);
@@ -248,11 +235,6 @@ return new class extends Migration
         DB::statement('CREATE INDEX ix_payments_status ON payments(status)');
         DB::statement('CREATE INDEX ix_payments_merchant_status ON payments(merchant_id, status)');
         DB::statement('CREATE INDEX ix_payments_created_at ON payments(created_at)');
-        DB::statement('CREATE INDEX ix_api_requests_user_id ON api_requests(user_id)');
-        DB::statement('CREATE INDEX ix_api_requests_subscription_id ON api_requests(subscription_id)');
-        DB::statement('CREATE INDEX ix_api_requests_payment_id ON api_requests(payment_id)');
-        DB::statement('CREATE INDEX ix_api_requests_source ON api_requests(source)');
-        DB::statement('CREATE INDEX ix_api_requests_user_subscription ON api_requests(user_id, subscription_id)');
     }
 
     private function columnType(string $table, string $column, ?string $connection = null): ?string

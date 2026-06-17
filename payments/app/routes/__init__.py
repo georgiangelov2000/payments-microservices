@@ -75,8 +75,3 @@ async def paypal_return(payment_id: str, token: str) -> ProviderReturnResponse:
 @router.get("/provider-return/paypal/cancel", response_model=ProviderReturnResponse)
 async def paypal_cancel(payment_id: str) -> ProviderReturnResponse:
     return await handler.paypal_cancel(payment_id=payment_id)
-
-
-@router.get("/provider-return/sandbox", response_model=ProviderReturnResponse)
-async def sandbox_return(payment_id: str, result: str = "success") -> ProviderReturnResponse:
-    return await handler.sandbox_return(payment_id=payment_id, result=result)
