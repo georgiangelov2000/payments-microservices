@@ -5,7 +5,7 @@ import { Head, Link, useForm, usePage, router } from '@inertiajs/react'
 import toast from 'react-hot-toast'
 import React from 'react'
 import { Download, SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp, CreditCard, Info, Copy, Check, Clock3 } from 'lucide-react'
-import { fmtDate } from '@/utils'
+import { fmtDate, fmtLogMessage, timestampMillis } from '@/utils'
 
 const formatDateTime = (value) => fmtDate(value) === '—' ? 'Not available' : fmtDate(value)
 
@@ -41,8 +41,8 @@ const statusClass = (status) => statusMeta(status).color
 const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000
 const isCheckoutExpired = (status, createdAt) => {
   if (statusKey(status) !== 'pending') return false
-  const created = new Date(createdAt)
-  return !Number.isNaN(created.getTime()) && (Date.now() - created.getTime()) > CHECKOUT_TTL_MS
+  const created = timestampMillis(createdAt)
+  return created != null && (Date.now() - created) > CHECKOUT_TTL_MS
 }
 
 function CheckoutExpiredBadge() {
@@ -365,7 +365,7 @@ export default function Payments({ payments, filters = {} }) {
                                     </time>
                                     <div>
                                       <div className="font-medium text-gray-900">
-                                        {event.message || 'Provider response received without a readable summary'}
+                                        {fmtLogMessage(event.message) || 'Provider response received without a readable summary'}
                                       </div>
                                       <div className="mt-1 text-xs text-gray-500">
                                         {event.event_type} · {event.status}

@@ -10,6 +10,7 @@ import {
 import Badge from '@/Components/Badge';
 import { ProviderIcon } from '@/Components/ProviderBrand';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { fmtDate, timestampMillis } from '@/utils';
 
 // ─── Lightweight modal ────────────────────────────────────────────────────────
 
@@ -875,10 +876,10 @@ function VersionHistoryRow({ version, currentVersion, onRename, onDelete, onRoll
                         <span className="text-xs text-slate-400">v{version.version}</span>
                     </div>
                     {version.published_at && (
-                        <p className="mt-1 text-xs text-slate-400">{t('routing.versions.publishedAt', { date: version.published_at })}</p>
+                        <p className="mt-1 text-xs text-slate-400">{t('routing.versions.publishedAt', { date: fmtDate(version.published_at) })}</p>
                     )}
                     {version.created_at && !version.published_at && (
-                        <p className="mt-1 text-xs text-slate-400">{t('routing.versions.createdAt', { date: version.created_at })}</p>
+                        <p className="mt-1 text-xs text-slate-400">{t('routing.versions.createdAt', { date: fmtDate(version.created_at) })}</p>
                     )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1271,7 +1272,7 @@ function ActivityFeed({ attempts, audits }) {
             ok: null,
             text: `${humanizeAuditAction(a.action)} by ${a.actor_type}`,
         })),
-    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 10);
+    ].sort((a, b) => (timestampMillis(b.time) ?? 0) - (timestampMillis(a.time) ?? 0)).slice(0, 10);
 
     if (!items.length) {
         return <p className="text-sm text-slate-400 py-4 text-center">No recent activity.</p>;
@@ -1294,7 +1295,7 @@ function ActivityFeed({ attempts, audits }) {
                                 <span className="truncate">Payment {shortPaymentId(item.paymentId)}</span>
                             </Link>
                         )}
-                        <p className="text-xs text-slate-400 mt-0.5">{item.time}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{fmtDate(item.time)}</p>
                     </div>
                 </div>
             ))}

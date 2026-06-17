@@ -2,6 +2,7 @@
  * Shared formatting utilities used across admin page components.
  * Import the specific functions you need — do not import the whole module.
  */
+import moment from 'moment';
 
 /**
  * Format an integer count with locale-aware thousands separators.
@@ -36,8 +37,23 @@ export function fmtCurrency(value, currency = 'USD') {
  */
 export function fmtDate(dateStr) {
     if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    return Number.isNaN(d.getTime()) ? String(dateStr) : d.toLocaleString('sv-SE');
+    const date = moment.parseZone(String(dateStr).trim());
+    return date.isValid() ? date.local().format('YYYY-MM-DD HH:mm:ss') : String(dateStr);
+}
+
+export function timestampMillis(dateStr) {
+    if (!dateStr) return null;
+    const date = moment.parseZone(String(dateStr).trim());
+    return date.isValid() ? date.valueOf() : null;
+}
+
+export function fmtLogMessage(message) {
+    if (!message) return message;
+
+    return String(message).replace(
+        /\[(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[zZ]|[+-]\d{2}:?\d{2})?)\]/g,
+        (_, timestamp) => fmtDate(timestamp),
+    );
 }
 
 /**

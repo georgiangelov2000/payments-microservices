@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
+import { fmtDate } from '@/utils';
 import { Plus, X, Copy, Check, RotateCcw, XCircle, SlidersHorizontal, Trash2 } from 'lucide-react';
 
 const scopesMeta = [
@@ -319,11 +320,11 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey, filters
                                     <td className="px-4 py-2">
                                         <Badge value={apiKey.status} label={t(`common.badges.${apiKey.status}`)} />
                                         {apiKey.revoked_at && (
-                                            <span className="mt-1 block text-xs text-red-500">{t('apiKeys.table.revokedAt', { date: apiKey.revoked_at })}</span>
+                                            <span className="mt-1 block text-xs text-red-500">{t('apiKeys.table.revokedAt', { date: fmtDate(apiKey.revoked_at) })}</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">
-                                        {apiKey.last_rotated_at || apiKey.created_at}
+                                        {fmtDate(apiKey.last_rotated_at || apiKey.created_at)}
                                     </td>
                                     <td className="px-4 py-2">
                                         <div className="flex flex-wrap gap-2">

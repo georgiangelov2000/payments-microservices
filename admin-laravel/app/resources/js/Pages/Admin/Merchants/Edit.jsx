@@ -4,6 +4,7 @@ import ProviderBrand from '@/Components/ProviderBrand';
 import AdminLayout from '@/Layouts/AdminLayout';
 import FormSection from '@/Components/FormSection';
 import Field from '@/Components/Field';
+import { fmtDate } from '@/utils';
 import {
     CheckCircle2, XCircle, Clock, Circle, Plus,
     Copy, ChevronDown, ChevronRight, CreditCard, Key, GitBranch,
@@ -672,7 +673,7 @@ function ApiKeysSection({ merchant, generatedKey }) {
                                             </span>
                                         </div>
                                         {key.last_rotated_at && (
-                                            <p className="mt-1 text-xs text-slate-400">Last rotated: {key.last_rotated_at}</p>
+                                            <p className="mt-1 text-xs text-slate-400">Last rotated: {fmtDate(key.last_rotated_at)}</p>
                                         )}
                                     </div>
 
@@ -773,7 +774,7 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                                     {currentStatus.icon} {currentStatus.label}
                                 </span>
                             )}
-                            <span className="text-xs text-slate-400">Member since {merchant.created_at}</span>
+                            <span className="text-xs text-slate-400">Member since {fmtDate(merchant.created_at)}</span>
                         </div>
                     </div>
                 </div>
@@ -893,7 +894,7 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                             </div>
                             <div>
                                 <dt className="text-xs font-medium text-slate-500">Created</dt>
-                                <dd className="mt-0.5 text-sm text-slate-900">{merchant.created_at}</dd>
+                                <dd className="mt-0.5 text-sm text-slate-900">{fmtDate(merchant.created_at)}</dd>
                             </div>
                         </dl>
                     </div>

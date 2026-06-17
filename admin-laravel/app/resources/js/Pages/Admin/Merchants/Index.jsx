@@ -4,6 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
 import ProviderBrand from '@/Components/ProviderBrand';
+import { fmtDate } from '@/utils';
 import { Plus, Search, X, Pencil, UserPlus } from 'lucide-react';
 
 const providerStatuses = ['pending', 'active', 'validated', 'disabled'];
@@ -226,7 +227,7 @@ export default function MerchantsIndex({ merchants, availableProviders, filters 
                                             <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">{merchant.subscriptions_count} subs</span>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">{merchant.created_at}</td>
+                                    <td className="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">{fmtDate(merchant.created_at)}</td>
                                     <td className="px-4 py-2">
                                         <div className="flex items-center gap-2">
                                             <Link

@@ -2,7 +2,7 @@ import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import ProviderBrand from '@/Components/ProviderBrand';
-import { fmt, fmtDate } from '@/utils';
+import { fmt, fmtDate, fmtLogMessage } from '@/utils';
 import {
     ArrowLeft, CreditCard, CheckCircle2, XCircle, Clock, Zap,
     AlertTriangle, RefreshCcw, SkipForward, Globe, Hash,
@@ -151,7 +151,7 @@ function TimelineEvent({ event, isLast }) {
                     }`}>{event.status}</span>
                 </div>
                 {event.message && (
-                    <p className="mt-1 text-xs text-slate-500 leading-relaxed break-words whitespace-pre-wrap">{event.message}</p>
+                    <p className="mt-1 text-xs text-slate-500 leading-relaxed break-words whitespace-pre-wrap">{fmtLogMessage(event.message)}</p>
                 )}
                 <p className="mt-1 text-[11px] text-slate-400">{fmtDate(event.timestamp)}</p>
 

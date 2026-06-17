@@ -464,7 +464,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                                     <span className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${exportStatusClasses(item.status)}`}>
                                         {exportStatusLabel(item.status)}
                                     </span>
-                                    <span className="text-xs text-slate-400">{item.completed_at || item.failed_at || item.created_at}</span>
+                                    <span className="text-xs text-slate-400">{fmtDate(item.completed_at || item.failed_at || item.created_at)}</span>
                                 </div>
                                 <p className="mt-1 truncate text-xs text-slate-500">
                                     {item.filename || item.message || 'Waiting for Horizon to start the export...'}

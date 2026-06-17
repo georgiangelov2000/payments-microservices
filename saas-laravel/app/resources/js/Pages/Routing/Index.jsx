@@ -17,7 +17,7 @@ import {
     Play, Scale, Zap, ArrowLeft, Save, RotateCcw,
     FlaskConical, Globe,
 } from 'lucide-react'
-import { fmtDate } from '@/utils'
+import { fmtDate, timestampMillis } from '@/utils'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -971,7 +971,7 @@ function ActivityFeed({ attempts, audits }) {
             ok: null,
             text: `${humanizeAuditAction(a.action)} by ${a.actor_type}`,
         })),
-    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 10);
+    ].sort((a, b) => (timestampMillis(b.time) ?? 0) - (timestampMillis(a.time) ?? 0)).slice(0, 10);
 
     if (!items.length) {
         return <p className="text-sm text-slate-400 py-4 text-center">No recent activity.</p>;
@@ -994,7 +994,7 @@ function ActivityFeed({ attempts, audits }) {
                                 <span className="truncate">Payment {shortPaymentId(item.paymentId)}</span>
                             </Link>
                         )}
-                        <p className="text-xs text-slate-400 mt-0.5">{item.time}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{fmt(item.time)}</p>
                     </div>
                 </div>
             ))}

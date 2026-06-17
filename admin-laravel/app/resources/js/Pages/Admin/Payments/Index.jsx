@@ -4,12 +4,8 @@ import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
 import AdminLayout from '@/Layouts/AdminLayout';
 import ProviderBrand from '@/Components/ProviderBrand';
-import { fmtDate } from '@/utils';
+import { fmtDate, fmtLogMessage, timestampMillis } from '@/utils';
 import { ChevronDown, Clock3, ListTree, Search, X, SlidersHorizontal, ReceiptText } from 'lucide-react';
-
-function cleanLogMessage(message) {
-    return (message || '').replace(/^\[[^\]]+\]\s*/, '');
-}
 
 function formatNumber(value, decimals = 2) {
     const number = Number(value);
@@ -35,8 +31,8 @@ function isCheckoutExpired(status, createdAt) {
     const normalizedStatus = (status || '').toLowerCase();
     if (normalizedStatus !== 'payment_pending' && normalizedStatus !== 'pending') return false;
 
-    const created = new Date(createdAt);
-    return !Number.isNaN(created.getTime()) && (Date.now() - created.getTime()) > CHECKOUT_TTL_MS;
+    const created = timestampMillis(createdAt);
+    return created != null && (Date.now() - created) > CHECKOUT_TTL_MS;
 }
 
 function CheckoutExpiredBadge() {
@@ -373,7 +369,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                                                         <p className="text-sm font-semibold text-slate-800">{log.event_type || 'Log event'}</p>
                                                                                         <Badge value={(log.status || '').toLowerCase()} />
                                                                                     </div>
-                                                                                    <p className="mt-1 break-words text-sm text-slate-600">{cleanLogMessage(log.message)}</p>
+                                                                                    <p className="mt-1 break-words text-sm text-slate-600">{fmtLogMessage(log.message)}</p>
                                                                                     <p className="mt-1 text-xs text-slate-400">{fmtDate(log.created_at)}</p>
                                                                                 </div>
                                                                             </li>
