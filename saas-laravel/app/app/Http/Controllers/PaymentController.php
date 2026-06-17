@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\PaymentStatus;
 use App\Http\Requests\ExportRequest;
 use App\Http\Requests\PaymentRequest;
+use App\Http\Resources\PaymentResource;
 use App\Jobs\PaymentsExportJob;
 use App\Models\Payment;
 use App\Services\PaymentService;
@@ -86,7 +87,7 @@ final class PaymentController extends Controller
         $params = $request->safe()->toArray();
 
         return Inertia::render('Payments/Index', [
-            'payments' => $this->paymentService->fetchAll($params),
+            'payments' => $this->resolveResourcePaginator($this->paymentService->fetchAll($params), PaymentResource::class),
         ]);
     }
 

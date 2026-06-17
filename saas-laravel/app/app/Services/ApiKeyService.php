@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
-use App\DTO\ApiKeysDTO;
 use App\Enums\MerchantAPIKeyStatus;
 use App\Models\MerchantApiKey;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -21,13 +20,9 @@ class ApiKeyService
     {
         $perPage = $params['per_page'];
 
-        $paginator = $this->apiKeyRepositoryInterface->fetchAll($params)
+        return $this->apiKeyRepositoryInterface->fetchAll($params)
             ->latest('id')
             ->paginate($perPage);
-
-        return $paginator->through(
-            fn ($apiKey) => ApiKeysDTO::fromModel($apiKey)->toArray()
-        );
     }
 
     public function generateForMerchant(string $merchantId, string $environment = 'test'): string

@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace App\Contracts\ApiKeys;
 
+use App\Contracts\Repositories\CreatesRecordsInterface;
+use App\Contracts\Repositories\FindsRecordsInterface;
+use App\Contracts\Repositories\PaginatesRecordsInterface;
 use App\Models\MerchantApiKey;
-use Illuminate\Pagination\LengthAwarePaginator;
 
-interface ApiKeyRepositoryInterface
+interface ApiKeyRepositoryInterface extends PaginatesRecordsInterface, FindsRecordsInterface, CreatesRecordsInterface
 {
-    public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator;
-
-    public function find(string $id): MerchantApiKey;
-
-    public function create(array $data): MerchantApiKey;
-
     public function update(MerchantApiKey $apiKey, array $data): MerchantApiKey;
 }

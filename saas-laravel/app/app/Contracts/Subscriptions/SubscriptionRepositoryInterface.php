@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace App\Contracts\Subscriptions;
 
-use App\Contracts\BaseIndexRepositoryInterface;
+use App\Contracts\Repositories\RetrievesRecordsInterface;
 
-interface SubscriptionRepositoryInterface extends BaseIndexRepositoryInterface {}
+interface SubscriptionRepositoryInterface extends RetrievesRecordsInterface {}

@@ -4,20 +4,16 @@ declare(strict_types=1);
 
 namespace App\Contracts\Merchants;
 
+use App\Contracts\Repositories\CreatesRecordsInterface;
+use App\Contracts\Repositories\FindsRecordsInterface;
+use App\Contracts\Repositories\PaginatesRecordsInterface;
 use App\Models\MerchantProviderCredential;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Pagination\LengthAwarePaginator;
 
-interface MerchantRepositoryInterface
+interface MerchantRepositoryInterface extends PaginatesRecordsInterface, FindsRecordsInterface, CreatesRecordsInterface
 {
-    public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator;
-
     public function allForSelect(): Collection;
-
-    public function find(string $id): User;
-
-    public function create(array $data): User;
 
     public function update(User $merchant, array $data): User;
 

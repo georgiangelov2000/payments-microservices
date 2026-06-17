@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\StoreMerchantRequest;
 use App\Http\Requests\Admin\StoreProviderCredentialRequest;
 use App\Http\Requests\Admin\UpdateMerchantRequest;
 use App\Http\Requests\Admin\UpdateProviderCredentialRequest;
+use App\Http\Resources\Admin\MerchantResource;
 use App\Models\MerchantProviderCredential;
 use App\Models\Provider;
 use App\Models\User;
@@ -31,7 +32,7 @@ final class MerchantController extends Controller
         return Inertia::render('Admin/Merchants/Index', [
             'availableProviders' => Provider::query()->orderBy('name')->get(['id', 'name', 'alias']),
             'filters' => $filters,
-            'merchants' => $this->merchantService->list($filters),
+            'merchants' => $this->resolveResourcePaginator($this->merchantService->list($filters), MerchantResource::class),
         ]);
     }
 
@@ -56,7 +57,7 @@ final class MerchantController extends Controller
             ->load(['providerCredentials.provider', 'apiKeys']);
 
         return Inertia::render('Admin/Merchants/Edit', [
-            'merchant' => $this->merchantService->serialize($merchant),
+            'merchant' => $this->resolveResource($merchant, MerchantResource::class),
             'availableProviders' => Provider::query()->orderBy('name')->get(['id', 'name', 'alias']),
             'generatedKey' => session('generated_api_key'),
         ]);

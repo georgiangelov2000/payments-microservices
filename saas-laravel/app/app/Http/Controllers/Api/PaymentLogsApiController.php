@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PaymentLogResource;
 use App\Services\PaymentLogsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class PaymentLogsApiController extends Controller
     public function index(Request $request): JsonResponse
     {
         return response()->json(
-            $this->service->get($request->all())
+            $this->resolveResourcePaginator($this->service->get($request->all()), PaymentLogResource::class)
         );
     }
 
@@ -30,7 +31,7 @@ class PaymentLogsApiController extends Controller
             return response()->json(['message' => 'Not found.'], 404);
         }
 
-        return response()->json($result);
+        return response()->json($this->resolveResource($result, PaymentLogResource::class));
     }
 
     public function byPayment(string $paymentId, Request $request): JsonResponse
@@ -42,7 +43,7 @@ class PaymentLogsApiController extends Controller
         }
 
         return response()->json([
-            'results' => $result->items(),
+            'results' => $this->resolveResourceCollection($result->getCollection(), PaymentLogResource::class),
             'pagination' => [
                 'total' => $result->total(),
                 'per_page' => $result->perPage(),

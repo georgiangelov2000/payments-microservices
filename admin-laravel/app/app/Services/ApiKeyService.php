@@ -6,10 +6,9 @@ namespace App\Services;
 
 use App\Contracts\ApiKeys\ApiKeyRepositoryInterface;
 use App\Enums\MerchantAPIKeyStatus;
-use App\Services\GatewayCacheService;
 use App\Models\MerchantApiKey;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 final class ApiKeyService
@@ -30,9 +29,7 @@ final class ApiKeyService
 
     public function list(array $filters = []): LengthAwarePaginator
     {
-        return $this->apiKeyRepository->paginate(filters: $filters)->through(
-            fn (MerchantApiKey $apiKey) => $this->serialize($apiKey)
-        );
+        return $this->apiKeyRepository->paginate(filters: $filters);
     }
 
     public function create(array $data): array
@@ -121,25 +118,6 @@ final class ApiKeyService
     public function availableScopes(): array
     {
         return self::SCOPES;
-    }
-
-    public function serialize(MerchantApiKey $apiKey): array
-    {
-        return [
-            'id' => $apiKey->id,
-            'name' => $apiKey->name,
-            'masked_key' => $apiKey->maskedKey(),
-            'environment' => $apiKey->environment ?: 'test',
-            'scopes' => $apiKey->scopes ?: [],
-            'status' => $apiKey->status?->label(),
-            'merchant' => $apiKey->merchant ? [
-                'name' => $apiKey->merchant->name,
-                'email' => $apiKey->merchant->email,
-            ] : null,
-            'last_rotated_at' => $apiKey->last_rotated_at?->toDateTimeString(),
-            'revoked_at' => $apiKey->revoked_at?->toDateTimeString(),
-            'created_at' => $apiKey->created_at?->toDateTimeString(),
-        ];
     }
 
     private function generatePlainKey(string $environment): string

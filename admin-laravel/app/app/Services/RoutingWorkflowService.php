@@ -423,35 +423,6 @@ final class RoutingWorkflowService
         return $errors;
     }
 
-    public function serializeWorkflow(RoutingWorkflow $workflow): array
-    {
-        return [
-            'id' => $workflow->id,
-            'merchant_id' => $workflow->merchant_id,
-            'merchant' => $workflow->merchant ? [
-                'name' => $workflow->merchant->name,
-                'email' => $workflow->merchant->email,
-            ] : null,
-            'name' => $workflow->name,
-            'environment' => $workflow->environment,
-            'status' => $workflow->status,
-            'current_version' => $workflow->current_version,
-            'nodes' => $workflow->nodes ?: [],
-            'edges' => $workflow->edges ?: [],
-            'validation_errors' => $workflow->validation_errors ?: [],
-            'published_at' => $workflow->published_at?->toDateTimeString(),
-            'updated_at' => $workflow->updated_at?->toDateTimeString(),
-            'versions' => $workflow->versions->map(fn (RoutingWorkflowVersion $version) => [
-                'id' => $version->id,
-                'version' => $version->version,
-                'name' => $version->name,
-                'status' => $version->status,
-                'published_at' => $version->published_at?->toDateTimeString(),
-                'created_at' => $version->created_at?->toDateTimeString(),
-            ]),
-        ];
-    }
-
     private function normalizeNodes(array $nodes): array
     {
         return collect($nodes)->map(function (array $node, int $index) {

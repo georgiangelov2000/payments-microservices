@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\MerchantAPIKeyStatus;
 use App\Http\Requests\ApiKeyRequest;
+use App\Http\Resources\ApiKeyResource;
 use App\Models\MerchantApiKey;
 use App\Services\ApiKeyService;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +25,7 @@ final class ApiKeyController extends Controller
         $params = $request->safe()->toArray();
 
         return Inertia::render('ApiKeys/Index', [
-            'keys' => $this->apiKeyService->fetchAll($params),
+            'keys' => $this->resolveResourcePaginator($this->apiKeyService->fetchAll($params), ApiKeyResource::class),
         ]);
     }
 

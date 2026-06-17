@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserSubscriptionRequest;
+use App\Http\Resources\UserSubscriptionResource;
 use App\Services\SubscriptionService;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +21,7 @@ final class SubscriptionController extends Controller
         $params = $request->safe()->toArray();
 
         return Inertia::render('Subscriptions/Index', [
-            'subscriptions' => $this->subscriptionService->fetchAll($params),
+            'subscriptions' => $this->resolveResourcePaginator($this->subscriptionService->fetchAll($params), UserSubscriptionResource::class),
         ]);
     }
 }

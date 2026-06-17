@@ -9,6 +9,7 @@ use App\Contracts\Routing\RoutingRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreWorkflowRequest;
 use App\Http\Requests\Admin\UpdateWorkflowRequest;
+use App\Http\Resources\Admin\RoutingWorkflowResource;
 use App\Models\Provider;
 use App\Models\RoutingWorkflow;
 use App\Models\RoutingWorkflowVersion;
@@ -50,9 +51,7 @@ final class RoutingController extends Controller
                     ])->values(),
             ]),
             'providers' => Provider::query()->orderBy('name')->get(['id', 'name', 'alias']),
-            'workflows' => $paginated->through(
-                fn ($workflow) => $this->routingService->serializeWorkflow($workflow)
-            ),
+            'workflows' => $this->resolveResourcePaginator($paginated, RoutingWorkflowResource::class),
             'filters' => $filters,
             'health' => $this->routingRepository->getHealthStatuses(),
             'configurations' => $this->routingRepository->getConfigurations(),

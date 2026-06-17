@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\Payments\PaymentRepositoryInterface;
-use App\DTO\PaymentsDTO;
-use App\Models\PaymentLog;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 final class PaymentService
@@ -17,27 +15,12 @@ final class PaymentService
 
     public function fetchAll(array $params = []): LengthAwarePaginator
     {
-        $payments = $this->paymentRepository->fetchAll($params)
+        return $this->paymentRepository->fetchAll($params)
+            ->with([
+                'provider:id,name,alias',
+                'logs' => fn ($query) => $query->orderBy('created_at'),
+            ])
             ->latest('id')
             ->paginate($params['per_page']);
-
-        $paymentIds = $payments->getCollection()->pluck('id');
-
-        $logsByPayment = PaymentLog::query()
-            ->whereIn('payment_id', $paymentIds)
-            ->orderBy('created_at')
-            ->get()
-            ->groupBy('payment_id');
-
-        $payments->setCollection(
-            $payments->getCollection()->map(
-                fn ($payment) => PaymentsDTO::fromModel(
-                    $payment,
-                    $logsByPayment->get($payment->id, collect())
-                )->toArray()
-            )
-        );
-
-        return $payments;
     }
 }

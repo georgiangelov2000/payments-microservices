@@ -198,43 +198,113 @@ function RoutingBehavior({ strategies }) {
 // ─── Daily trend mini-chart ───────────────────────────────────────────────────
 
 function DailyTrend({ data }) {
-    if (!data.length) return (
+    const points = (data ?? []).map((d) => ({
+        date: d.date,
+        total: Number(d.total ?? 0),
+        failovers: Number(d.failovers ?? 0),
+        successes: Number(d.successes ?? 0),
+    }));
+
+    if (!points.length) return (
         <p className="py-8 text-center text-sm text-slate-400">No data for the selected period.</p>
     );
 
-    const maxFailovers = Math.max(...data.map(d => d.failovers), 1);
+    const width = 640;
+    const height = 180;
+    const paddingX = 18;
+    const paddingTop = 16;
+    const paddingBottom = 28;
+    const chartHeight = height - paddingTop - paddingBottom;
+    const maxFailovers = Math.max(...points.map(d => d.failovers), 1);
+    const step = points.length > 1 ? (width - paddingX * 2) / (points.length - 1) : 0;
+
+    const coordinates = points.map((d, index) => ({
+        ...d,
+        x: paddingX + index * step,
+        y: paddingTop + chartHeight - (d.failovers / maxFailovers) * chartHeight,
+    }));
+
+    const linePath = coordinates
+        .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
+        .join(' ');
 
     return (
         <div className="overflow-x-auto">
-            <div className="flex items-end gap-1 h-24 min-w-0" style={{ minWidth: `${data.length * 18}px` }}>
-                {data.map((d) => {
-                    const heightPct = (d.failovers / maxFailovers) * 100;
-                    const successPct = d.total > 0 ? (d.failovers / d.total) * 100 : 0;
-                    const barColor = successPct > 20 ? 'bg-red-400' : successPct > 5 ? 'bg-amber-400' : 'bg-indigo-300';
-                    return (
-                        <div
-                            key={d.date}
-                            className="group relative flex-1 flex flex-col justify-end"
-                            title={`${d.date}: ${d.failovers} failovers / ${d.total} total`}
-                        >
-                            <div
-                                className={`w-full rounded-t transition-all ${barColor} hover:opacity-80`}
-                                style={{ height: `${Math.max(heightPct, 4)}%` }}
+            <div className="min-w-[460px]">
+                <svg
+                    viewBox={`0 0 ${width} ${height}`}
+                    className="h-52 w-full overflow-visible"
+                    role="img"
+                    aria-label="Failover trend over the last 30 days"
+                >
+                    {[0, 0.5, 1].map((ratio) => {
+                        const y = paddingTop + chartHeight - ratio * chartHeight;
+                        return (
+                            <line
+                                key={ratio}
+                                x1={paddingX}
+                                y1={y}
+                                x2={width - paddingX}
+                                y2={y}
+                                stroke="#e2e8f0"
+                                strokeWidth="1"
                             />
-                            {/* Tooltip */}
-                            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:flex flex-col items-center z-10">
-                                <div className="rounded bg-slate-900 px-2 py-1 text-[10px] text-white whitespace-nowrap shadow-lg">
-                                    {d.date}: {d.failovers} failovers
-                                </div>
-                                <div className="h-1.5 w-1.5 rotate-45 bg-slate-900" style={{ marginTop: '-3px' }} />
+                        );
+                    })}
+                    <path
+                        d={`${linePath} L ${width - paddingX} ${height - paddingBottom} L ${paddingX} ${height - paddingBottom} Z`}
+                        fill="#fecaca"
+                        opacity="0.35"
+                    />
+                    <path
+                        d={linePath}
+                        fill="none"
+                        stroke="#f87171"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                    {coordinates.map((d) => {
+                        const failoverRate = d.total > 0 ? (d.failovers / d.total) * 100 : 0;
+                        const pointColor = failoverRate > 20 ? '#f87171' : failoverRate > 5 ? '#fbbf24' : '#a5b4fc';
+
+                        return (
+                            <g key={d.date}>
+                                <title>{`${d.date}: ${d.failovers} failovers / ${d.total} total`}</title>
+                                <line
+                                    x1={d.x}
+                                    y1={d.y}
+                                    x2={d.x}
+                                    y2={height - paddingBottom}
+                                    stroke={pointColor}
+                                    strokeWidth="2"
+                                    opacity="0.4"
+                                />
+                                <circle cx={d.x} cy={d.y} r="5" fill={pointColor} stroke="#ffffff" strokeWidth="2" />
+                            </g>
+                        );
+                    })}
+                </svg>
+                <div className="mt-1 grid grid-cols-3 text-[10px] text-slate-400">
+                    <span>{points[0]?.date}</span>
+                    <span className="text-center">Max {fmt(maxFailovers)} failovers</span>
+                    <span className="text-right">{points[points.length - 1]?.date}</span>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    {points.filter(d => d.failovers > 0).slice(-3).map((d) => {
+                        const rate = d.total > 0 ? Math.round((d.failovers / d.total) * 100) : 0;
+
+                        return (
+                            <div key={d.date} className="rounded-lg bg-slate-50 px-3 py-2">
+                                <p className="text-[11px] font-medium text-slate-500">{d.date}</p>
+                                <p className="mt-0.5 text-sm font-semibold text-slate-900">
+                                    {fmt(d.failovers)} failovers
+                                </p>
+                                <p className="text-[11px] text-slate-400">{rate}% of {fmt(d.total)} attempts</p>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
-            <div className="mt-2 flex justify-between text-[10px] text-slate-400">
-                <span>{data[0]?.date}</span>
-                <span>{data[data.length - 1]?.date}</span>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );

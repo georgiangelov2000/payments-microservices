@@ -9,6 +9,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\IndexMerchantPaymentsRequest;
 use App\Http\Requests\Admin\IndexPaymentsRequest;
 use App\Http\Requests\Admin\StoreMerchantPaymentsExportRequest;
+use App\Http\Resources\Admin\AdminExportFileResource;
+use App\Http\Resources\Admin\MerchantActivityResource;
+use App\Http\Resources\Admin\PaymentResource;
 use App\Models\AdminExportFile;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
@@ -30,18 +33,23 @@ final class PaymentController extends Controller
 
         return Inertia::render('Admin/Payments/Index', [
             'filters' => $filters,
-            'payments' => $this->payments->paginate($filters),
+            'payments' => $this->resolveResourcePaginator($this->payments->paginate($filters), PaymentResource::class),
         ]);
     }
 
     public function merchants(IndexMerchantPaymentsRequest $request): Response
     {
         $filters = $request->validated();
+        $activity = $this->payments->merchantActivity($filters);
+        $activity['merchants'] = $this->resolveResourcePaginator($activity['merchants'], MerchantActivityResource::class);
 
         return Inertia::render('Admin/Payments/Merchants', [
             'filters' => $filters,
-            'activity' => $this->payments->merchantActivity($filters),
-            'exports' => $this->payments->recentMerchantPaymentExports((string) Auth::id()),
+            'activity' => $activity,
+            'exports' => $this->resolveResourceCollection(
+                $this->payments->recentMerchantPaymentExports((string) Auth::id()),
+                AdminExportFileResource::class,
+            ),
         ]);
     }
 

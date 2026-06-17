@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace App\Contracts\ApiKeys;
 
-use App\Contracts\BaseIndexRepositoryInterface;
+use App\Contracts\Repositories\RetrievesRecordsInterface;
 
-interface ApiKeyRepositoryInterface extends BaseIndexRepositoryInterface {}
+interface ApiKeyRepositoryInterface extends RetrievesRecordsInterface {}

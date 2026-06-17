@@ -11,7 +11,6 @@ use App\Models\MerchantProviderCredential;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 final class MerchantService
 {
@@ -21,9 +20,7 @@ final class MerchantService
 
     public function list(array $filters = []): LengthAwarePaginator
     {
-        return $this->merchantRepository->paginate(filters: $filters)->through(
-            fn (User $merchant) => $this->serialize($merchant)
-        );
+        return $this->merchantRepository->paginate(filters: $filters);
     }
 
     public function create(array $data): User
@@ -85,43 +82,4 @@ final class MerchantService
         return $this->merchantRepository->updateProviderCredential($credential, $updates);
     }
 
-    public function serialize(User $merchant): array
-    {
-        return [
-            'id' => $merchant->id,
-            'name' => $merchant->name,
-            'email' => $merchant->email,
-            'status' => $merchant->status->label(),
-            'payments_count' => $merchant->payments_count,
-            'api_keys_count' => $merchant->api_keys_count,
-            'subscriptions_count' => $merchant->subscriptions_count,
-            'created_at' => $merchant->created_at?->toDateString(),
-            'provider_credentials' => $merchant->providerCredentials->map(
-                fn (MerchantProviderCredential $credential) => [
-                    'id' => $credential->id,
-                    'provider_id' => $credential->provider_id,
-                    'provider_name' => $credential->provider?->name,
-                    'provider_alias' => $credential->provider?->alias,
-                    'environment' => $credential->environment,
-                    'display_name' => $credential->display_name,
-                    'public_key' => $credential->maskedPublicKey(),
-                    'has_secret' => $credential->hasSecret(),
-                    'status' => $credential->status,
-                    'last_validated_at' => $credential->last_validated_at?->toDateTimeString(),
-                ]
-            )->all(),
-            'api_keys' => ($merchant->relationLoaded('apiKeys') ? $merchant->apiKeys : collect())->map(
-                fn ($key) => [
-                    'id' => $key->id,
-                    'name' => $key->name,
-                    'key_prefix' => $key->key_prefix,
-                    'environment' => $key->environment,
-                    'status' => $key->status?->label() ?? $key->status,
-                    'scopes' => $key->scopes ?? [],
-                    'last_rotated_at' => $key->last_rotated_at?->toDateTimeString(),
-                    'revoked_at' => $key->revoked_at?->toDateTimeString(),
-                ]
-            )->all(),
-        ];
-    }
 }

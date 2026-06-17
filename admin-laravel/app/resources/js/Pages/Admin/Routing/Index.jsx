@@ -1259,6 +1259,7 @@ function ActivityFeed({ attempts, audits }) {
             type: 'attempt',
             time: a.created_at,
             ok: a.status === 'succeeded',
+            paymentId: a.payment_id,
             text: a.status === 'succeeded'
                 ? `Payment routed to ${a.provider_alias} via ${a.strategy} strategy in ${a.latency_ms}ms`
                 : `Routing to ${a.provider_alias} failed (${a.error_code ?? a.status}) after ${a.latency_ms}ms`,
@@ -1283,12 +1284,30 @@ function ActivityFeed({ attempts, audits }) {
                     <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${item.ok === null ? 'bg-slate-300' : item.ok ? 'bg-green-500' : 'bg-red-500'}`} />
                     <div className="min-w-0 flex-1">
                         <p className="text-sm text-slate-700">{item.text}</p>
+                        {item.paymentId && (
+                            <Link
+                                href={route('admin.payments.index', { search: item.paymentId })}
+                                title={item.paymentId}
+                                className="mt-1 inline-flex max-w-full items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-indigo-700 ring-1 ring-indigo-100 hover:bg-indigo-100 hover:text-indigo-900"
+                            >
+                                <CreditCard size={11} strokeWidth={2} />
+                                <span className="truncate">Payment {shortPaymentId(item.paymentId)}</span>
+                            </Link>
+                        )}
                         <p className="text-xs text-slate-400 mt-0.5">{item.time}</p>
                     </div>
                 </div>
             ))}
         </div>
     );
+}
+
+function shortPaymentId(id) {
+    const value = String(id ?? '');
+
+    if (value.length <= 18) return value;
+
+    return `${value.slice(0, 8)}…${value.slice(-6)}`;
 }
 
 function humanizeAuditAction(action) {

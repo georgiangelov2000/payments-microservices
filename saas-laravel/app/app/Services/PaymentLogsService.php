@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\DTO\PaymentLogsDTO;
 use App\Repositories\PaymentLogsRepository;
 
 class PaymentLogsService
@@ -15,15 +14,12 @@ class PaymentLogsService
 
     public function get(array $filters = [])
     {
-        return $this->repository->get($filters)
-            ->through(fn ($log) => PaymentLogsDTO::fromModel($log)->toArray());
+        return $this->repository->get($filters);
     }
 
-    public function show(string $logId, string $merchantId): ?array
+    public function show(string $logId, string $merchantId)
     {
-        $log = $this->repository->show($logId, $merchantId);
-
-        return $log ? PaymentLogsDTO::fromModel($log)->toArray() : null;
+        return $this->repository->show($logId, $merchantId);
     }
 
     public function byPayment(string $paymentId, string $merchantId)
@@ -34,6 +30,6 @@ class PaymentLogsService
             return null;
         }
 
-        return $paginator->through(fn ($log) => PaymentLogsDTO::fromModel($log)->toArray());
+        return $paginator;
     }
 }

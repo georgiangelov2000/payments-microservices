@@ -8,6 +8,7 @@ use App\Contracts\Merchants\MerchantRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreApiKeyRequest;
 use App\Http\Requests\Admin\UpdateApiKeyRequest;
+use App\Http\Resources\Admin\ApiKeyResource;
 use App\Models\MerchantApiKey;
 use App\Services\ApiKeyService;
 use Illuminate\Http\RedirectResponse;
@@ -30,7 +31,7 @@ final class ApiKeyController extends Controller
         return Inertia::render('Admin/ApiKeys/Index', [
             'generatedKey' => session('generated_api_key'),
             'merchants' => $this->merchantRepository->allForSelect(),
-            'apiKeys' => $this->apiKeyService->list($filters),
+            'apiKeys' => $this->resolveResourcePaginator($this->apiKeyService->list($filters), ApiKeyResource::class),
             'filters' => $filters,
         ]);
     }

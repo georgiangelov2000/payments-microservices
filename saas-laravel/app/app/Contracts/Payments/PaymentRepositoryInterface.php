@@ -4,6 +4,6 @@ declare(strict_types=1);
 
 namespace App\Contracts\Payments;
 
-use App\Contracts\BaseIndexRepositoryInterface;
+use App\Contracts\Repositories\RetrievesRecordsInterface;
 
-interface PaymentRepositoryInterface extends BaseIndexRepositoryInterface {}
+interface PaymentRepositoryInterface extends RetrievesRecordsInterface {}

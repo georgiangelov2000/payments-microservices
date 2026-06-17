@@ -680,7 +680,7 @@ classDiagram
 _REGISTRY: dict[str, Type] = {
     "stripe": StripeConnector,
     "paypal": PayPalConnector,
-    # "adyen": AdyenConnector  ← adding a provider = one line
+    # "new_provider": NewProviderConnector  ← adding a provider = one line
 }
 
 def provider_connector(alias: str, credentials: ProviderCredentials | None = None):
@@ -1455,7 +1455,7 @@ flowchart LR
 | **P3** | Encrypt `secret_value` at rest (AES-256-GCM or KMS) | Credential security |
 | **P3** | Admin-controlled provider allowlist per merchant | Operational control |
 | **P3** | Webhook retry queue with exponential backoff | Delivery reliability |
-| **Future** | Additional provider adapters (Adyen, Checkout.com) | Provider diversity |
+| **Future** | Additional provider adapters | Provider diversity |
 | **Future** | Automatic reconciliation job (sync DB vs provider) | Data integrity |
 | **Future** | Merchant-facing analytics charts (approval rates, latency) | Business intelligence |
 | **Future** | A/B testing framework for provider comparison | Optimization |
@@ -1493,21 +1493,21 @@ sequenceDiagram
 ### Adding a New Payment Provider
 
 ```
-1. Create: payments/app/providers/adyen.py
-   - class AdyenConnector
+1. Create: payments/app/providers/new_provider.py
+   - class NewProviderConnector
    - implements: create_checkout(request) → CheckoutSession
    - reads credentials from request.credentials
    - no global env vars
 
 2. Register: payments/app/providers/registry.py
-   - _REGISTRY["adyen"] = AdyenConnector
+   - _REGISTRY["new_provider"] = NewProviderConnector
 
 3. Webhook route: payments/app/routes/webhooks.py
-   - GET /provider-return/adyen
-   - GET /provider-return/adyen/cancel
+   - GET /provider-return/new-provider
+   - GET /provider-return/new-provider/cancel
 
 4. DB: Insert into providers table
-   - ("adyen", "Adyen", "https://adyen.com")
+   - ("new_provider", "New Provider", "https://new-provider.example")
 
 5. Admin UI: Automatically appears in provider assignment
    (reads from providers table, no code change needed)

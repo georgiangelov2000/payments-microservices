@@ -40,6 +40,7 @@ class AnalyticsRepository
             ->where('created_at', '>=', $since)
             ->whereNotNull('latency_ms')
             ->avg('latency_ms');
+        $avgLatency = $avgLatency !== null ? (float) $avgLatency : null;
 
         // Previous period for trend deltas
         $prevSince = Carbon::now()->subDays($days * 2)->startOfDay();
@@ -75,7 +76,7 @@ class AnalyticsRepository
             'volume'           => $volume,
             'currency'         => $row->currency ?? 'USD',
             'success_rate'     => $successRate,
-            'avg_latency_ms'   => $avgLatency ? (int) round($avgLatency) : null,
+            'avg_latency_ms'   => $avgLatency !== null ? (int) round($avgLatency) : null,
             'delta_total'      => $prevTotal > 0 ? round(($total - $prevTotal) / $prevTotal * 100, 1) : null,
             'delta_volume'     => $prevVolume > 0 ? round(($volume - $prevVolume) / $prevVolume * 100, 1) : null,
             'delta_rate'       => $prevSuccessRate > 0 ? round($successRate - $prevSuccessRate, 1) : null,

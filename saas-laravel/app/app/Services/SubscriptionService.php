@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\Subscriptions\SubscriptionRepositoryInterface;
-use App\DTO\UserSubscriptionsDTO;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 final class SubscriptionService
@@ -18,12 +17,9 @@ final class SubscriptionService
     {
         $perPage = $params['per_page'];
 
-        $paginator = $this->subscriptionRepositoryInterface->fetchAll($params)
+        return $this->subscriptionRepositoryInterface->fetchAll($params)
+            ->with('subscription')
             ->latest('id')
             ->paginate($perPage);
-
-        return $paginator->through(
-            fn ($subscription) => UserSubscriptionsDTO::fromModel($subscription)->toArray()
-        );
     }
 }

@@ -33,7 +33,8 @@ final class PaymentRepository implements PaymentRepositoryInterface
             ])
             ->when($filters['search'] ?? null, function ($query, string $search) {
                 $query->where(function ($q) use ($search) {
-                    $q->whereRaw('CAST(order_id AS TEXT) ILIKE ?', ["%{$search}%"])
+                    $q->whereRaw('CAST(id AS TEXT) ILIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('CAST(order_id AS TEXT) ILIKE ?', ["%{$search}%"])
                         ->orWhereHas('merchant', fn ($q) => $q
                             ->where('name', 'ilike', "%{$search}%")
                             ->orWhere('email', 'ilike', "%{$search}%")
