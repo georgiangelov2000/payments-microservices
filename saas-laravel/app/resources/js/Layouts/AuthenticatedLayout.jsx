@@ -10,6 +10,7 @@ import {
     Package,
     BarChart2,
     Webhook,
+    Mail,
     GitBranch,
     LogOut,
     ChevronLeft,
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
     { labelKey: 'common.nav.apiKeys',       routeName: 'api-keys.index',      pattern: 'api-keys.*',         Icon: Key },
     { labelKey: 'common.nav.subscriptions', routeName: 'subscriptions.index', pattern: 'subscriptions.*',    Icon: Package },
     { labelKey: 'common.nav.webhooks',      routeName: 'webhooks.index',      pattern: 'webhooks.*',         Icon: Webhook },
+    { labelKey: 'common.nav.notifications', routeName: 'notifications.index', pattern: 'notifications.*',    Icon: Mail },
 ];
 
 // ── Nav Item ─────────────────────────────────────────────────────────────────

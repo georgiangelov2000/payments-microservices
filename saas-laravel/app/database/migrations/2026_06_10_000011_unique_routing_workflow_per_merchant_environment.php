@@ -15,6 +15,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         // Guard: deduplicate any existing rows before adding the constraint.
         // Keep the most-recently-updated row for each (merchant_id, environment) pair;
         // soft-delete all earlier duplicates by marking them 'archived'.
@@ -48,6 +52,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('DROP INDEX IF EXISTS ux_routing_workflows_merchant_environment');
     }
 };

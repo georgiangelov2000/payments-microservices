@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\ApiKeyController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EmailNotificationController;
 use App\Http\Controllers\Admin\MerchantController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\RoutingController;
@@ -43,6 +44,9 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::post('/api-keys/{apiKey}/revoke', [ApiKeyController::class, 'revoke'])->name('admin.api-keys.revoke');
     Route::delete('/api-keys/{apiKey}', [ApiKeyController::class, 'destroy'])->name('admin.api-keys.destroy');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
+    Route::get('/notifications', [EmailNotificationController::class, 'index'])->name('admin.notifications.index');
+    Route::put('/notifications/settings', [EmailNotificationController::class, 'updateSettings'])->name('admin.notifications.settings.update');
+    Route::put('/notifications/templates/{eventType}', [EmailNotificationController::class, 'updateTemplate'])->name('admin.notifications.templates.update')->where('eventType', '.*');
     Route::get('/routing', [RoutingController::class, 'index'])->name('admin.routing.index');
     Route::post('/routing/workflows', [RoutingController::class, 'storeWorkflow'])->name('admin.routing.workflows.store');
     Route::get('/routing/workflows/{workflow}/builder', [RoutingController::class, 'builder'])->name('admin.routing.workflows.builder');

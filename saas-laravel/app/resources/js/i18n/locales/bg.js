@@ -33,6 +33,7 @@ export default {
             apiKeys: 'API ключове',
             subscriptions: 'Абонаменти',
             webhooks: 'Webhooks',
+            notifications: 'Известия',
         },
     },
     apiKeys: {

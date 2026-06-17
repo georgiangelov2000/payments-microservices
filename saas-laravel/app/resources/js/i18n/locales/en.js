@@ -33,6 +33,7 @@ export default {
             apiKeys: 'API Keys',
             subscriptions: 'Subscriptions',
             webhooks: 'Webhooks',
+            notifications: 'Notifications',
         },
     },
     apiKeys: {

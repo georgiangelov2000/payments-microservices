@@ -45,6 +45,7 @@ export default {
             apiKeys: 'API ключове',
             routing: 'Рутиране',
             analytics: 'Анализи',
+            notifications: 'Известия',
         },
     },
     auth: {

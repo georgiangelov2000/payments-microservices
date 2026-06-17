@@ -19,6 +19,7 @@ import {
     Key,
     GitBranch,
     BarChart2,
+    Mail,
     LogOut,
     ChevronLeft,
     ChevronRight,
@@ -38,6 +39,7 @@ const navItems = [
     { labelKey: 'common.nav.apiKeys',       routeName: 'admin.api-keys.index',      pattern: 'admin.api-keys.*',       Icon: Key },
     { labelKey: 'common.nav.routing',       routeName: 'admin.routing.index',       pattern: 'admin.routing.*',        Icon: GitBranch },
     { labelKey: 'common.nav.analytics',     routeName: 'admin.analytics.index',     pattern: 'admin.analytics.*',      Icon: BarChart2 },
+    { labelKey: 'common.nav.notifications', routeName: 'admin.notifications.index', pattern: 'admin.notifications.*',   Icon: Mail },
 ];
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ContactFormController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailNotificationController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
@@ -96,6 +97,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [WebhookController::class, 'store'])->name('store');
         Route::delete('/{webhook}', [WebhookController::class, 'destroy'])->name('destroy');
         Route::post('/{webhook}/test', [WebhookController::class, 'test'])->name('test');
+    });
+
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [EmailNotificationController::class, 'index'])->name('index');
+        Route::put('/', [EmailNotificationController::class, 'update'])->name('update');
     });
 
     // Password management

@@ -45,6 +45,7 @@ export default {
             apiKeys: 'API Keys',
             routing: 'Routing',
             analytics: 'Analytics',
+            notifications: 'Notifications',
         },
     },
     auth: {
