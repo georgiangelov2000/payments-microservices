@@ -17,7 +17,18 @@ function formatNumber(value, decimals = 2) {
     return Number.isFinite(number) ? number.toFixed(decimals) : '0.00';
 }
 
-const STATUS_OPTIONS = ['', 'pending', 'succeeded', 'failed'];
+const STATUS_OPTIONS = [
+    { value: '', label: 'All statuses' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'processing', label: 'Processing' },
+    { value: 'succeeded', label: 'Succeeded' },
+    { value: 'failed', label: 'Failed' },
+    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'refunded', label: 'Refunded' },
+    { value: 'partially_refunded', label: 'Partially refunded' },
+    { value: 'disputed', label: 'Disputed' },
+    { value: 'expired', label: 'Expired' },
+];
 const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000;
 
 function isCheckoutExpired(status, createdAt) {
@@ -154,9 +165,10 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                             onChange={(e) => setStatus(e.target.value)}
                             className="min-w-40 rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-10 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         >
-                            <option value="">All statuses</option>
-                            {STATUS_OPTIONS.filter(Boolean).map((s) => (
-                                <option key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                            {STATUS_OPTIONS.map((option) => (
+                                <option key={option.value || 'all'} value={option.value}>
+                                    {option.label}
+                                </option>
                             ))}
                         </select>
                     </div>

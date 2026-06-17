@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class IndexMerchantPaymentsRequest extends FormRequest
 {
@@ -22,7 +23,24 @@ class IndexMerchantPaymentsRequest extends FormRequest
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'in:pending,finished,failed,refunded,processing,cancelled,disputed,expired'],
+            'status' => [
+                'nullable',
+                'string',
+                Rule::in([
+                    'pending',
+                    'processing',
+                    'succeeded',
+                    'finished',
+                    'failed',
+                    'cancelled',
+                    'canceled',
+                    'refunded',
+                    'partially_refunded',
+                    'partially refunded',
+                    'disputed',
+                    'expired',
+                ]),
+            ],
         ];
     }
 }

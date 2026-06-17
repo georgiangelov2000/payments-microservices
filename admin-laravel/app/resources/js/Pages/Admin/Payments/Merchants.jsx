@@ -28,7 +28,18 @@ import {
     X,
 } from 'lucide-react';
 
-const STATUS_OPTIONS = ['', 'succeeded', 'pending', 'failed', 'refunded', 'processing', 'cancelled', 'disputed', 'expired'];
+const STATUS_OPTIONS = [
+    { value: '', label: 'All statuses' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'processing', label: 'Processing' },
+    { value: 'succeeded', label: 'Succeeded' },
+    { value: 'failed', label: 'Failed' },
+    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'refunded', label: 'Refunded' },
+    { value: 'partially_refunded', label: 'Partially refunded' },
+    { value: 'disputed', label: 'Disputed' },
+    { value: 'expired', label: 'Expired' },
+];
 const EXPORT_FORMATS = ['xlsx', 'csv', 'json', 'pdf'];
 
 function currentMonth() {
@@ -399,9 +410,10 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                             onChange={(e) => setStatus(e.target.value)}
                             className="min-w-40 rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-10 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         >
-                            <option value="">All statuses</option>
-                            {STATUS_OPTIONS.filter(Boolean).map((option) => (
-                                <option key={option} value={option}>{option.charAt(0).toUpperCase() + option.slice(1)}</option>
+                            {STATUS_OPTIONS.map((option) => (
+                                <option key={option.value || 'all'} value={option.value}>
+                                    {option.label}
+                                </option>
                             ))}
                         </select>
                     </div>
