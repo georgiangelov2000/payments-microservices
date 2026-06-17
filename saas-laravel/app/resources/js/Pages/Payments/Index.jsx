@@ -18,7 +18,7 @@ const formatNumber = (value, decimals = 2) => {
 const STATUS_META = {
   pending:            { color: 'border-amber-200 bg-amber-50 text-amber-700',  label: 'Pending',              desc: 'Created — awaiting customer checkout' },
   processing:         { color: 'border-indigo-200 bg-indigo-50 text-indigo-700', label: 'Processing',         desc: 'Customer submitted — awaiting provider confirmation' },
-  finished:           { color: 'border-green-200 bg-green-50 text-green-700',  label: 'Finished',             desc: 'Captured successfully' },
+  succeeded:          { color: 'border-green-200 bg-green-50 text-green-700',  label: 'Succeeded',            desc: 'Captured successfully' },
   failed:             { color: 'border-red-200 bg-red-50 text-red-700',        label: 'Failed',               desc: 'Declined by provider or all providers failed' },
   cancelled:          { color: 'border-slate-200 bg-slate-100 text-slate-600', label: 'Cancelled',            desc: 'Cancelled before capture' },
   refunded:           { color: 'border-blue-200 bg-blue-50 text-blue-700',     label: 'Refunded',             desc: 'Full refund issued' },

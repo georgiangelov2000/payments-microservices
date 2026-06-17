@@ -28,7 +28,7 @@ import {
     X,
 } from 'lucide-react';
 
-const STATUS_OPTIONS = ['', 'finished', 'pending', 'failed', 'refunded', 'processing', 'cancelled', 'disputed', 'expired'];
+const STATUS_OPTIONS = ['', 'succeeded', 'pending', 'failed', 'refunded', 'processing', 'cancelled', 'disputed', 'expired'];
 const EXPORT_FORMATS = ['xlsx', 'csv', 'json', 'pdf'];
 
 function currentMonth() {
@@ -158,7 +158,7 @@ function TrendBars({ trend }) {
 
 function StatusBreakdown({ counts }) {
     const items = [
-        ['finished', counts?.paid || 0],
+        ['succeeded', counts?.paid || 0],
         ['pending', counts?.pending || 0],
         ['failed', counts?.failed || 0],
         ['refunded', counts?.refunded || 0],

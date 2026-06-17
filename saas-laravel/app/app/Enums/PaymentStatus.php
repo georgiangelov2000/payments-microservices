@@ -20,7 +20,7 @@ enum PaymentStatus: int
     {
         return match ($this) {
             self::PENDING            => 'pending',
-            self::FINISHED           => 'finished',
+            self::FINISHED           => 'succeeded',
             self::FAILED             => 'failed',
             self::PROCESSING         => 'processing',
             self::CANCELLED          => 'cancelled',
@@ -35,7 +35,7 @@ enum PaymentStatus: int
     {
         return match (strtolower($status)) {
             'pending'                    => self::PENDING,
-            'finished', 'success', 'succeeded' => self::FINISHED,
+            'succeeded', 'finished' => self::FINISHED,
             'failed', 'declined'         => self::FAILED,
             'processing'                 => self::PROCESSING,
             'cancelled', 'canceled'      => self::CANCELLED,

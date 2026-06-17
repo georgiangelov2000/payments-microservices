@@ -17,7 +17,7 @@ function formatNumber(value, decimals = 2) {
     return Number.isFinite(number) ? number.toFixed(decimals) : '0.00';
 }
 
-const STATUS_OPTIONS = ['', 'pending', 'finished', 'failed'];
+const STATUS_OPTIONS = ['', 'pending', 'succeeded', 'failed'];
 const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000;
 
 function isCheckoutExpired(status, createdAt) {
@@ -89,12 +89,12 @@ export default function PaymentsIndex({ payments, filters = {} }) {
         (acc, p) => {
             acc.total++;
             const s = (p.status || '').toLowerCase();
-            if (s === 'finished') acc.finished++;
+            if (s === 'succeeded') acc.succeeded++;
             else if (s === 'pending') acc.pending++;
             else if (s === 'failed') acc.failed++;
             return acc;
         },
-        { total: 0, finished: 0, pending: 0, failed: 0 },
+        { total: 0, succeeded: 0, pending: 0, failed: 0 },
     );
 
     // Pagination info
@@ -212,7 +212,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
             <div className="mb-4 flex flex-wrap gap-3">
                 {[
                     { label: 'Shown', value: counts.total, color: 'text-slate-700' },
-                    { label: 'Finished', value: counts.finished, color: 'text-green-600' },
+                    { label: 'Succeeded', value: counts.succeeded, color: 'text-green-600' },
                     { label: 'Pending', value: counts.pending, color: 'text-amber-600' },
                     { label: 'Failed', value: counts.failed, color: 'text-red-600' },
                 ].map(({ label, value, color }) => (

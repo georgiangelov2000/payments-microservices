@@ -14,7 +14,7 @@ const PROVIDERS = {
     },
     paypal: {
         label: 'PayPal',
-        aliases: ['paypal', 'pay-pal'],
+        aliases: ['paypal'],
         colors: {
             bg: 'bg-[#003087]',
             text: 'text-white',
@@ -25,7 +25,7 @@ const PROVIDERS = {
     },
     mypos: {
         label: 'myPOS',
-        aliases: ['mypos', 'my-pos', 'my_pos'],
+        aliases: ['mypos'],
         colors: {
             bg: 'bg-[#00a3e0]',
             text: 'text-white',
@@ -36,7 +36,7 @@ const PROVIDERS = {
     },
     epay: {
         label: 'ePay.bg',
-        aliases: ['epay', 'epaybg', 'epay.bg', 'e-pay'],
+        aliases: ['epay'],
         colors: {
             bg: 'bg-[#1282c4]',
             text: 'text-white',
@@ -47,7 +47,7 @@ const PROVIDERS = {
     },
     borica: {
         label: 'BORICA',
-        aliases: ['borica', 'borika'],
+        aliases: ['borica'],
         colors: {
             bg: 'bg-[#e30613]',
             text: 'text-white',
