@@ -1,6 +1,7 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
+import ProviderBrand from '@/Components/ProviderBrand';
 import { fmt, fmtDate } from '@/utils';
 import {
     ArrowLeft, CreditCard, CheckCircle2, XCircle, Clock, Zap,
@@ -61,6 +62,40 @@ function attemptRowColor(status) {
     return 'border-red-200 bg-red-50';
 }
 
+function providerLabel(alias) {
+    if (!alias) return 'provider';
+    return String(alias).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+}
+
+function attemptStatusLabel(status) {
+    if (status === 'succeeded') return 'Routed';
+    return status ? String(status).replace(/_/g, ' ') : 'Unknown';
+}
+
+function attemptSummary(attempt) {
+    if (attempt.error_message) return attempt.error_message;
+
+    const provider = providerLabel(attempt.provider_alias);
+
+    if (attempt.status === 'succeeded') {
+        return `Checkout session created with ${provider}; awaiting payment confirmation.`;
+    }
+
+    if (attempt.status === 'timeout') {
+        return `${provider} did not respond before the timeout.`;
+    }
+
+    if (attempt.status === 'skipped') {
+        return `${provider} was skipped by the routing rules.`;
+    }
+
+    if (attempt.error_code) {
+        return `${provider} returned ${attempt.error_code}.`;
+    }
+
+    return `${provider} attempt recorded.`;
+}
+
 // ─── Info row ─────────────────────────────────────────────────────────────────
 
 function InfoRow({ label, value, mono }) {
@@ -74,6 +109,19 @@ function InfoRow({ label, value, mono }) {
                 {value}
             </span>
         </div>
+    );
+}
+
+function ProviderValue({ alias, label }) {
+    if (!alias && !label) return null;
+
+    return (
+        <ProviderBrand
+            alias={alias ?? label}
+            label={label ?? alias}
+            variant="compact"
+            className="max-w-full"
+        />
     );
 }
 
@@ -225,7 +273,11 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                                                 {/* Details */}
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="font-semibold capitalize text-slate-900">{attempt.provider_alias}</span>
+                                                        <ProviderBrand
+                                                            alias={attempt.provider_alias}
+                                                            label={attempt.provider_alias}
+                                                            variant="compact"
+                                                        />
                                                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${
                                                             attempt.status === 'succeeded'
                                                                 ? 'bg-green-100 text-green-700'
@@ -234,7 +286,7 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                                                                 : attempt.status === 'skipped'
                                                                 ? 'bg-slate-100 text-slate-500'
                                                                 : 'bg-red-100 text-red-700'
-                                                        }`}>{attempt.status}</span>
+                                                        }`}>{attemptStatusLabel(attempt.status)}</span>
                                                         {attempt.latency_ms != null && (
                                                             <span className="flex items-center gap-1 text-xs text-slate-500">
                                                                 <Zap size={11} strokeWidth={2} />
@@ -243,15 +295,15 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                                                         )}
                                                     </div>
 
-                                                    {attempt.error_code && (
-                                                        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-600">
-                                                            <AlertTriangle size={12} strokeWidth={2} className="text-red-400 shrink-0" />
-                                                            <span className="font-mono">{attempt.error_code}</span>
-                                                            {attempt.error_message && (
-                                                                <span className="text-slate-400 truncate max-w-xs">— {attempt.error_message}</span>
-                                                            )}
-                                                        </p>
-                                                    )}
+                                                    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-600">
+                                                        {attempt.error_code && (
+                                                            <>
+                                                                <AlertTriangle size={12} strokeWidth={2} className="shrink-0 text-red-400" />
+                                                                <span className="font-mono">{attempt.error_code}</span>
+                                                            </>
+                                                        )}
+                                                        <span className="text-slate-500">{attemptSummary(attempt)}</span>
+                                                    </p>
 
                                                     <p className="mt-1 text-[11px] text-slate-400">{fmtDate(attempt.timestamp)}</p>
                                                 </div>
@@ -295,7 +347,10 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                             <h3 className="mb-3 text-sm font-semibold text-slate-700">Payment Details</h3>
                             <InfoRow label="Payment ID"      value={payment.id}              mono />
                             <InfoRow label="Order ID"        value={payment.order_id}         />
-                            <InfoRow label="Provider"        value={payment.provider_name ?? payment.provider} />
+                            <InfoRow
+                                label="Provider"
+                                value={<ProviderValue alias={payment.provider} label={payment.provider_name ?? payment.provider} />}
+                            />
                             <InfoRow label="Reference"       value={payment.provider_reference} mono />
                             <InfoRow label="Idempotency Key" value={payment.idempotency_key}  mono />
                             <InfoRow label="Created"         value={fmtDate(payment.created_at)} />
@@ -316,11 +371,11 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                                     </span>
                                     <div className="flex flex-wrap gap-1.5">
                                         {candidates.map((alias, i) => (
-                                            <span key={alias} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 text-xs text-slate-700">
+                                            <span key={alias} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-700">
                                                 <span className="h-4 w-4 flex items-center justify-center rounded-full bg-slate-200 text-[9px] font-bold">
                                                     {i + 1}
                                                 </span>
-                                                {alias}
+                                                <ProviderBrand alias={alias} label={alias} variant="compact" />
                                             </span>
                                         ))}
                                     </div>
@@ -333,7 +388,7 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                                     </span>
                                     {Object.entries(snapshot.weights).map(([alias, w]) => (
                                         <div key={alias} className="flex items-center gap-2 mb-1">
-                                            <span className="w-16 text-xs capitalize text-slate-600">{alias}</span>
+                                            <ProviderBrand alias={alias} label={alias} variant="compact" className="w-24" />
                                             <div className="flex-1 h-1.5 rounded-full bg-slate-100">
                                                 <div className="h-full rounded-full bg-indigo-500" style={{ width: `${w}%` }} />
                                             </div>
