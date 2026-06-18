@@ -296,7 +296,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                 <div>
                     <h1 className="text-xl font-semibold text-slate-900">Merchant Payment Activity</h1>
                     <p className="mt-0.5 text-sm text-slate-500">
-                        Review merchant payment volume, totals, status mix, and recent transactions.
+                        Review merchant paid volume, totals, status mix, and recent transactions.
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -493,7 +493,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
 
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard
-                    label="Total volume"
+                    label="Paid volume"
                     value={fmtCurrency(summary.total_amount)}
                     sub={activeFilterLabel}
                     Icon={DollarSign}
@@ -526,7 +526,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <h2 className="text-base font-semibold text-slate-900">Payment Trend</h2>
-                            <p className="mt-0.5 text-sm text-slate-500">Volume over {activeFilterLabel}</p>
+                            <p className="mt-0.5 text-sm text-slate-500">Paid volume over {activeFilterLabel}</p>
                         </div>
                         <CalendarDays size={18} strokeWidth={1.75} className="text-slate-400" />
                     </div>

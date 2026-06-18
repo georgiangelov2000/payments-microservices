@@ -29,7 +29,7 @@
       <tr>
         <th>Merchant</th>
         <th>Email</th>
-        <th class="num">Total</th>
+        <th class="num">Paid Total</th>
         <th>Currency</th>
         <th class="num">Payments</th>
         <th class="num">Finished</th>

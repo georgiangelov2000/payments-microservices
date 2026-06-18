@@ -31,7 +31,9 @@ final class DashboardRepository implements DashboardRepositoryInterface
             'merchants' => User::query()->where('role', Role::MERCHANT->value)->count(),
             'activeMerchants' => User::query()->where('role', Role::MERCHANT->value)->where('status', 1)->count(),
             'payments' => Payment::query()->count(),
-            'paymentVolume' => (float) Payment::query()->sum('price'),
+            'paymentVolume' => (float) Payment::query()
+                ->where('status', PaymentStatus::FINISHED->value)
+                ->sum('price'),
             'pendingPayments' => (int) ($paymentsByStatus[PaymentStatus::PENDING->value] ?? 0),
             'finishedPayments' => (int) ($paymentsByStatus[PaymentStatus::FINISHED->value] ?? 0),
             'failedPayments' => (int) ($paymentsByStatus[PaymentStatus::FAILED->value] ?? 0),

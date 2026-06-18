@@ -94,7 +94,7 @@ export default function Dashboard({ metrics, recentPayments }) {
                     routeName="admin.payments.index"
                 />
                 <KpiCard
-                    label="Payment Volume"
+                    label="Paid Volume"
                     value={fmtCurrency(metrics.paymentVolume)}
                     prefix="$"
                     icon={<DollarSign size={20} strokeWidth={1.75} className="text-green-600" />}

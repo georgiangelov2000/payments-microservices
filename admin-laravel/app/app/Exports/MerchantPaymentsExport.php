@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
 
-class MerchantPaymentsExport implements FromCollection, WithHeadings, WithMapping, WithEvents
+class MerchantPaymentsExport implements FromCollection, WithEvents, WithHeadings, WithMapping
 {
     public function __construct(
         protected readonly array $rows,
@@ -28,7 +28,7 @@ class MerchantPaymentsExport implements FromCollection, WithHeadings, WithMappin
         return [
             'Merchant',
             'Email',
-            'Total Amount',
+            'Paid Amount',
             'Currency',
             'Currency Count',
             'Payments',

@@ -85,7 +85,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 'users.name',
                 'users.email',
                 DB::raw('COUNT(payments.id) as payments_count'),
-                DB::raw('COALESCE(SUM(payments.price), 0) as total_amount'),
+                DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0) as total_amount'),
                 DB::raw("COALESCE(MIN(COALESCE(payments.currency, 'USD')), 'USD') as currency"),
                 DB::raw('COUNT(DISTINCT CASE WHEN payments.id IS NOT NULL THEN COALESCE(payments.currency, \'USD\') END) as currencies_count'),
                 DB::raw('SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN 1 ELSE 0 END) as paid_count'),
@@ -95,7 +95,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 DB::raw('MAX(payments.created_at) as last_payment_at'),
             ])
             ->groupBy('users.id', 'users.name', 'users.email')
-            ->orderByDesc(DB::raw('COALESCE(SUM(payments.price), 0)'))
+            ->orderByDesc(DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0)'))
             ->orderBy('users.name')
             ->paginate($perPage)
             ->withQueryString();
@@ -140,7 +140,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 'users.name',
                 'users.email',
                 DB::raw('COUNT(payments.id) as payments_count'),
-                DB::raw('COALESCE(SUM(payments.price), 0) as total_amount'),
+                DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0) as total_amount'),
                 DB::raw("COALESCE(MIN(COALESCE(payments.currency, 'USD')), 'USD') as currency"),
                 DB::raw('COUNT(DISTINCT CASE WHEN payments.id IS NOT NULL THEN COALESCE(payments.currency, \'USD\') END) as currencies_count'),
                 DB::raw('SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN 1 ELSE 0 END) as paid_count'),
@@ -150,7 +150,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 DB::raw('MAX(payments.created_at) as last_payment_at'),
             ])
             ->groupBy('users.id', 'users.name', 'users.email')
-            ->orderByDesc(DB::raw('COALESCE(SUM(payments.price), 0)'))
+            ->orderByDesc(DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0)'))
             ->orderBy('users.name')
             ->get();
 
@@ -207,13 +207,14 @@ final class PaymentRepository implements PaymentRepositoryInterface
         $row = $this->filteredPayments($range['from'], $range['to'], $statusValue)
             ->selectRaw('
                 COUNT(*) as payments_count,
-                COALESCE(SUM(price), 0) as total_amount,
+                COALESCE(SUM(CASE WHEN status = ? THEN price ELSE 0 END), 0) as total_amount,
                 COUNT(DISTINCT merchant_id) as active_merchants,
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as paid_count,
                 SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END) as pending_count,
                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as failed_count,
                 SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END) as refunded_count
             ', [
+                PaymentStatus::FINISHED->value,
                 PaymentStatus::FINISHED->value,
                 PaymentStatus::PENDING->value,
                 PaymentStatus::PROCESSING->value,
@@ -243,7 +244,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
             ->select([
                 DB::raw($bucket.' as period'),
                 DB::raw('COUNT(*) as payments_count'),
-                DB::raw('COALESCE(SUM(price), 0) as total_amount'),
+                DB::raw('COALESCE(SUM(CASE WHEN status = '.PaymentStatus::FINISHED->value.' THEN price ELSE 0 END), 0) as total_amount'),
             ])
             ->groupByRaw($bucket)
             ->orderByRaw($bucket.' ASC')
