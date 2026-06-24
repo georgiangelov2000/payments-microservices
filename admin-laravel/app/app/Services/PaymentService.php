@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Contracts\Payments\PaymentRepositoryInterface;
 use App\Enums\PaymentStatus;
+use App\Enums\UserStatus;
 use App\Models\AdminExportFile;
 use App\Models\Payment;
 use Carbon\CarbonImmutable;
@@ -61,28 +62,34 @@ final class PaymentService
             $hasPayments = (int) $merchant->payments_count > 0;
 
             return [
-                'merchant_name'    => $merchant->name,
-                'merchant_email'   => $merchant->email,
-                'payments_count'   => (int) $merchant->payments_count,
-                'total_amount'     => (float) $merchant->total_amount,
-                'currency'         => $merchant->currency ?: 'USD',
+                'merchant_id' => $merchant->id,
+                'merchant_name' => $merchant->name,
+                'merchant_email' => $merchant->email,
+                'merchant_status' => $this->merchantStatusLabel($merchant->status),
+                'member_since' => $merchant->created_at?->toDateString() ?? '—',
+                'api_keys_count' => (int) $merchant->api_keys_count,
+                'provider_credentials_count' => (int) $merchant->provider_credentials_count,
+                'subscriptions_count' => (int) $merchant->subscriptions_count,
+                'payments_count' => (int) $merchant->payments_count,
+                'total_amount' => (float) $merchant->total_amount,
+                'currency' => $merchant->currency ?: 'USD',
                 'currencies_count' => (int) $merchant->currencies_count,
-                'finished_count'   => (int) $merchant->paid_count,
-                'pending_count'    => (int) $merchant->pending_count,
-                'failed_count'     => (int) $merchant->failed_count,
-                'refunded_count'   => (int) $merchant->refunded_count,
-                'latest_order_id'    => $latest?->order_id    ?? ($hasPayments ? '—' : 'No Payments'),
-                'latest_amount'      => $latest ? (float) $latest->price : 0,
-                'latest_currency'    => $latest?->currency    ?? ($hasPayments ? '—' : '—'),
-                'latest_provider'    => $latest?->provider?->alias ?? ($hasPayments ? '—' : '—'),
-                'latest_status'      => $latest?->status?->label() ?? ($hasPayments ? '—' : 'No Payments'),
-                'latest_payment_at'  => $latest?->created_at?->toDateTimeString() ?? ($hasPayments ? '—' : 'No Payments'),
+                'finished_count' => (int) $merchant->paid_count,
+                'pending_count' => (int) $merchant->pending_count,
+                'failed_count' => (int) $merchant->failed_count,
+                'refunded_count' => (int) $merchant->refunded_count,
+                'latest_order_id' => $latest?->order_id ?? ($hasPayments ? '—' : 'No Payments'),
+                'latest_amount' => $latest ? (float) $latest->price : 0,
+                'latest_currency' => $latest?->currency ?? ($hasPayments ? '—' : '—'),
+                'latest_provider' => $latest?->provider?->alias ?? ($hasPayments ? '—' : '—'),
+                'latest_status' => $latest?->status?->label() ?? ($hasPayments ? '—' : 'No Payments'),
+                'latest_payment_at' => $latest?->created_at?->toDateTimeString() ?? ($hasPayments ? '—' : 'No Payments'),
             ];
         })->values()->all();
 
         return [
             'range' => $range,
-            'rows'  => $rows,
+            'rows' => $rows,
         ];
     }
 
@@ -94,6 +101,19 @@ final class PaymentService
             ->latest()
             ->limit(8)
             ->get();
+    }
+
+    private function merchantStatusLabel(mixed $status): string
+    {
+        if ($status instanceof UserStatus) {
+            return $status->label();
+        }
+
+        if ($status === null) {
+            return '—';
+        }
+
+        return UserStatus::tryFrom((int) $status)?->label() ?? '—';
     }
 
     /**

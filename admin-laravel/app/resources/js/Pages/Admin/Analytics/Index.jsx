@@ -1,23 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { fmt, fmtRate, fmtMs } from '@/utils';
+import { fmt, fmtRate, fmtMs, fmtCurrency } from '@/utils';
 import {
-    CheckCircle2, XCircle, Clock, Zap, BarChart2,
-    AlertTriangle, TrendingUp, Activity, ArrowRight,
+    CheckCircle2, XCircle, Zap, BarChart2, DollarSign, Coins,
+    TrendingUp, Activity, ArrowRight, Clock,
 } from 'lucide-react';
 import ProviderBrand, { getProviderMeta } from '@/Components/ProviderBrand';
-
-function rateColor(rate) {
-    if (rate >= 95) return 'text-green-600';
-    if (rate >= 80) return 'text-amber-600';
-    return 'text-red-600';
-}
-
-function rateBarColor(rate) {
-    if (rate >= 95) return 'bg-green-500';
-    if (rate >= 80) return 'bg-amber-500';
-    return 'bg-red-500';
-}
 
 // ─── Summary cards ────────────────────────────────────────────────────────────
 
@@ -42,8 +30,12 @@ function SummaryCard({ label, value, sub, Icon, iconBg, iconColor, accent }) {
 // ─── Provider row ─────────────────────────────────────────────────────────────
 
 function ProviderCard({ provider }) {
-    const rate = Number(provider.success_rate ?? 0);
     const providerMeta = getProviderMeta(provider.provider, provider.provider);
+    const hasMixedCurrencies = Number(provider.currencies_count ?? 0) > 1;
+    const currency = provider.currency || 'USD';
+    const money = (value) => hasMixedCurrencies
+        ? Number(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : fmtCurrency(value, currency);
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -53,30 +45,28 @@ function ProviderCard({ provider }) {
                     <ProviderBrand alias={provider.provider} label={provider.provider} size="md" variant="icon" />
                     <div>
                         <p className="font-semibold text-slate-900">{providerMeta.label}</p>
-                        <p className="text-xs text-slate-400">{fmt(provider.total)} attempts</p>
+                        <p className="text-xs text-slate-400">{fmt(provider.total)} total payments</p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className={`text-2xl font-bold ${rateColor(rate)}`}>{fmtRate(rate)}</p>
-                    <p className="text-xs text-slate-400">approval rate</p>
+                    <p className="text-2xl font-bold text-green-600">{fmt(provider.succeeded)}</p>
+                    <p className="text-xs text-slate-400">paid payments</p>
                 </div>
-            </div>
-
-            {/* Rate bar */}
-            <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                <div
-                    className={`h-full rounded-full transition-all ${rateBarColor(rate)}`}
-                    style={{ width: `${Math.min(rate, 100)}%` }}
-                />
             </div>
 
             {/* Stats grid */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                    { label: 'Succeeded', value: fmt(provider.succeeded), Icon: CheckCircle2, color: 'text-green-600 bg-green-50' },
-                    { label: 'Failed',    value: fmt(provider.failed),    Icon: XCircle,      color: 'text-red-600 bg-red-50' },
-                    { label: 'Timeouts',  value: fmt(provider.timeouts),  Icon: Clock,        color: 'text-amber-600 bg-amber-50' },
-                    { label: 'Avg latency', value: fmtMs(provider.avg_latency_ms), Icon: Zap, color: 'text-indigo-600 bg-indigo-50' },
+                    { label: 'Successful', value: fmt(provider.succeeded), Icon: CheckCircle2, color: 'text-green-600 bg-green-50' },
+                    { label: 'Pending', value: fmt(provider.pending), Icon: Clock, color: 'text-amber-600 bg-amber-50' },
+                    { label: 'Failed', value: fmt(provider.failed), Icon: XCircle, color: 'text-red-600 bg-red-50' },
+                    { label: 'Paid volume', value: money(provider.paid_volume), Icon: DollarSign, color: 'text-indigo-600 bg-indigo-50' },
+                    {
+                        label: 'Avg paid',
+                        value: money(provider.avg_payment),
+                        Icon: Coins,
+                        color: 'text-slate-600 bg-slate-100',
+                    },
                 ].map(({ label, value, Icon: I, color }) => (
                     <div key={label} className={`rounded-lg px-3 py-2 ${color.split(' ')[1]}`}>
                         <div className="flex items-center gap-1 mb-0.5">
@@ -87,11 +77,9 @@ function ProviderCard({ provider }) {
                     </div>
                 ))}
             </div>
-
-            {/* Latency range */}
-            {provider.min_latency_ms != null && (
+            {hasMixedCurrencies && (
                 <p className="mt-3 text-xs text-slate-400">
-                    Latency range: {fmtMs(provider.min_latency_ms)} – {fmtMs(provider.max_latency_ms)}
+                    Mixed currencies are displayed as raw stored amounts, not converted totals.
                 </p>
             )}
         </div>
@@ -362,7 +350,7 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
                 <div>
                     <h1 className="text-xl font-semibold text-slate-900">Provider Analytics</h1>
                     <p className="mt-0.5 text-sm text-slate-500">
-                        Approval rates, latency, failover trends, and error breakdown across all payment providers.
+                        Payment status by provider, failover trends, and error breakdown across all payment providers.
                     </p>
                 </div>
                 {/* Environment toggle */}
@@ -420,7 +408,7 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
                 {providers?.length === 0 ? (
                     <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
                         <BarChart2 size={32} strokeWidth={1.25} className="mx-auto mb-2 text-slate-300" />
-                        <p className="text-sm text-slate-400">No routing attempts recorded yet for <strong>{environment}</strong> environment.</p>
+                        <p className="text-sm text-slate-400">No payments recorded yet for <strong>{environment}</strong> environment.</p>
                         <p className="mt-1 text-xs text-slate-400">Process some payments to see analytics here.</p>
                     </div>
                 ) : (

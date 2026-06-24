@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Contracts\Analytics\AnalyticsRepositoryInterface;
+use App\Enums\PaymentStatus;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -12,41 +13,41 @@ final class AnalyticsRepository implements AnalyticsRepositoryInterface
 {
     public function providerStats(string $environment = 'test', ?string $merchantId = null): Collection
     {
-        $query = DB::table('payment_routing_attempts')
+        $query = DB::table('payments')
+            ->join('providers', 'providers.id', '=', 'payments.provider_id')
             ->select([
-                'provider_alias',
-                DB::raw('COUNT(*) as total_attempts'),
-                DB::raw("SUM(CASE WHEN status = 'succeeded' THEN 1 ELSE 0 END) as successes"),
-                DB::raw("SUM(CASE WHEN status = 'failed'    THEN 1 ELSE 0 END) as failures"),
-                DB::raw("SUM(CASE WHEN status = 'timeout'   THEN 1 ELSE 0 END) as timeouts"),
-                DB::raw("SUM(CASE WHEN status = 'skipped'   THEN 1 ELSE 0 END) as skipped"),
-                DB::raw('ROUND(AVG(latency_ms)::numeric, 0)  as avg_latency_ms'),
-                DB::raw('MIN(latency_ms) as min_latency_ms'),
-                DB::raw('MAX(latency_ms) as max_latency_ms'),
+                'providers.alias as provider_alias',
+                DB::raw('COUNT(payments.id) as total_payments'),
+                DB::raw('SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN 1 ELSE 0 END) as successful_payments'),
+                DB::raw('SUM(CASE WHEN payments.status IN ('.PaymentStatus::PENDING->value.', '.PaymentStatus::PROCESSING->value.') THEN 1 ELSE 0 END) as pending_payments'),
+                DB::raw('SUM(CASE WHEN payments.status = '.PaymentStatus::FAILED->value.' THEN 1 ELSE 0 END) as failed_payments'),
+                DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0) as paid_volume'),
+                DB::raw('COALESCE(AVG(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price END), 0) as avg_payment_amount'),
+                DB::raw("COALESCE(MIN(COALESCE(payments.currency, 'USD')), 'USD') as currency"),
+                DB::raw("COUNT(DISTINCT COALESCE(payments.currency, 'USD')) as currencies_count"),
             ])
-            ->where('environment', $environment)
-            ->groupBy('provider_alias')
-            ->orderByDesc('total_attempts');
+            ->where('payments.environment', $environment)
+            ->groupBy('providers.alias')
+            ->orderByDesc('total_payments');
 
         if ($merchantId) {
-            $query->where('merchant_id', $merchantId);
+            $query->where('payments.merchant_id', $merchantId);
         }
 
         return $query->get()->map(function (object $row): array {
-            $total   = (int) $row->total_attempts;
-            $success = (int) $row->successes;
+            $totalPayments = (int) $row->total_payments;
+            $successfulPayments = (int) $row->successful_payments;
 
             return [
-                'provider'       => $row->provider_alias,
-                'total'          => $total,
-                'succeeded'      => $success,
-                'failed'         => (int) $row->failures,
-                'timeouts'       => (int) $row->timeouts,
-                'skipped'        => (int) $row->skipped,
-                'success_rate'   => $total > 0 ? round($success / $total * 100, 1) : 0.0,
-                'avg_latency_ms' => $row->avg_latency_ms !== null ? (int) $row->avg_latency_ms : null,
-                'min_latency_ms' => $row->min_latency_ms,
-                'max_latency_ms' => $row->max_latency_ms,
+                'provider' => $row->provider_alias,
+                'total' => $totalPayments,
+                'succeeded' => $successfulPayments,
+                'pending' => (int) $row->pending_payments,
+                'failed' => (int) $row->failed_payments,
+                'paid_volume' => (float) $row->paid_volume,
+                'avg_payment' => (float) $row->avg_payment_amount,
+                'currency' => $row->currency ?: 'USD',
+                'currencies_count' => (int) $row->currencies_count,
             ];
         });
     }
@@ -64,9 +65,9 @@ final class AnalyticsRepository implements AnalyticsRepositoryInterface
             ->orderByDesc('total')
             ->get()
             ->map(fn (object $row): array => [
-                'strategy'    => $row->strategy,
-                'total'       => (int) $row->total,
-                'successes'   => (int) $row->successes,
+                'strategy' => $row->strategy,
+                'total' => (int) $row->total,
+                'successes' => (int) $row->successes,
                 'success_rate' => $row->total > 0
                     ? round($row->successes / $row->total * 100, 1)
                     : 0.0,
@@ -77,7 +78,7 @@ final class AnalyticsRepository implements AnalyticsRepositoryInterface
     {
         return DB::table('payment_routing_attempts')
             ->select([
-                DB::raw("DATE(created_at) as date"),
+                DB::raw('DATE(created_at) as date'),
                 DB::raw('COUNT(*) as total'),
                 DB::raw("SUM(CASE WHEN status IN ('failed', 'timeout') THEN 1 ELSE 0 END) as failovers"),
                 DB::raw("SUM(CASE WHEN status = 'succeeded' THEN 1 ELSE 0 END) as successes"),
@@ -88,8 +89,8 @@ final class AnalyticsRepository implements AnalyticsRepositoryInterface
             ->orderByRaw('DATE(created_at) ASC')
             ->get()
             ->map(fn (object $row): array => [
-                'date'      => $row->date,
-                'total'     => (int) $row->total,
+                'date' => $row->date,
+                'total' => (int) $row->total,
                 'failovers' => (int) $row->failovers,
                 'successes' => (int) $row->successes,
             ]);
@@ -112,10 +113,10 @@ final class AnalyticsRepository implements AnalyticsRepositoryInterface
             ->limit($limit)
             ->get()
             ->map(fn (object $row): array => [
-                'provider'    => $row->provider_alias,
-                'error_code'  => $row->error_code,
+                'provider' => $row->provider_alias,
+                'error_code' => $row->error_code,
                 'occurrences' => (int) $row->occurrences,
-                'last_seen'   => $row->last_seen,
+                'last_seen' => $row->last_seen,
             ]);
     }
 
@@ -131,15 +132,15 @@ final class AnalyticsRepository implements AnalyticsRepositoryInterface
             ")
             ->first();
 
-        $total    = (int) ($row->total ?? 0);
-        $success  = (int) ($row->successes ?? 0);
+        $total = (int) ($row->total ?? 0);
+        $success = (int) ($row->successes ?? 0);
 
         return [
-            'total_attempts'  => $total,
+            'total_attempts' => $total,
             'total_succeeded' => $success,
-            'total_failed'    => (int) ($row->failures ?? 0),
-            'overall_rate'    => $total > 0 ? round($success / $total * 100, 1) : 0.0,
-            'avg_latency_ms'  => $row->avg_latency !== null ? (int) $row->avg_latency : null,
+            'total_failed' => (int) ($row->failures ?? 0),
+            'overall_rate' => $total > 0 ? round($success / $total * 100, 1) : 0.0,
+            'avg_latency_ms' => $row->avg_latency !== null ? (int) $row->avg_latency : null,
         ];
     }
 }

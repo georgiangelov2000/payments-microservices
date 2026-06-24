@@ -184,6 +184,61 @@ function StatusBreakdown({ counts }) {
     );
 }
 
+function avatarClasses(color) {
+    return {
+        indigo: 'bg-indigo-100 text-indigo-700 ring-indigo-200',
+        emerald: 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+        sky: 'bg-sky-100 text-sky-700 ring-sky-200',
+        violet: 'bg-violet-100 text-violet-700 ring-violet-200',
+        amber: 'bg-amber-100 text-amber-700 ring-amber-200',
+        rose: 'bg-rose-100 text-rose-700 ring-rose-200',
+        slate: 'bg-slate-100 text-slate-700 ring-slate-200',
+    }[color] || 'bg-slate-100 text-slate-700 ring-slate-200';
+}
+
+function MerchantIdentity({ merchant }) {
+    const detailItems = [
+        ['Providers', merchant.provider_credentials_count],
+        ['API keys', merchant.api_keys_count],
+        ['Subs', merchant.subscriptions_count],
+    ];
+
+    return (
+        <div className="flex min-w-[280px] items-start gap-3">
+            {merchant.logo_url ? (
+                <img
+                    src={merchant.logo_url}
+                    alt={`${merchant.name} logo`}
+                    className="h-11 w-11 rounded-lg border border-slate-200 object-cover"
+                />
+            ) : (
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-bold ring-1 ${avatarClasses(merchant.avatar?.color)}`}>
+                    {merchant.avatar?.initials || 'M'}
+                </div>
+            )}
+            <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium text-slate-900">{merchant.name}</p>
+                    {merchant.status && <Badge value={merchant.status} size="sm" />}
+                </div>
+                <p className="truncate text-xs text-slate-500">{merchant.email}</p>
+                <p className="mt-0.5 font-mono text-[11px] text-slate-400">{merchant.id}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    {detailItems.map(([label, value]) => (
+                        <span key={label} className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                            {label}: {fmt(value || 0)}
+                        </span>
+                    ))}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                    {merchant.created_at && <span>Since {merchant.created_at}</span>}
+                    {merchant.last_payment_at && <span>Last payment {fmtDate(merchant.last_payment_at)}</span>}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function exportStatusClasses(status) {
     return {
         queued: 'border-blue-200 bg-blue-50 text-blue-700',
@@ -210,6 +265,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
     const [dateTo, setDateTo] = useState(filters.date_to || '');
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || '');
+    const [trendStatus, setTrendStatus] = useState(filters.trend_status || '');
     const [exportingFormat, setExportingFormat] = useState(null);
 
     const merchants = activity.merchants?.data || [];
@@ -223,7 +279,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
         return range.label || month;
     }, [period, year, month, range.label]);
 
-    function currentFilterParams() {
+    function currentFilterParams({ includeTrendStatus = true, trendStatusValue = trendStatus } = {}) {
         const params = { period };
         if (period === 'monthly') params.month = month;
         if (period === 'yearly') params.year = year;
@@ -233,6 +289,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
         }
         if (search.trim()) params.search = search.trim();
         if (status) params.status = status;
+        if (includeTrendStatus && trendStatusValue) params.trend_status = trendStatusValue;
 
         return params;
     }
@@ -270,7 +327,17 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
         setDateTo('');
         setSearch('');
         setStatus('');
+        setTrendStatus('');
         router.get(route('admin.payments.merchants'), {}, {
+            preserveScroll: true,
+            replace: true,
+        });
+    }
+
+    function updateTrendStatus(nextStatus) {
+        setTrendStatus(nextStatus);
+
+        router.get(route('admin.payments.merchants'), currentFilterParams({ trendStatusValue: nextStatus }), {
             preserveScroll: true,
             replace: true,
         });
@@ -280,7 +347,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
         setExportingFormat(format);
 
         router.post(route('admin.payments.merchants.exports.store'), {
-            ...currentFilterParams(),
+            ...currentFilterParams({ includeTrendStatus: false }),
             format,
         }, {
             preserveScroll: true,
@@ -523,12 +590,25 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
 
             <div className="mb-6">
                 <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h2 className="text-base font-semibold text-slate-900">Payment Trend</h2>
-                            <p className="mt-0.5 text-sm text-slate-500">Paid volume over {activeFilterLabel}</p>
+                            <p className="mt-0.5 text-sm text-slate-500">Payments over {activeFilterLabel}</p>
                         </div>
-                        <CalendarDays size={18} strokeWidth={1.75} className="text-slate-400" />
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={trendStatus}
+                                onChange={(e) => updateTrendStatus(e.target.value)}
+                                className="rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            >
+                                {STATUS_OPTIONS.map((option) => (
+                                    <option key={option.value || 'all-trend'} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <CalendarDays size={18} strokeWidth={1.75} className="text-slate-400" />
+                        </div>
                     </div>
                     <TrendBars trend={activity.trend || []} />
                 </section>
@@ -569,8 +649,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                             ) : merchants.map((merchant) => (
                                 <tr key={merchant.id} className="border-b hover:bg-slate-50 transition-colors">
                                     <td className="px-4 py-2">
-                                        <p className="font-medium text-slate-900">{merchant.name}</p>
-                                        <p className="text-xs text-slate-500">{merchant.email}</p>
+                                        <MerchantIdentity merchant={merchant} />
                                     </td>
                                     <td className="px-4 py-2 text-right">
                                         <p className="tabular-nums font-medium text-slate-900">

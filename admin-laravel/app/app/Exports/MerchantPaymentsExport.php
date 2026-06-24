@@ -26,8 +26,14 @@ class MerchantPaymentsExport implements FromCollection, WithEvents, WithHeadings
     public function headings(): array
     {
         return [
+            'Merchant ID',
             'Merchant',
             'Email',
+            'Status',
+            'Member Since',
+            'Provider Credentials',
+            'API Keys',
+            'Subscriptions',
             'Paid Amount',
             'Currency',
             'Currency Count',
@@ -48,8 +54,14 @@ class MerchantPaymentsExport implements FromCollection, WithEvents, WithHeadings
     public function map($row): array
     {
         return [
+            $row['merchant_id'],
             $row['merchant_name'],
             $row['merchant_email'],
+            $row['merchant_status'],
+            $row['member_since'],
+            $row['provider_credentials_count'],
+            $row['api_keys_count'],
+            $row['subscriptions_count'],
             $row['total_amount'],
             $row['currency'],
             $row['currencies_count'],

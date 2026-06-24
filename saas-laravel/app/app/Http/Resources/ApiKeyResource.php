@@ -16,11 +16,16 @@ final class ApiKeyResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'name' => $this->name,
             'merchant_id' => $this->merchant_id,
             'hash' => $this->hash,
-            'environment' => $this->environment,
+            'masked_key' => $this->maskedKey(),
+            'environment' => $this->environment ?: 'test',
+            'scopes' => $this->scopes ?: [],
             'status' => $this->status->label(),
-            'created_at' => $this->created_at->toISOString(),
+            'last_rotated_at' => $this->last_rotated_at?->toDateTimeString(),
+            'revoked_at' => $this->revoked_at?->toDateTimeString(),
+            'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }
 }

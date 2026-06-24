@@ -41,6 +41,24 @@ class IndexMerchantPaymentsRequest extends FormRequest
                     'expired',
                 ]),
             ],
+            'trend_status' => [
+                'nullable',
+                'string',
+                Rule::in([
+                    'pending',
+                    'processing',
+                    'succeeded',
+                    'finished',
+                    'failed',
+                    'cancelled',
+                    'canceled',
+                    'refunded',
+                    'partially_refunded',
+                    'partially refunded',
+                    'disputed',
+                    'expired',
+                ]),
+            ],
         ];
     }
 }

@@ -63,6 +63,8 @@ final class PaymentRepository implements PaymentRepositoryInterface
         $range = $this->resolveDateRange($filters);
         $status = $filters['status'] ?? null;
         $statusValue = $status ? PaymentStatus::fromString($status)->value : null;
+        $trendStatus = $filters['trend_status'] ?? null;
+        $trendStatusValue = $trendStatus ? PaymentStatus::fromString($trendStatus)->value : null;
 
         $merchants = User::query()
             ->where('users.role', Role::MERCHANT->value)
@@ -84,6 +86,8 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 'users.id',
                 'users.name',
                 'users.email',
+                'users.status',
+                'users.created_at',
                 DB::raw('COUNT(payments.id) as payments_count'),
                 DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0) as total_amount'),
                 DB::raw("COALESCE(MIN(COALESCE(payments.currency, 'USD')), 'USD') as currency"),
@@ -92,9 +96,12 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 DB::raw('SUM(CASE WHEN payments.status IN ('.PaymentStatus::PENDING->value.', '.PaymentStatus::PROCESSING->value.') THEN 1 ELSE 0 END) as pending_count'),
                 DB::raw('SUM(CASE WHEN payments.status = '.PaymentStatus::FAILED->value.' THEN 1 ELSE 0 END) as failed_count'),
                 DB::raw('SUM(CASE WHEN payments.status IN ('.PaymentStatus::REFUNDED->value.', '.PaymentStatus::PARTIALLY_REFUNDED->value.') THEN 1 ELSE 0 END) as refunded_count'),
+                DB::raw('(SELECT COUNT(*) FROM merchant_api_keys WHERE merchant_api_keys.merchant_id = users.id) as api_keys_count'),
+                DB::raw('(SELECT COUNT(*) FROM user_subscriptions WHERE user_subscriptions.user_id = users.id) as subscriptions_count'),
+                DB::raw('(SELECT COUNT(*) FROM merchant_provider_credentials WHERE merchant_provider_credentials.merchant_id = users.id) as provider_credentials_count'),
                 DB::raw('MAX(payments.created_at) as last_payment_at'),
             ])
-            ->groupBy('users.id', 'users.name', 'users.email')
+            ->groupBy('users.id', 'users.name', 'users.email', 'users.status', 'users.created_at')
             ->orderByDesc(DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0)'))
             ->orderBy('users.name')
             ->paginate($perPage)
@@ -107,7 +114,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 'label' => $range['label'],
             ],
             'summary' => $this->activitySummary($range, $statusValue),
-            'trend' => $this->activityTrend($range, $statusValue),
+            'trend' => $this->activityTrend($range, $trendStatusValue),
             'merchants' => $merchants,
             'recent_payments' => $this->recentMerchantPayments($range, $statusValue, $filters),
         ];
@@ -139,6 +146,8 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 'users.id',
                 'users.name',
                 'users.email',
+                'users.status',
+                'users.created_at',
                 DB::raw('COUNT(payments.id) as payments_count'),
                 DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0) as total_amount'),
                 DB::raw("COALESCE(MIN(COALESCE(payments.currency, 'USD')), 'USD') as currency"),
@@ -147,9 +156,12 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 DB::raw('SUM(CASE WHEN payments.status IN ('.PaymentStatus::PENDING->value.', '.PaymentStatus::PROCESSING->value.') THEN 1 ELSE 0 END) as pending_count'),
                 DB::raw('SUM(CASE WHEN payments.status = '.PaymentStatus::FAILED->value.' THEN 1 ELSE 0 END) as failed_count'),
                 DB::raw('SUM(CASE WHEN payments.status IN ('.PaymentStatus::REFUNDED->value.', '.PaymentStatus::PARTIALLY_REFUNDED->value.') THEN 1 ELSE 0 END) as refunded_count'),
+                DB::raw('(SELECT COUNT(*) FROM merchant_api_keys WHERE merchant_api_keys.merchant_id = users.id) as api_keys_count'),
+                DB::raw('(SELECT COUNT(*) FROM user_subscriptions WHERE user_subscriptions.user_id = users.id) as subscriptions_count'),
+                DB::raw('(SELECT COUNT(*) FROM merchant_provider_credentials WHERE merchant_provider_credentials.merchant_id = users.id) as provider_credentials_count'),
                 DB::raw('MAX(payments.created_at) as last_payment_at'),
             ])
-            ->groupBy('users.id', 'users.name', 'users.email')
+            ->groupBy('users.id', 'users.name', 'users.email', 'users.status', 'users.created_at')
             ->orderByDesc(DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0)'))
             ->orderBy('users.name')
             ->get();

@@ -16,7 +16,7 @@ class ApiKeysBuilder
         $this->query = MerchantApiKey::query();
     }
 
-    public function whereStatus(?string $status): self
+    public function whereStatus(int|string|null $status): self
     {
         if ($status) {
             $this->query->where('status', $status);

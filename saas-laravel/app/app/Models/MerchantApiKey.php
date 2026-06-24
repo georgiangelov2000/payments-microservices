@@ -22,11 +22,15 @@ class MerchantApiKey extends Model
         'name',
         'environment',
         'key_prefix',
+        'scopes',
+        'last_rotated_at',
         'revoked_at',
     ];
 
     protected $casts = [
-        'status'     => MerchantAPIKeyStatus::class,
+        'status' => MerchantAPIKeyStatus::class,
+        'scopes' => 'array',
+        'last_rotated_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'revoked_at' => 'datetime',
@@ -35,5 +39,10 @@ class MerchantApiKey extends Model
     public function merchant(): BelongsTo
     {
         return $this->belongsTo(User::class, 'merchant_id');
+    }
+
+    public function maskedKey(): string
+    {
+        return ($this->key_prefix ?: substr($this->hash, 0, 10)).'...';
     }
 }

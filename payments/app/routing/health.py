@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import cast
 from uuid import UUID
 
@@ -23,6 +23,9 @@ class ProviderHealthMonitor:
     def _key(self, merchant_id: UUID, environment: str, provider_alias: str) -> str:
         return f"routing:health:{merchant_id}:{environment}:{provider_alias.lower()}"
 
+    def _now(self) -> datetime:
+        return datetime.now(timezone.utc)
+
     async def is_available(
         self, db: Session, merchant_id: UUID, environment: str, provider_alias: str
     ) -> bool:
@@ -44,7 +47,7 @@ class ProviderHealthMonitor:
             return True
 
         disabled_until = cast(datetime | None, row.disabled_until)
-        if disabled_until and disabled_until > datetime.utcnow():
+        if disabled_until and disabled_until > self._now():
             return False
 
         return cast(str, row.status) != "unhealthy"
@@ -69,8 +72,8 @@ class ProviderHealthMonitor:
                 "consecutive_failures": 0,
                 "failure_rate": 0,
                 "disabled_until": None,
-                "last_success_at": datetime.utcnow(),
-                "last_checked_at": datetime.utcnow(),
+                "last_success_at": self._now(),
+                "last_checked_at": self._now(),
                 "last_error": None,
             },
         )
@@ -106,7 +109,7 @@ class ProviderHealthMonitor:
 
         if next_failures >= self.failure_threshold:
             status = "unhealthy"
-            disabled_until = datetime.utcnow() + timedelta(seconds=self.quarantine_seconds)
+            disabled_until = self._now() + timedelta(seconds=self.quarantine_seconds)
             await self._redis.setex(
                 self._key(merchant_id, environment, provider_alias),
                 self.quarantine_seconds,
@@ -125,8 +128,8 @@ class ProviderHealthMonitor:
                 "timeout_count": current_timeout_count + (1 if timed_out else 0),
                 "failure_rate": 100,
                 "disabled_until": disabled_until,
-                "last_failure_at": datetime.utcnow(),
-                "last_checked_at": datetime.utcnow(),
+                "last_failure_at": self._now(),
+                "last_checked_at": self._now(),
                 "last_error": error[:4000],
             },
         )
@@ -153,7 +156,7 @@ class ProviderHealthMonitor:
             set_={
                 **values,
                 "provider_id": provider_id,
-                "updated_at": datetime.utcnow(),
+                "updated_at": self._now(),
             },
         )
 

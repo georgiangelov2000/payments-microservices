@@ -10,7 +10,6 @@ use App\Http\Resources\ApiKeyResource;
 use App\Models\MerchantApiKey;
 use App\Services\ApiKeyService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,25 +25,12 @@ final class ApiKeyController extends Controller
 
         return Inertia::render('ApiKeys/Index', [
             'keys' => $this->resolveResourcePaginator($this->apiKeyService->fetchAll($params), ApiKeyResource::class),
+            'filters' => [
+                'hash' => $request->query('hash', ''),
+                'environment' => $request->query('environment', ''),
+                'status' => $request->query('status', ''),
+            ],
         ]);
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        $environment = $request->input('environment', 'test');
-
-        if (! in_array($environment, ['test', 'live'], true)) {
-            $environment = 'test';
-        }
-
-        $plainTextKey = $this->apiKeyService->generateForMerchant(
-            auth()->id(),
-            $environment,
-        );
-
-        return redirect()
-            ->route('api-keys.index')
-            ->with('generated_api_key', $plainTextKey);
     }
 
     /**
@@ -60,7 +46,7 @@ final class ApiKeyController extends Controller
             ->firstOrFail();
 
         $key->update([
-            'status'     => MerchantAPIKeyStatus::INACTIVE,
+            'status' => MerchantAPIKeyStatus::INACTIVE,
             'revoked_at' => now(),
         ]);
 

@@ -580,6 +580,7 @@ class PaymentCreationService:
         error_message: str | None,
         routing_snapshot: JsonObject,
     ) -> None:
+        now = datetime.utcnow()
         with payments_session() as payments_db:
             payments_db.add(
                 PaymentRoutingAttempt(
@@ -596,6 +597,8 @@ class PaymentCreationService:
                     error_code=error_code,
                     error_message=error_message[:4000] if error_message else None,
                     routing_snapshot=json.dumps(routing_snapshot),
+                    created_at=now,
+                    updated_at=now,
                 )
             )
             payments_db.commit()

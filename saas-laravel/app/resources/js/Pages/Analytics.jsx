@@ -1,13 +1,22 @@
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+    Area,
+    Bar,
+    CartesianGrid,
+    ComposedChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ProviderBrand, { getProviderMeta } from '@/Components/ProviderBrand';
-import { fmt, fmtCurrency, fmtMs, fmtRate } from '@/utils';
+import { fmt, fmtCurrency, fmtMs } from '@/utils';
 import {
     TrendingUp, TrendingDown, Minus,
     CheckCircle2, XCircle, Zap, Clock,
-    DollarSign, Activity, AlertTriangle,
+    DollarSign, Activity,
     FlaskConical, Globe, BarChart2,
 } from 'lucide-react';
 
@@ -59,177 +68,157 @@ function KpiCard({ label, value, sub, delta, suffix, Icon, accentColor, reverseD
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sparkline area chart (SVG)
-// ─────────────────────────────────────────────────────────────────────────────
+const STATUS_OPTIONS = [
+    { value: '', labelKey: 'analytics.statusFilters.all' },
+    { value: 'pending', labelKey: 'analytics.statusFilters.pending' },
+    { value: 'processing', labelKey: 'analytics.statusFilters.processing' },
+    { value: 'succeeded', labelKey: 'analytics.statusFilters.succeeded' },
+    { value: 'failed', labelKey: 'analytics.statusFilters.failed' },
+    { value: 'cancelled', labelKey: 'analytics.statusFilters.cancelled' },
+    { value: 'refunded', labelKey: 'analytics.statusFilters.refunded' },
+    { value: 'partially_refunded', labelKey: 'analytics.statusFilters.partiallyRefunded' },
+    { value: 'disputed', labelKey: 'analytics.statusFilters.disputed' },
+    { value: 'expired', labelKey: 'analytics.statusFilters.expired' },
+];
 
-const W = 800;
-const H = 140;
-const PAD = { top: 12, right: 16, bottom: 28, left: 44 };
+function analyticsParams(days, env, trendStatus) {
+    const params = { days, env };
+    if (trendStatus) {
+        params.trend_status = trendStatus;
+    }
 
-function areaPath(points, yMin, yMax, key) {
-    if (!points.length) return '';
-    const xs = points.map((_, i) => PAD.left + (i / (points.length - 1)) * (W - PAD.left - PAD.right));
-    const ys = points.map(p => {
-        const range = yMax - yMin || 1;
-        return PAD.top + (1 - (p[key] - yMin) / range) * (H - PAD.top - PAD.bottom);
-    });
-    const line = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(' ');
-    const bottom = H - PAD.bottom;
-    return `${line} L${xs[xs.length - 1].toFixed(1)},${bottom} L${xs[0].toFixed(1)},${bottom} Z`;
+    return params;
 }
 
-function linePath(points, yMin, yMax, key) {
-    if (!points.length) return '';
-    return points.map((p, i) => {
-        const x = PAD.left + (i / (points.length - 1)) * (W - PAD.left - PAD.right);
-        const range = yMax - yMin || 1;
-        const y = PAD.top + (1 - (p[key] - yMin) / range) * (H - PAD.top - PAD.bottom);
-        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
+function TrendTooltip({ active, payload, currency }) {
+    const { t } = useTranslation();
+
+    if (!active || !payload?.length) return null;
+
+    const row = payload[0]?.payload ?? {};
+    const volume = payload.find((item) => item.dataKey === 'volume')?.value ?? 0;
+    const payments = payload.find((item) => item.dataKey === 'total')?.value ?? 0;
+    const succeeded = row.succeeded ?? 0;
+    const successRate = row.success_rate ?? 0;
+
+    return (
+        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg shadow-slate-900/10">
+            <p className="mb-1 font-semibold text-slate-900">{row.date}</p>
+            <p className="tabular-nums text-indigo-700">{fmtCurrency(volume, currency)}</p>
+            <p className="mt-0.5 text-slate-500">{fmt(payments)} {t('analytics.payments')}</p>
+            <p className="text-slate-400">{fmt(succeeded)} {t('analytics.succeeded').toLowerCase()} · {Number(successRate).toFixed(1)}%</p>
+        </div>
+    );
 }
 
-function AreaChart({ data, dataKey, label, color, formatter, yMin: yMinProp, yMax: yMaxProp }) {
-    const values = data.map(d => d[dataKey]);
-    const yMin = yMinProp ?? Math.min(...values);
-    const yMax = yMaxProp ?? Math.max(...values);
+function PaymentTrendChart({ data, currency, days, environment, trendStatus }) {
+    const { t } = useTranslation();
+    const points = (data ?? []).map((row) => ({
+        ...row,
+        dateLabel: row.date?.slice(5) ?? row.date,
+        total: Number(row.total ?? 0),
+        succeeded: Number(row.succeeded ?? 0),
+        volume: Number(row.volume ?? 0),
+        success_rate: Number(row.success_rate ?? 0),
+    }));
 
-    const area = useMemo(() => areaPath(data, yMin, yMax, dataKey), [data, dataKey, yMin, yMax]);
-    const line = useMemo(() => linePath(data, yMin, yMax, dataKey), [data, dataKey, yMin, yMax]);
-
-    const tickIdxs = data.length >= 3 ? [0, Math.floor((data.length - 1) / 2), data.length - 1] : [0];
-    const xForIdx = i => PAD.left + (i / Math.max(data.length - 1, 1)) * (W - PAD.left - PAD.right);
-    const yTicks = [yMax, (yMax + yMin) / 2, yMin];
-    const yForVal = v => {
-        const range = yMax - yMin || 1;
-        return PAD.top + (1 - (v - yMin) / range) * (H - PAD.top - PAD.bottom);
-    };
-
-    const gradId = `grad-${dataKey}`;
-    const svgRef = useRef(null);
-    const [hover, setHover] = useState(null); // { idx, x, y, value, date }
-
-    const handleMouseMove = (e) => {
-        if (!data.length) return;
-        const rect = svgRef.current.getBoundingClientRect();
-        const rawX = ((e.clientX - rect.left) / rect.width) * W;
-        const chartLeft = PAD.left;
-        const chartRight = W - PAD.right;
-        const clamped = Math.max(chartLeft, Math.min(chartRight, rawX));
-        const frac = (clamped - chartLeft) / (chartRight - chartLeft);
-        const idx = Math.round(frac * (data.length - 1));
-        const x = xForIdx(idx);
-        const val = data[idx][dataKey];
-        const y = yForVal(val);
-        setHover({ idx, x, y, value: val, date: data[idx]?.date });
+    const handleStatusChange = (e) => {
+        router.get(
+            route('analytics'),
+            analyticsParams(days, environment, e.target.value),
+            { preserveScroll: true },
+        );
     };
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="mb-3 text-sm font-semibold text-slate-700">{label}</p>
-            <div className="relative">
-                <svg
-                    ref={svgRef}
-                    viewBox={`0 0 ${W} ${H}`}
-                    className="w-full"
-                    style={{ height: 140 }}
-                    onMouseMove={handleMouseMove}
-                    onMouseLeave={() => setHover(null)}
-                >
-                    <defs>
-                        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-                            <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-                        </linearGradient>
-                    </defs>
-                    {yTicks.map((v, i) => (
-                        <g key={i}>
-                            <line
-                                x1={PAD.left} y1={yForVal(v).toFixed(1)}
-                                x2={W - PAD.right} y2={yForVal(v).toFixed(1)}
-                                stroke="#e2e8f0" strokeWidth="1"
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h3 className="text-base font-semibold text-slate-900">{t('analytics.paymentTrend')}</h3>
+                    <p className="mt-0.5 text-xs text-slate-400">{t('analytics.paymentTrendHint')}</p>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] font-medium text-slate-500">
+                        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />{t('analytics.paidVolume')}</span>
+                        <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-300" />{t('analytics.totalPayments')}</span>
+                    </div>
+                    <select
+                        value={trendStatus ?? ''}
+                        onChange={handleStatusChange}
+                        className="min-w-44 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                    >
+                        {STATUS_OPTIONS.map(option => (
+                            <option key={option.value || 'all'} value={option.value}>
+                                {t(option.labelKey)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+            {!points.length ? (
+                <p className="py-10 text-center text-sm text-slate-400">{t('analytics.noData')}</p>
+            ) : (
+                <div className="h-72 rounded-xl border border-slate-200 bg-white px-2 py-3">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={points} margin={{ top: 16, right: 10, bottom: 4, left: 0 }}>
+                            <defs>
+                                <linearGradient id="merchantPaidVolumeTrend" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.36} />
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.03} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+                            <XAxis
+                                dataKey="dateLabel"
+                                axisLine={false}
+                                tickLine={false}
+                                minTickGap={18}
+                                tick={{ fill: '#94a3b8', fontSize: 11 }}
                             />
-                            <text x={PAD.left - 6} y={yForVal(v) + 4} textAnchor="end" fontSize="10" fill="#94a3b8">
-                                {formatter ? formatter(v) : fmt(v, 0)}
-                            </text>
-                        </g>
-                    ))}
-                    <path d={area} fill={`url(#${gradId})`} />
-                    <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-                    {tickIdxs.map(i => (
-                        <text key={i} x={xForIdx(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="#94a3b8">
-                            {data[i]?.date?.slice(5)}
-                        </text>
-                    ))}
-                    {/* Crosshair + dot */}
-                    {hover && (
-                        <g>
-                            <line
-                                x1={hover.x} y1={PAD.top}
-                                x2={hover.x} y2={H - PAD.bottom}
-                                stroke={color} strokeWidth="1" strokeDasharray="3 3" opacity="0.6"
+                            <YAxis
+                                yAxisId="volume"
+                                axisLine={false}
+                                tickLine={false}
+                                width={58}
+                                tick={{ fill: '#94a3b8', fontSize: 11 }}
+                                tickFormatter={(value) => fmtCurrency(value, currency)}
                             />
-                            <circle cx={hover.x} cy={hover.y} r="5" fill="white" stroke={color} strokeWidth="2" />
-                        </g>
-                    )}
-                </svg>
-                {/* Floating tooltip */}
-                {hover && (() => {
-                    const pct = (hover.x - PAD.left) / (W - PAD.left - PAD.right);
-                    return (
-                        <div
-                            className="pointer-events-none absolute z-10 -translate-y-full rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg"
-                            style={{
-                                top: `${(hover.y / H) * 100}%`,
-                                left: `${pct * 100}%`,
-                                transform: `translate(${pct > 0.75 ? '-110%' : '8px'}, -50%)`,
-                            }}
-                        >
-                            <p className="text-[10px] font-medium text-slate-400">{hover.date}</p>
-                            <p className="text-sm font-bold" style={{ color }}>{formatter ? formatter(hover.value) : fmt(hover.value)}</p>
-                        </div>
-                    );
-                })()}
-            </div>
-        </div>
-    );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Bar chart (horizontal, for decline codes / latency buckets)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function HorizontalBar({ label, value, maxValue, color, sub }) {
-    const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
-    return (
-        <div className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-                <span className="font-mono text-xs text-slate-700 truncate max-w-[60%]">{label}</span>
-                <span className="text-xs font-semibold text-slate-600">{fmt(value)}{sub ? ` ${sub}` : ''}</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-slate-100">
-                <div
-                    className="h-2 rounded-full transition-all"
-                    style={{ width: `${pct}%`, backgroundColor: color }}
-                />
-            </div>
-        </div>
-    );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Provider success rate bar (inline table bar)
-// ─────────────────────────────────────────────────────────────────────────────
-
-function RateBar({ rate }) {
-    const pct = Math.min(Math.max(rate ?? 0, 0), 100);
-    const color = pct >= 90 ? '#10b981' : pct >= 70 ? '#f59e0b' : '#ef4444';
-    return (
-        <div className="flex items-center gap-2">
-            <div className="h-2 flex-1 rounded-full bg-slate-100">
-                <div className="h-2 rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-            </div>
-            <span className="text-xs font-semibold tabular-nums" style={{ color }}>{pct.toFixed(1)}%</span>
+                            <YAxis
+                                yAxisId="payments"
+                                orientation="right"
+                                axisLine={false}
+                                tickLine={false}
+                                width={36}
+                                tick={{ fill: '#94a3b8', fontSize: 11 }}
+                                allowDecimals={false}
+                            />
+                            <Tooltip
+                                content={<TrendTooltip currency={currency} />}
+                                cursor={{ stroke: '#818cf8', strokeWidth: 1, strokeDasharray: '4 4' }}
+                            />
+                            <Bar
+                                yAxisId="payments"
+                                dataKey="total"
+                                name={t('analytics.totalPayments')}
+                                barSize={18}
+                                radius={[5, 5, 0, 0]}
+                                fill="#c4b5fd"
+                            />
+                            <Area
+                                yAxisId="volume"
+                                type="monotone"
+                                dataKey="volume"
+                                name={t('analytics.paidVolume')}
+                                stroke="#4f46e5"
+                                strokeWidth={2.5}
+                                fill="url(#merchantPaidVolumeTrend)"
+                                dot={{ r: 3, strokeWidth: 2, fill: '#ffffff', stroke: '#4f46e5' }}
+                                activeDot={{ r: 5, strokeWidth: 2, fill: '#4f46e5', stroke: '#ffffff' }}
+                            />
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                </div>
+            )}
         </div>
     );
 }
@@ -238,23 +227,15 @@ function RateBar({ rate }) {
 // Rich Provider Performance Card (matches admin panel style)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function rateColor(rate) {
-    if (rate >= 95) return 'text-green-600';
-    if (rate >= 80) return 'text-amber-600';
-    return 'text-red-600';
-}
-
-function rateBarColor(rate) {
-    if (rate >= 95) return 'bg-green-500';
-    if (rate >= 80) return 'bg-amber-500';
-    return 'bg-red-500';
-}
-
 function ProviderCard({ provider }) {
     const { t } = useTranslation();
-    const rate = Number(provider.success_rate ?? 0);
     const name = provider.provider ?? provider.provider_alias ?? 'Unknown';
     const providerMeta = getProviderMeta(name, name);
+    const hasMixedCurrencies = Number(provider.currencies_count ?? 0) > 1;
+    const currency = provider.currency || 'USD';
+    const money = (value) => hasMixedCurrencies
+        ? Number(value ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : fmtCurrency(value, currency);
 
     return (
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -264,30 +245,23 @@ function ProviderCard({ provider }) {
                     <ProviderBrand alias={name} label={name} size="md" variant="icon" />
                     <div>
                         <p className="font-semibold text-slate-900">{providerMeta.label}</p>
-                        <p className="text-xs text-slate-400">{t('analytics.attempts', { count: fmt(provider.total ?? provider.total_attempts) })}</p>
+                        <p className="text-xs text-slate-400">{t('analytics.providerTotalPayments', { count: fmt(provider.total) })}</p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className={`text-2xl font-bold ${rateColor(rate)}`}>{fmtRate(rate)}</p>
-                    <p className="text-xs text-slate-400">{t('analytics.approvalRate')}</p>
+                    <p className="text-2xl font-bold text-green-600">{fmt(provider.succeeded)}</p>
+                    <p className="text-xs text-slate-400">{t('analytics.paidPayments')}</p>
                 </div>
-            </div>
-
-            {/* Rate bar */}
-            <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                <div
-                    className={`h-full rounded-full transition-all ${rateBarColor(rate)}`}
-                    style={{ width: `${Math.min(rate, 100)}%` }}
-                />
             </div>
 
             {/* Stats grid */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                    { label: t('analytics.succeeded'), value: fmt(provider.succeeded),       Icon: CheckCircle2, color: 'text-green-600 bg-green-50'   },
-                    { label: t('analytics.failed'),    value: fmt(provider.failed),           Icon: XCircle,      color: 'text-red-600 bg-red-50'       },
-                    { label: t('analytics.timeouts'),  value: fmt(provider.timeouts ?? 0),    Icon: Clock,        color: 'text-amber-600 bg-amber-50'   },
-                    { label: t('analytics.avgLatency'), value: fmtMs(provider.avg_latency_ms), Icon: Zap,        color: 'text-indigo-600 bg-indigo-50' },
+                    { label: t('analytics.succeeded'), value: fmt(provider.succeeded), Icon: CheckCircle2, color: 'text-green-600 bg-green-50' },
+                    { label: t('analytics.pending'), value: fmt(provider.pending), Icon: Clock, color: 'text-amber-600 bg-amber-50' },
+                    { label: t('analytics.failed'), value: fmt(provider.failed), Icon: XCircle, color: 'text-red-600 bg-red-50' },
+                    { label: t('analytics.paidVolume'), value: money(provider.paid_volume), Icon: DollarSign, color: 'text-indigo-600 bg-indigo-50' },
+                    { label: t('analytics.avgPaid'), value: money(provider.avg_payment), Icon: Zap, color: 'text-slate-600 bg-slate-100' },
                 ].map(({ label, value, Icon: I, color }) => (
                     <div key={label} className={`rounded-lg px-3 py-2 ${color.split(' ')[1]}`}>
                         <div className="flex items-center gap-1 mb-0.5">
@@ -299,10 +273,9 @@ function ProviderCard({ provider }) {
                 ))}
             </div>
 
-            {/* Latency range */}
-            {provider.min_latency_ms != null && (
+            {hasMixedCurrencies && (
                 <p className="mt-3 text-xs text-slate-400">
-                    {t('analytics.latencyRange', { min: fmtMs(provider.min_latency_ms), max: fmtMs(provider.max_latency_ms) })}
+                    {t('analytics.mixedCurrencyRawAmounts')}
                 </p>
             )}
         </div>
@@ -318,7 +291,7 @@ const ENV_TABS = [
     { key: 'live', label: 'Live', Icon: Globe,        activeCls: 'border-violet-500 bg-violet-50 text-violet-700', dotCls: 'bg-violet-400' },
 ]
 
-function EnvSelector({ current, days }) {
+function EnvSelector({ current, days, trendStatus }) {
     const { t } = useTranslation();
     return (
         <div className="flex items-center gap-3">
@@ -327,7 +300,7 @@ function EnvSelector({ current, days }) {
                 return (
                     <button
                         key={key}
-                        onClick={() => router.get(route('analytics'), { days, env: key }, { preserveScroll: false })}
+                        onClick={() => router.get(route('analytics'), analyticsParams(days, key, trendStatus), { preserveScroll: false })}
                         className={[
                             'flex items-center gap-2.5 rounded-xl border px-5 py-3 text-sm font-semibold transition-all',
                             isActive
@@ -350,7 +323,7 @@ function EnvSelector({ current, days }) {
     )
 }
 
-function PeriodSelector({ current, env }) {
+function PeriodSelector({ current, env, trendStatus }) {
     const options = [
         { label: '7d',  value: 7 },
         { label: '30d', value: 30 },
@@ -361,7 +334,7 @@ function PeriodSelector({ current, env }) {
             {options.map(o => (
                 <button
                     key={o.value}
-                    onClick={() => router.get(route('analytics'), { days: o.value, env }, { preserveScroll: false })}
+                    onClick={() => router.get(route('analytics'), analyticsParams(o.value, env, trendStatus), { preserveScroll: false })}
                     className={[
                         'px-3 py-1.5 text-xs font-semibold transition-colors',
                         current === o.value
@@ -377,116 +350,25 @@ function PeriodSelector({ current, env }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Routing strategy distribution
-// ─────────────────────────────────────────────────────────────────────────────
-
-const STRATEGY_COLORS = {
-    priority:    '#6366f1',
-    weighted:    '#06b6d4',
-    conditional: '#f59e0b',
-    failover:    '#10b981',
-};
-
-const STRATEGY_COPY = {
-    priority: {
-        label: 'Priority routing',
-        description: 'Payments follow your configured provider order, then use fallback providers when needed.',
-    },
-    weighted: {
-        label: 'Traffic distribution',
-        description: 'Payments are split across providers by percentage weights.',
-    },
-    conditional: {
-        label: 'Rule-based routing',
-        description: 'Payments are routed by rules such as country, currency, payment method, or amount.',
-    },
-    failover: {
-        label: 'Failover routing',
-        description: 'Payments move to the next provider after a provider error, decline, or timeout.',
-    },
-};
-
-function StrategyBreakdown({ data, environment }) {
-    const { t } = useTranslation();
-    const total = data.reduce((sum, row) => sum + Number(row.count ?? 0), 0);
-    if (!total) return <p className="text-center text-sm text-slate-400 py-6">{t('analytics.noRoutingData')}</p>;
-
-    return (
-        <div className="space-y-4">
-            {data.map((row) => {
-                const strategy = row.strategy ?? 'unknown';
-                const fallbackLabel = `${strategy.charAt(0).toUpperCase()}${strategy.slice(1)} routing`;
-                const copy = STRATEGY_COPY[strategy] ?? { label: fallbackLabel, description: t('analytics.strategies.unknown.description') };
-                const translatedLabel = t(`analytics.strategies.${strategy}.label`, { defaultValue: copy.label });
-                const translatedDescription = t(`analytics.strategies.${strategy}.description`, { defaultValue: copy.description });
-                const count = Number(row.count ?? 0);
-                const pct = total > 0 ? (count / total) * 100 : 0;
-                const color = STRATEGY_COLORS[strategy] ?? '#64748b';
-
-                return (
-                    <div key={strategy} className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-                                    <p className="text-sm font-semibold text-slate-800">{translatedLabel}</p>
-                                </div>
-                                <p className="mt-1 text-xs leading-5 text-slate-500">{translatedDescription}</p>
-                            </div>
-                            <div className="shrink-0 text-right">
-                                <p className="text-sm font-bold text-slate-900">{fmt(count)}</p>
-                                <p className="text-[11px] text-slate-400">{t('analytics.payments')}</p>
-                            </div>
-                        </div>
-                        <div className="mt-3 flex items-center gap-3">
-                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-white">
-                                <div
-                                    className="h-full rounded-full"
-                                    style={{ width: `${Math.max(pct, 4)}%`, backgroundColor: color }}
-                                />
-                            </div>
-                            <span className="w-12 text-right text-xs font-semibold tabular-nums text-slate-600">
-                                {pct.toFixed(0)}%
-                            </span>
-                        </div>
-                    </div>
-                );
-            })}
-            <p className="text-xs text-slate-400">
-                {t('analytics.basedOnPayments', { total: fmt(total), environment })}
-            </p>
-        </div>
-    );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Analytics({
     days,
     environment,
+    trendStatus,
     overview,
     dailyTrend,
     providerPerformance,
-    topDeclineCodes,
-    routingDistribution,
-    latencyBuckets,
 }) {
     const { t } = useTranslation();
-    const maxDecline = topDeclineCodes[0]?.count ?? 1;
-    const maxLatency = Math.max(...latencyBuckets.map(b => b.count), 1);
-
-    const successRateMin = Math.max(0, Math.min(...dailyTrend.map(d => d.success_rate)) - 5);
-    const successRateMax = Math.min(100, Math.max(...dailyTrend.map(d => d.success_rate)) + 5);
-    const volumeMax = Math.max(...dailyTrend.map(d => d.volume), 0.01);
 
     return (
         <AuthenticatedLayout
             header={
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-gray-800">{t('analytics.title')}</h2>
-                    <PeriodSelector current={days} env={environment} />
+                    <PeriodSelector current={days} env={environment} trendStatus={trendStatus} />
                 </div>
             }
         >
@@ -495,7 +377,7 @@ export default function Analytics({
             <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto">
 
                 {/* Environment switcher */}
-                <EnvSelector current={environment} days={days} />
+                <EnvSelector current={environment} days={days} trendStatus={trendStatus} />
 
                 {/* KPI row */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -552,7 +434,7 @@ export default function Analytics({
                     {providerPerformance.length === 0 ? (
                         <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
                             <BarChart2 size={32} strokeWidth={1.25} className="mx-auto mb-2 text-slate-300" />
-                            <p className="text-sm text-slate-400" dangerouslySetInnerHTML={{ __html: t('analytics.noProviderAttempts', { environment: `<strong>${environment}</strong>` }) }} />
+                            <p className="text-sm text-slate-400" dangerouslySetInnerHTML={{ __html: t('analytics.noProviderPayments', { environment: `<strong>${environment}</strong>` }) }} />
                             <p className="mt-1 text-xs text-slate-400">{t('analytics.noProviderAttemptsHint')}</p>
                         </div>
                     ) : (
@@ -564,98 +446,13 @@ export default function Analytics({
                     )}
                 </section>
 
-                {/* Trend charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <AreaChart
-                        data={dailyTrend}
-                        dataKey="success_rate"
-                        label={t('analytics.successRateTrend')}
-                        color="#6366f1"
-                        formatter={v => `${v.toFixed(0)}%`}
-                        yMin={successRateMin}
-                        yMax={successRateMax}
-                    />
-                    <AreaChart
-                        data={dailyTrend}
-                        dataKey="volume"
-                        label={t('analytics.paymentVolumeTrend')}
-                        color="#06b6d4"
-                        formatter={v => fmtCurrency(v)}
-                        yMin={0}
-                        yMax={volumeMax}
-                    />
-                </div>
-
-                {/* Total payments trend */}
-                <AreaChart
+                <PaymentTrendChart
                     data={dailyTrend}
-                    dataKey="total"
-                    label={t('analytics.dailyPaymentCount')}
-                    color="#f59e0b"
-                    formatter={v => fmt(v, 0)}
-                    yMin={0}
-                    yMax={Math.max(...dailyTrend.map(d => d.total), 1)}
+                    currency={overview.currency}
+                    days={days}
+                    environment={environment}
+                    trendStatus={trendStatus}
                 />
-
-                {/* Bottom row: decline codes + routing distribution + latency buckets */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-                    {/* Decline codes */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-                        <div>
-                            <h3 className="text-sm font-semibold text-slate-700">{t('analytics.topDeclineCodes')}</h3>
-                            <p className="text-xs text-slate-400 mt-0.5">{t('analytics.topDeclineCodesHint')}</p>
-                        </div>
-                        {topDeclineCodes.length === 0 ? (
-                            <p className="text-center text-sm text-slate-400 py-4">{t('analytics.noDeclines')}</p>
-                        ) : (
-                            topDeclineCodes.map((d, i) => (
-                                <HorizontalBar
-                                    key={i}
-                                    label={d.error_code}
-                                    value={d.count}
-                                    maxValue={maxDecline}
-                                    color="#ef4444"
-                                />
-                            ))
-                        )}
-                    </div>
-
-                    {/* Routing strategy distribution */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div className="mb-4">
-                            <h3 className="text-sm font-semibold text-slate-700">{t('analytics.routingStrategyBreakdown')}</h3>
-                            <p className="text-xs text-slate-400 mt-0.5">{t('analytics.routingStrategyHint')}</p>
-                        </div>
-                        {routingDistribution.length === 0 ? (
-                            <p className="text-center text-sm text-slate-400 py-4">{t('analytics.noData')}</p>
-                        ) : (
-                            <StrategyBreakdown data={routingDistribution} environment={environment} />
-                        )}
-                    </div>
-
-                    {/* Latency buckets */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
-                        <div>
-                            <h3 className="text-sm font-semibold text-slate-700">{t('analytics.latencyDistribution')}</h3>
-                            <p className="text-xs text-slate-400 mt-0.5">{t('analytics.latencyDistributionHint')}</p>
-                        </div>
-                        {latencyBuckets.every(b => b.count === 0) ? (
-                            <p className="text-center text-sm text-slate-400 py-4">{t('analytics.noLatencyData')}</p>
-                        ) : (
-                            latencyBuckets.map((b, i) => (
-                                <HorizontalBar
-                                    key={i}
-                                    label={b.bucket}
-                                    value={b.count}
-                                    maxValue={maxLatency}
-                                    color="#6366f1"
-                                    sub="req"
-                                />
-                            ))
-                        )}
-                    </div>
-                </div>
 
             </div>
         </AuthenticatedLayout>
