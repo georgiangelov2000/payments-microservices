@@ -208,8 +208,18 @@ export default function MerchantsIndex({ merchants, availableProviders, filters 
                             ) : merchants.data.map((merchant) => (
                                 <tr key={merchant.id} className="align-top hover:bg-slate-50/50 transition-colors">
                                     <td className="px-4 py-2">
-                                        <span className="block font-medium text-slate-900">{merchant.name}</span>
-                                        <span className="block text-xs text-slate-500">{merchant.email}</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                                                {merchant.logo_url
+                                                    ? <img src={merchant.logo_url} alt="" className="h-full w-full object-contain" />
+                                                    : (merchant.company_name || merchant.name).slice(0, 2).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <span className="block font-medium text-slate-900">{merchant.company_name || merchant.name}</span>
+                                                {merchant.company_name && <span className="block text-xs text-slate-500">{merchant.name}</span>}
+                                                <span className="block text-xs text-slate-500">{merchant.email}</span>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="px-4 py-2">
                                         <Badge value={merchant.status} />

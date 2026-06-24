@@ -86,6 +86,7 @@ echo "================ LARAVEL ================"
 if docker compose ps --services --status running | grep -q "^saas-laravel$"; then
   docker compose exec saas-laravel composer install --no-interaction
   docker compose exec saas-laravel php artisan key:generate --no-interaction
+  docker compose exec saas-laravel php artisan storage:link --force
   docker compose exec saas-laravel npm install
   docker compose exec saas-laravel npm run build
   docker compose exec saas-laravel php artisan optimize:clear
@@ -99,6 +100,7 @@ echo "================ ADMIN LARAVEL ================"
 if docker compose ps --services --status running | grep -q "^admin-laravel$"; then
   docker compose exec admin-laravel composer install --no-interaction
   docker compose exec admin-laravel php artisan key:generate --no-interaction
+  docker compose exec admin-laravel php artisan storage:link --force
   docker compose exec admin-laravel php artisan db:seed --no-interaction
   docker compose exec admin-laravel npm install
   docker compose exec admin-laravel npm run build

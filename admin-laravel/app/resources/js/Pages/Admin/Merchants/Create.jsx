@@ -84,14 +84,25 @@ function StatusPicker({ value, onChange }) {
 
 export default function MerchantsCreate() {
     const { data, setData, post, processing, errors } = useForm({
-        name:   '',
-        email:  '',
+        name: '',
+        email: '',
+        company_name: '',
+        legal_name: '',
+        logo: null,
+        website: '',
+        phone: '',
+        tax_id: '',
+        country: '',
+        city: '',
+        postal_code: '',
+        address_line1: '',
+        address_line2: '',
         status: 'pending',
     });
 
     const submit = (e) => {
         e.preventDefault();
-        post(route('admin.merchants.store'));
+        post(route('admin.merchants.store'), { forceFormData: true });
     };
 
     return (
@@ -146,6 +157,67 @@ export default function MerchantsCreate() {
                                     error={errors.email}
                                 />
                             </Field>
+                        </FormSection>
+
+                        <FormSection
+                            title="Company Profile"
+                            description="Brand, legal and contact details for this merchant company."
+                        >
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <Field label="Trading Name" error={errors.company_name}>
+                                    <TextInput type="text" placeholder="Acme Payments" value={data.company_name}
+                                        onChange={(e) => setData('company_name', e.target.value)} error={errors.company_name} />
+                                </Field>
+                                <Field label="Legal Company Name" error={errors.legal_name}>
+                                    <TextInput type="text" placeholder="Acme Payments Ltd." value={data.legal_name}
+                                        onChange={(e) => setData('legal_name', e.target.value)} error={errors.legal_name} />
+                                </Field>
+                                <Field label="Website" error={errors.website}>
+                                    <TextInput type="url" placeholder="https://example.com" value={data.website}
+                                        onChange={(e) => setData('website', e.target.value)} error={errors.website} />
+                                </Field>
+                                <Field label="Phone" error={errors.phone}>
+                                    <TextInput type="tel" placeholder="+359 2 123 4567" value={data.phone}
+                                        onChange={(e) => setData('phone', e.target.value)} error={errors.phone} />
+                                </Field>
+                                <Field label="Tax / VAT ID" error={errors.tax_id}>
+                                    <TextInput type="text" value={data.tax_id}
+                                        onChange={(e) => setData('tax_id', e.target.value)} error={errors.tax_id} />
+                                </Field>
+                                <Field label="Country Code" hint="Two-letter ISO code, for example BG or US." error={errors.country}>
+                                    <TextInput type="text" maxLength={2} placeholder="BG" value={data.country}
+                                        onChange={(e) => setData('country', e.target.value.toUpperCase())} error={errors.country} />
+                                </Field>
+                            </div>
+                            <Field label="Company Logo" hint="JPG, PNG or WebP, up to 2 MB." error={errors.logo}>
+                                <input type="file" accept="image/jpeg,image/png,image/webp"
+                                    onChange={(e) => setData('logo', e.target.files?.[0] ?? null)}
+                                    className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:font-medium file:text-indigo-700" />
+                            </Field>
+                        </FormSection>
+
+                        <FormSection
+                            title="Business Address"
+                            description="Optional registered or operating address."
+                        >
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <Field label="Address Line 1" error={errors.address_line1}>
+                                    <TextInput type="text" value={data.address_line1}
+                                        onChange={(e) => setData('address_line1', e.target.value)} error={errors.address_line1} />
+                                </Field>
+                                <Field label="Address Line 2" error={errors.address_line2}>
+                                    <TextInput type="text" value={data.address_line2}
+                                        onChange={(e) => setData('address_line2', e.target.value)} error={errors.address_line2} />
+                                </Field>
+                                <Field label="City" error={errors.city}>
+                                    <TextInput type="text" value={data.city}
+                                        onChange={(e) => setData('city', e.target.value)} error={errors.city} />
+                                </Field>
+                                <Field label="Postal Code" error={errors.postal_code}>
+                                    <TextInput type="text" value={data.postal_code}
+                                        onChange={(e) => setData('postal_code', e.target.value)} error={errors.postal_code} />
+                                </Field>
+                            </div>
                         </FormSection>
 
                         {/* Account status */}

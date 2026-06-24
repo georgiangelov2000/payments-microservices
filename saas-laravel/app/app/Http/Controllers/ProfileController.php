@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,15 +32,44 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $data = $request->validated();
+        unset($data['logo'], $data['remove_logo']);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if (isset($data['country'])) {
+            $data['country'] = strtoupper($data['country']);
         }
 
-        $request->user()->save();
+        if ($request->boolean('remove_logo')) {
+            $this->deleteLocalLogo($user->logo_url);
+            $data['logo_url'] = null;
+        }
+
+        if ($request->hasFile('logo')) {
+            $this->deleteLocalLogo($user->logo_url);
+            $path = $request->file('logo')->store("merchant-logos/{$user->id}", 'public');
+            $data['logo_url'] = Storage::disk('public')->url($path);
+        }
+
+        $user->fill($data);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
 
         return Redirect::route('profile.edit');
+    }
+
+    private function deleteLocalLogo(?string $logoUrl): void
+    {
+        $path = parse_url((string) $logoUrl, PHP_URL_PATH);
+        $prefix = '/storage/';
+
+        if (is_string($path) && str_starts_with($path, $prefix)) {
+            Storage::disk('public')->delete(substr($path, strlen($prefix)));
+        }
     }
 
     /**

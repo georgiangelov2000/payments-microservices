@@ -71,6 +71,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
             ->when($filters['search'] ?? null, function (Builder $query, string $search) {
                 $query->where(function (Builder $query) use ($search) {
                     $query->where('users.name', 'ilike', "%{$search}%")
+                        ->orWhere('users.company_name', 'ilike', "%{$search}%")
                         ->orWhere('users.email', 'ilike', "%{$search}%");
                 });
             })
@@ -86,6 +87,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 'users.id',
                 'users.name',
                 'users.email',
+                'users.logo_url',
                 'users.status',
                 'users.created_at',
                 DB::raw('COUNT(payments.id) as payments_count'),
@@ -101,7 +103,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 DB::raw('(SELECT COUNT(*) FROM merchant_provider_credentials WHERE merchant_provider_credentials.merchant_id = users.id) as provider_credentials_count'),
                 DB::raw('MAX(payments.created_at) as last_payment_at'),
             ])
-            ->groupBy('users.id', 'users.name', 'users.email', 'users.status', 'users.created_at')
+            ->groupBy('users.id', 'users.name', 'users.email', 'users.logo_url', 'users.status', 'users.created_at')
             ->orderByDesc(DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0)'))
             ->orderBy('users.name')
             ->paginate($perPage)
@@ -131,6 +133,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
             ->when($filters['search'] ?? null, function (Builder $query, string $search) {
                 $query->where(function (Builder $query) use ($search) {
                     $query->where('users.name', 'ilike', "%{$search}%")
+                        ->orWhere('users.company_name', 'ilike', "%{$search}%")
                         ->orWhere('users.email', 'ilike', "%{$search}%");
                 });
             })
@@ -146,6 +149,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 'users.id',
                 'users.name',
                 'users.email',
+                'users.logo_url',
                 'users.status',
                 'users.created_at',
                 DB::raw('COUNT(payments.id) as payments_count'),
@@ -161,7 +165,7 @@ final class PaymentRepository implements PaymentRepositoryInterface
                 DB::raw('(SELECT COUNT(*) FROM merchant_provider_credentials WHERE merchant_provider_credentials.merchant_id = users.id) as provider_credentials_count'),
                 DB::raw('MAX(payments.created_at) as last_payment_at'),
             ])
-            ->groupBy('users.id', 'users.name', 'users.email', 'users.status', 'users.created_at')
+            ->groupBy('users.id', 'users.name', 'users.email', 'users.logo_url', 'users.status', 'users.created_at')
             ->orderByDesc(DB::raw('COALESCE(SUM(CASE WHEN payments.status = '.PaymentStatus::FINISHED->value.' THEN payments.price ELSE 0 END), 0)'))
             ->orderBy('users.name')
             ->get();

@@ -4,6 +4,17 @@
 CREATE TABLE users (
     id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
+    company_name VARCHAR(255),
+    legal_name VARCHAR(255),
+    logo_url VARCHAR(2048),
+    website VARCHAR(2048),
+    phone VARCHAR(50),
+    tax_id VARCHAR(100),
+    country VARCHAR(2),
+    city VARCHAR(255),
+    postal_code VARCHAR(30),
+    address_line1 VARCHAR(255),
+    address_line2 VARCHAR(255),
 
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,

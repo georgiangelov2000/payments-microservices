@@ -730,10 +730,33 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
 
     const [showAddProvider, setShowAddProvider] = useState(false);
 
-    const infoForm = useForm({ name: merchant.name, email: merchant.email });
+    const infoForm = useForm({
+        _method: 'put',
+        name: merchant.name ?? '',
+        email: merchant.email ?? '',
+        company_name: merchant.company_name ?? '',
+        legal_name: merchant.legal_name ?? '',
+        logo: null,
+        remove_logo: false,
+        website: merchant.website ?? '',
+        phone: merchant.phone ?? '',
+        tax_id: merchant.tax_id ?? '',
+        country: merchant.country ?? '',
+        city: merchant.city ?? '',
+        postal_code: merchant.postal_code ?? '',
+        address_line1: merchant.address_line1 ?? '',
+        address_line2: merchant.address_line2 ?? '',
+    });
     const statusForm = useForm({ status: merchant.status });
 
-    const saveInfo   = (e) => { e.preventDefault(); infoForm.put(route('admin.merchants.update', merchant.id), { preserveScroll: true }); };
+    const saveInfo = (e) => {
+        e.preventDefault();
+        infoForm.post(route('admin.merchants.update', merchant.id), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => infoForm.setData('logo', null),
+        });
+    };
     const saveStatus = (e) => { e.preventDefault(); statusForm.put(route('admin.merchants.update', merchant.id), { preserveScroll: true }); };
 
     const currentStatus = STATUS_OPTIONS.find((o) => o.value === merchant.status);
@@ -757,12 +780,15 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
 
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-700">
-                        <Store size={26} strokeWidth={1.8} />
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 text-indigo-700">
+                        {merchant.logo_url
+                            ? <img src={merchant.logo_url} alt={`${merchant.company_name || merchant.name} logo`} className="h-full w-full object-contain" />
+                            : <Store size={26} strokeWidth={1.8} />}
                     </div>
                     <div>
-                        <h1 className="text-xl font-semibold text-slate-900">{merchant.name}</h1>
+                        <h1 className="text-xl font-semibold text-slate-900">{merchant.company_name || merchant.name}</h1>
                         <div className="mt-1 flex items-center gap-2 flex-wrap">
+                            {merchant.company_name && <span className="text-sm text-slate-500">{merchant.name}</span>}
                             <span className="text-sm text-slate-500">{merchant.email}</span>
                             {currentStatus && (
                                 <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${
@@ -792,15 +818,75 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
 
                     {/* Account information */}
                     <form onSubmit={saveInfo}>
-                        <FormSection title="Account Information" description="Update the merchant's name and email address."
+                        <FormSection title="Account & Company Information" description="Update the merchant contact, brand, legal details and business address."
                             actions={<SaveButton processing={infoForm.processing} />}>
-                            <Field label="Full Name" error={infoForm.errors.name} required>
-                                <TextInput type="text" value={infoForm.data.name}
-                                    onChange={(e) => infoForm.setData('name', e.target.value)} error={infoForm.errors.name} />
-                            </Field>
-                            <Field label="Email Address" hint="Changing the email will update the merchant's login credentials." error={infoForm.errors.email} required>
-                                <TextInput type="email" value={infoForm.data.email}
-                                    onChange={(e) => infoForm.setData('email', e.target.value)} error={infoForm.errors.email} />
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <Field label="Contact Name" error={infoForm.errors.name} required>
+                                    <TextInput type="text" value={infoForm.data.name}
+                                        onChange={(e) => infoForm.setData('name', e.target.value)} error={infoForm.errors.name} />
+                                </Field>
+                                <Field label="Email Address" hint="Also updates the merchant's login." error={infoForm.errors.email} required>
+                                    <TextInput type="email" value={infoForm.data.email}
+                                        onChange={(e) => infoForm.setData('email', e.target.value)} error={infoForm.errors.email} />
+                                </Field>
+                                <Field label="Trading Name" error={infoForm.errors.company_name}>
+                                    <TextInput type="text" value={infoForm.data.company_name}
+                                        onChange={(e) => infoForm.setData('company_name', e.target.value)} error={infoForm.errors.company_name} />
+                                </Field>
+                                <Field label="Legal Company Name" error={infoForm.errors.legal_name}>
+                                    <TextInput type="text" value={infoForm.data.legal_name}
+                                        onChange={(e) => infoForm.setData('legal_name', e.target.value)} error={infoForm.errors.legal_name} />
+                                </Field>
+                                <Field label="Website" error={infoForm.errors.website}>
+                                    <TextInput type="url" placeholder="https://example.com" value={infoForm.data.website}
+                                        onChange={(e) => infoForm.setData('website', e.target.value)} error={infoForm.errors.website} />
+                                </Field>
+                                <Field label="Phone" error={infoForm.errors.phone}>
+                                    <TextInput type="tel" value={infoForm.data.phone}
+                                        onChange={(e) => infoForm.setData('phone', e.target.value)} error={infoForm.errors.phone} />
+                                </Field>
+                                <Field label="Tax / VAT ID" error={infoForm.errors.tax_id}>
+                                    <TextInput type="text" value={infoForm.data.tax_id}
+                                        onChange={(e) => infoForm.setData('tax_id', e.target.value)} error={infoForm.errors.tax_id} />
+                                </Field>
+                                <Field label="Country Code" hint="Two-letter ISO code." error={infoForm.errors.country}>
+                                    <TextInput type="text" maxLength={2} value={infoForm.data.country}
+                                        onChange={(e) => infoForm.setData('country', e.target.value.toUpperCase())} error={infoForm.errors.country} />
+                                </Field>
+                                <Field label="Address Line 1" error={infoForm.errors.address_line1}>
+                                    <TextInput type="text" value={infoForm.data.address_line1}
+                                        onChange={(e) => infoForm.setData('address_line1', e.target.value)} error={infoForm.errors.address_line1} />
+                                </Field>
+                                <Field label="Address Line 2" error={infoForm.errors.address_line2}>
+                                    <TextInput type="text" value={infoForm.data.address_line2}
+                                        onChange={(e) => infoForm.setData('address_line2', e.target.value)} error={infoForm.errors.address_line2} />
+                                </Field>
+                                <Field label="City" error={infoForm.errors.city}>
+                                    <TextInput type="text" value={infoForm.data.city}
+                                        onChange={(e) => infoForm.setData('city', e.target.value)} error={infoForm.errors.city} />
+                                </Field>
+                                <Field label="Postal Code" error={infoForm.errors.postal_code}>
+                                    <TextInput type="text" value={infoForm.data.postal_code}
+                                        onChange={(e) => infoForm.setData('postal_code', e.target.value)} error={infoForm.errors.postal_code} />
+                                </Field>
+                            </div>
+                            <Field label="Company Logo" hint="JPG, PNG or WebP, up to 2 MB." error={infoForm.errors.logo}>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <input type="file" accept="image/jpeg,image/png,image/webp"
+                                        onChange={(e) => {
+                                            infoForm.setData('logo', e.target.files?.[0] ?? null);
+                                            infoForm.setData('remove_logo', false);
+                                        }}
+                                        className="block flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:font-medium file:text-indigo-700" />
+                                    {merchant.logo_url && (
+                                        <button type="button" onClick={() => {
+                                            infoForm.setData('logo', null);
+                                            infoForm.setData('remove_logo', true);
+                                        }} className="text-sm font-medium text-red-600 hover:text-red-700">
+                                            Remove logo
+                                        </button>
+                                    )}
+                                </div>
                             </Field>
                         </FormSection>
                     </form>

@@ -21,7 +21,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                         <UpdateProfileInformationForm
                             mustVerifyEmail={mustVerifyEmail}
                             status={status}
-                            className="max-w-xl"
+                            className="max-w-4xl"
                         />
                     </div>
 

@@ -58,7 +58,7 @@ final class MerchantActivityResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'status' => $this->statusLabel(),
-            'logo_url' => null,
+            'logo_url' => $this->logo_url,
             'avatar' => $this->avatar(),
             'created_at' => $this->created_at?->toDateString(),
             'payments_count' => (int) $this->payments_count,

@@ -20,6 +20,8 @@ final class MerchantRepository implements MerchantRepositoryInterface
             ->when($filters['search'] ?? null, function ($query, string $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'ilike', "%{$search}%")
+                        ->orWhere('company_name', 'ilike', "%{$search}%")
+                        ->orWhere('legal_name', 'ilike', "%{$search}%")
                         ->orWhere('email', 'ilike', "%{$search}%");
                 });
             })
@@ -37,7 +39,7 @@ final class MerchantRepository implements MerchantRepositoryInterface
             ->where('role', Role::MERCHANT->value)
             ->with(['providerCredentials.provider:id,name,alias'])
             ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+            ->get(['id', 'name', 'company_name', 'logo_url', 'email']);
     }
 
     public function find(string $id): User

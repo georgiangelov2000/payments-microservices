@@ -6,6 +6,8 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -61,6 +63,43 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertNotNull($user->refresh()->email_verified_at);
+    }
+
+    public function test_company_profile_and_logo_can_be_updated(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'name' => $user->name,
+                'email' => $user->email,
+                'company_name' => 'Acme Payments',
+                'legal_name' => 'Acme Payments Ltd.',
+                'website' => 'https://acme.example',
+                'phone' => '+35921234567',
+                'tax_id' => 'BG123456789',
+                'country' => 'BG',
+                'city' => 'Sofia',
+                'postal_code' => '1000',
+                'address_line1' => '1 Payment Street',
+                'logo' => UploadedFile::fake()->image('logo.png', 256, 256),
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile');
+
+        $user->refresh();
+
+        $this->assertSame('Acme Payments', $user->company_name);
+        $this->assertSame('Acme Payments Ltd.', $user->legal_name);
+        $this->assertSame('BG', $user->country);
+        $this->assertStringContainsString('/storage/merchant-logos/', $user->logo_url);
+
+        $storedPath = str_replace('/storage/', '', parse_url($user->logo_url, PHP_URL_PATH));
+        Storage::disk('public')->assertExists($storedPath);
     }
 
     public function test_user_can_delete_their_account(): void
