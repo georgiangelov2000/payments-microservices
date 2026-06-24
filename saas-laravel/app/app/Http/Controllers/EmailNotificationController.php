@@ -57,6 +57,6 @@ class EmailNotificationController extends Controller
     {
         $this->notifications->updateMerchantSettings(Auth::id(), $request->validated());
 
-        return back()->with('success', 'Email notification settings updated.');
+        return back()->with('success', __('messages.notifications.updated'));
     }
 }

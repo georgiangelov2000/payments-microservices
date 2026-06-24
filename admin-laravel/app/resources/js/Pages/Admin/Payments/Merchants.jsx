@@ -15,6 +15,7 @@ import Badge from '@/Components/Badge';
 import Pagination from '@/Components/Pagination';
 import ProviderBrand from '@/Components/ProviderBrand';
 import { fmt, fmtCurrency, fmtDate } from '@/utils';
+import i18n from '@/i18n';
 import {
     Activity,
     CalendarDays,
@@ -29,16 +30,16 @@ import {
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
-    { value: '', label: 'All statuses' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'processing', label: 'Processing' },
-    { value: 'succeeded', label: 'Succeeded' },
-    { value: 'failed', label: 'Failed' },
-    { value: 'cancelled', label: 'Cancelled' },
-    { value: 'refunded', label: 'Refunded' },
-    { value: 'partially_refunded', label: 'Partially refunded' },
-    { value: 'disputed', label: 'Disputed' },
-    { value: 'expired', label: 'Expired' },
+    { value: '', label: i18n.t('generated.payments_Merchants.allStatuses') },
+    { value: 'pending', label: i18n.t('generated.common.pending') },
+    { value: 'processing', label: i18n.t('generated.common.processing') },
+    { value: 'succeeded', label: i18n.t('generated.common.succeeded') },
+    { value: 'failed', label: i18n.t('generated.common.failed') },
+    { value: 'cancelled', label: i18n.t('generated.common.cancelled') },
+    { value: 'refunded', label: i18n.t('generated.common.refunded') },
+    { value: 'partially_refunded', label: i18n.t('generated.common.partiallyRefunded') },
+    { value: 'disputed', label: i18n.t('generated.common.disputed') },
+    { value: 'expired', label: i18n.t('generated.common.expired') },
 ];
 const EXPORT_FORMATS = ['xlsx', 'csv', 'json', 'pdf'];
 
@@ -84,7 +85,7 @@ function TrendTooltip({ active, payload, label }) {
         <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg shadow-slate-900/10">
             <p className="mb-1 font-semibold text-slate-900">{label}</p>
             <p className="tabular-nums text-indigo-700">{fmtCurrency(amount)}</p>
-            <p className="mt-0.5 text-slate-500">{fmt(payments)} payment{Number(payments) === 1 ? '' : 's'}</p>
+            <p className="mt-0.5 text-slate-500">{fmt(payments)}{' '}{i18n.t('generated.payments_Merchants.payment')}{Number(payments) === 1 ? '' : 's'}</p>
         </div>
     );
 }
@@ -98,9 +99,7 @@ function TrendBars({ trend }) {
 
     if (!trend.length) {
         return (
-            <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 text-sm text-slate-400">
-                No payment trend data for this period.
-            </div>
+            <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 text-sm text-slate-400">{i18n.t('generated.payments_Merchants.noPaymentTrendDataForThisPeriod')}</div>
         );
     }
 
@@ -231,8 +230,8 @@ function MerchantIdentity({ merchant }) {
                     ))}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400">
-                    {merchant.created_at && <span>Since {merchant.created_at}</span>}
-                    {merchant.last_payment_at && <span>Last payment {fmtDate(merchant.last_payment_at)}</span>}
+                    {merchant.created_at && <span>{i18n.t('generated.payments_Merchants.since')}{' '}{merchant.created_at}</span>}
+                    {merchant.last_payment_at && <span>{i18n.t('generated.payments_Merchants.lastPayment')}{' '}{fmtDate(merchant.last_payment_at)}</span>}
                 </div>
             </div>
         </div>
@@ -250,10 +249,10 @@ function exportStatusClasses(status) {
 
 function exportStatusLabel(status) {
     return {
-        queued: 'Started',
-        running: 'In progress',
-        completed: 'Completed',
-        failed: 'Failed',
+        queued: i18n.t('generated.common.exportStarted'),
+        running: i18n.t('generated.common.exportInProgress'),
+        completed: i18n.t('generated.common.exportCompleted'),
+        failed: i18n.t('generated.common.failed'),
     }[status] || status;
 }
 
@@ -356,15 +355,13 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
     }
 
     return (
-        <AdminLayout title="Merchant Payments">
-            <Head title="Merchant Payments" />
+        <AdminLayout title={i18n.t('generated.payments_Merchants.merchantPayments')}>
+            <Head title={i18n.t('generated.payments_Merchants.merchantPayments')} />
 
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-semibold text-slate-900">Merchant Payment Activity</h1>
-                    <p className="mt-0.5 text-sm text-slate-500">
-                        Review merchant paid volume, totals, status mix, and recent transactions.
-                    </p>
+                    <h1 className="text-xl font-semibold text-slate-900">{i18n.t('generated.payments_Merchants.merchantPaymentActivity')}</h1>
+                    <p className="mt-0.5 text-sm text-slate-500">{i18n.t('generated.payments_Merchants.reviewMerchantPaidVolumeTotalsStatusMixAnd')}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
@@ -375,10 +372,10 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                                 onClick={() => startExport(format)}
                                 disabled={exportingFormat !== null}
                                 className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold uppercase text-slate-600 transition-colors hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                title={`Export current filters as ${format.toUpperCase()}`}
+                                title={i18n.t('generated.common.exportAs', { format: format.toUpperCase() })}
                             >
                                 <FileDown size={13} strokeWidth={2} />
-                                {exportingFormat === format ? 'Queueing...' : format}
+                                {exportingFormat === format ? i18n.t('generated.common.queueing') : format}
                             </button>
                         ))}
                     </div>
@@ -386,30 +383,28 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                         href={route('admin.payments.index')}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                     >
-                        <CreditCard size={15} strokeWidth={2} />
-                        Transaction list
-                    </Link>
+                        <CreditCard size={15} strokeWidth={2} />{i18n.t('generated.payments_Merchants.transactionList')}</Link>
                 </div>
             </div>
 
             <form onSubmit={applyFilters} className="mb-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex flex-wrap items-end gap-3">
                     <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">Period</label>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">{i18n.t('generated.payments_Merchants.period')}</label>
                         <select
                             value={period}
                             onChange={(e) => setPeriod(e.target.value)}
                             className="min-w-36 rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-10 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         >
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                            <option value="custom">Custom range</option>
+                            <option value="monthly">{i18n.t('generated.payments_Merchants.monthly')}</option>
+                            <option value="yearly">{i18n.t('generated.payments_Merchants.yearly')}</option>
+                            <option value="custom">{i18n.t('generated.payments_Merchants.customRange')}</option>
                         </select>
                     </div>
 
                     {period === 'monthly' && (
                         <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">Month</label>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">{i18n.t('generated.payments_Merchants.month')}</label>
                             <input
                                 type="month"
                                 value={month}
@@ -421,7 +416,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
 
                     {period === 'yearly' && (
                         <div>
-                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">Year</label>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">{i18n.t('generated.payments_Merchants.year')}</label>
                             <input
                                 type="number"
                                 min="2020"
@@ -436,7 +431,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                     {period === 'custom' && (
                         <>
                             <div>
-                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">From</label>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">{i18n.t('generated.payments_Merchants.from')}</label>
                                 <input
                                     type="date"
                                     value={dateFrom}
@@ -445,7 +440,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                                 />
                             </div>
                             <div>
-                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">To</label>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">{i18n.t('generated.payments_Merchants.to')}</label>
                                 <input
                                     type="date"
                                     value={dateTo}
@@ -457,21 +452,21 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                     )}
 
                     <div className="min-w-0 flex-1" style={{ minWidth: '220px' }}>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">Merchant</label>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">{i18n.t('generated.payments_Merchants.merchant')}</label>
                         <div className="relative">
                             <Search size={15} strokeWidth={2} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search name or email"
+                                placeholder={i18n.t('generated.payments_Merchants.searchNameOrEmail')}
                                 className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">Status</label>
+                        <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">{i18n.t('generated.payments_Merchants.status')}</label>
                         <select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
@@ -490,17 +485,13 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                             type="submit"
                             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
                         >
-                            <SlidersHorizontal size={14} strokeWidth={2} />
-                            Apply
-                        </button>
+                            <SlidersHorizontal size={14} strokeWidth={2} />{i18n.t('generated.payments_Merchants.apply')}</button>
                         <button
                             type="button"
                             onClick={clearFilters}
                             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-1"
                         >
-                            <X size={14} strokeWidth={2} />
-                            Clear
-                        </button>
+                            <X size={14} strokeWidth={2} />{i18n.t('generated.payments_Merchants.clear')}</button>
                     </div>
                 </div>
             </form>
@@ -508,8 +499,8 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
             <section className="mb-6 rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
                     <div>
-                        <h2 className="text-sm font-semibold text-slate-900">Merchant payment exports</h2>
-                        <p className="mt-0.5 text-xs text-slate-500">Background exports use the active filters and are emailed when complete.</p>
+                        <h2 className="text-sm font-semibold text-slate-900">{i18n.t('generated.payments_Merchants.merchantPaymentExports')}</h2>
+                        <p className="mt-0.5 text-xs text-slate-500">{i18n.t('generated.payments_Merchants.backgroundExportsUseTheActiveFiltersAndAre')}</p>
                     </div>
                     {hasActiveExport && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
@@ -520,9 +511,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                 </div>
                 <div className="divide-y divide-slate-100">
                     {exports.length === 0 ? (
-                        <div className="px-4 py-5 text-sm text-slate-400">
-                            No exports have been requested yet.
-                        </div>
+                        <div className="px-4 py-5 text-sm text-slate-400">{i18n.t('generated.payments_Merchants.noExportsHaveBeenRequestedYet')}</div>
                     ) : exports.map((item) => (
                         <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                             <div className="min-w-0">
@@ -545,12 +534,10 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                                     href={item.download_url}
                                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                                 >
-                                    <Download size={13} strokeWidth={2} />
-                                    Download
-                                </a>
+                                    <Download size={13} strokeWidth={2} />{i18n.t('generated.payments_Merchants.download')}</a>
                             ) : (
                                 <span className="text-xs text-slate-400">
-                                    {item.status === 'failed' ? 'Retry from export buttons' : 'Download pending'}
+                                    {item.status === 'failed' ? i18n.t('generated.common.retryFromExportButtons') : i18n.t('generated.common.downloadPending')}
                                 </span>
                             )}
                         </div>
@@ -560,29 +547,29 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
 
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard
-                    label="Paid volume"
+                    label={i18n.t('generated.payments_Merchants.paidVolume')}
                     value={fmtCurrency(summary.total_amount)}
                     sub={activeFilterLabel}
                     Icon={DollarSign}
                     tone="green"
                 />
                 <SummaryCard
-                    label="Payments"
+                    label={i18n.t('common.nav.payments')}
                     value={fmt(summary.payments_count)}
                     sub="Selected period"
                     Icon={CreditCard}
                 />
                 <SummaryCard
-                    label="Active merchants"
+                    label={i18n.t('generated.payments_Merchants.activeMerchants')}
                     value={fmt(summary.active_merchants)}
                     sub="With payments"
                     Icon={Users}
                     tone="slate"
                 />
                 <SummaryCard
-                    label="Finished payments"
+                    label={i18n.t('generated.payments_Merchants.finishedPayments')}
                     value={fmt(summary.paid_count)}
-                    sub={`${fmt(summary.failed_count)} failed · ${fmt(summary.refunded_count)} refunded`}
+                    sub={i18n.t('generated.common.failedAndRefunded', { failed: fmt(summary.failed_count), refunded: fmt(summary.refunded_count) })}
                     Icon={Activity}
                     tone="green"
                 />
@@ -592,8 +579,8 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                 <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div>
-                            <h2 className="text-base font-semibold text-slate-900">Payment Trend</h2>
-                            <p className="mt-0.5 text-sm text-slate-500">Payments over {activeFilterLabel}</p>
+                            <h2 className="text-base font-semibold text-slate-900">{i18n.t('generated.payments_Merchants.paymentTrend')}</h2>
+                            <p className="mt-0.5 text-sm text-slate-500">{i18n.t('generated.payments_Merchants.paymentsOver')}{' '}{activeFilterLabel}</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <select
@@ -617,11 +604,11 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
             <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
                     <div>
-                        <h2 className="text-base font-semibold text-slate-900">Merchant Payment Activity</h2>
-                        <p className="mt-0.5 text-sm text-slate-500">Totals, status mix, and latest payment per merchant</p>
+                        <h2 className="text-base font-semibold text-slate-900">{i18n.t('generated.payments_Merchants.merchantPaymentActivity')}</h2>
+                        <p className="mt-0.5 text-sm text-slate-500">{i18n.t('generated.payments_Merchants.totalsStatusMixAndLatestPaymentPerMerchant')}</p>
                     </div>
                     <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-500">
-                        {range.from} to {range.to}
+                        {range.from}{' '}{i18n.t('generated.payments_Merchants.to01b6e2')}{' '}{range.to}
                     </span>
                 </div>
 
@@ -629,22 +616,20 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                             <tr>
-                                <th className="px-4 py-2 font-medium">Merchant</th>
-                                <th className="px-4 py-2 font-medium text-right">Total</th>
-                                <th className="px-4 py-2 font-medium text-right">Payments</th>
-                                <th className="px-4 py-2 font-medium">Status breakdown</th>
-                                <th className="px-4 py-2 font-medium">Latest payment</th>
-                                <th className="px-4 py-2 font-medium text-right">Latest amount</th>
-                                <th className="px-4 py-2 font-medium">Provider</th>
-                                <th className="px-4 py-2 font-medium">Latest status</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Merchants.merchant')}</th>
+                                <th className="px-4 py-2 font-medium text-right">{i18n.t('generated.payments_Merchants.total')}</th>
+                                <th className="px-4 py-2 font-medium text-right">{i18n.t('common.nav.payments')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Merchants.statusBreakdown')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Merchants.latestPayment')}</th>
+                                <th className="px-4 py-2 font-medium text-right">{i18n.t('generated.payments_Merchants.latestAmount')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Merchants.provider')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Merchants.latestStatus')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {merchants.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-14 text-center text-sm text-slate-400">
-                                        No merchants match this payment view.
-                                    </td>
+                                    <td colSpan={8} className="px-6 py-14 text-center text-sm text-slate-400">{i18n.t('generated.payments_Merchants.noMerchantsMatchThisPaymentView')}</td>
                                 </tr>
                             ) : merchants.map((merchant) => (
                                 <tr key={merchant.id} className="border-b hover:bg-slate-50 transition-colors">
@@ -656,7 +641,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                                             {fmtCurrency(merchant.total_amount, merchant.currency)}
                                         </p>
                                         {merchant.currencies_count > 1 && (
-                                            <p className="text-xs text-amber-600">Mixed currencies</p>
+                                            <p className="text-xs text-amber-600">{i18n.t('generated.payments_Merchants.mixedCurrencies')}</p>
                                         )}
                                     </td>
                                     <td className="px-4 py-2 text-right font-medium text-slate-700">{fmt(merchant.payments_count)}</td>
@@ -670,7 +655,7 @@ export default function MerchantPayments({ activity, filters = {}, exports = [] 
                                                 <p className="text-xs text-gray-600">{fmtDate(merchant.latest_payment.created_at)}</p>
                                             </>
                                         ) : (
-                                            <span className="text-xs text-slate-400">No payment</span>
+                                            <span className="text-xs text-slate-400">{i18n.t('generated.payments_Merchants.noPayment')}</span>
                                         )}
                                     </td>
                                     <td className="px-4 py-2 text-right">

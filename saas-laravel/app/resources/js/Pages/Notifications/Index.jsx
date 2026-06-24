@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { fmtDate } from '@/utils';
 import { Mail, Plus, Trash2, Save, AlertCircle } from 'lucide-react';
 
+import i18n from '@/i18n';
 function StatusPill({ value }) {
     const styles = {
         sent: 'border-emerald-200 bg-emerald-50 text-emerald-700',
@@ -47,62 +48,58 @@ export default function NotificationsIndex({ settings, recipients, preferences, 
 
     return (
         <AuthenticatedLayout>
-            <Head title="Email Notifications" />
+            <Head title={i18n.t('generated.notifications_Index.emailNotifications')} />
 
             <div className="mx-auto max-w-7xl space-y-6 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-semibold text-slate-900">Email Notifications</h1>
-                        <p className="mt-1 text-sm text-slate-500">Configure payment and routing email alerts for your account.</p>
+                        <h1 className="text-xl font-semibold text-slate-900">{i18n.t('generated.notifications_Index.emailNotifications')}</h1>
+                        <p className="mt-1 text-sm text-slate-500">{i18n.t('generated.notifications_Index.configurePaymentAndRoutingEmailAlertsForYour')}</p>
                     </div>
                     {!global.enabled && (
                         <div className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                            <AlertCircle size={15} /> Disabled globally by admin
-                        </div>
+                            <AlertCircle size={15} />{i18n.t('generated.notifications_Index.disabledGloballyByAdmin')}</div>
                     )}
                 </div>
 
                 <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_420px]">
                     <section className="space-y-6">
                         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <h2 className="text-sm font-semibold text-slate-900">Account settings</h2>
+                            <h2 className="text-sm font-semibold text-slate-900">{i18n.t('generated.notifications_Index.accountSettings')}</h2>
                             <div className="mt-4 grid gap-4 sm:grid-cols-2">
                                 <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                                    <input type="checkbox" checked={data.enabled} onChange={(e) => setData('enabled', e.target.checked)} />
-                                    Enable email notifications
-                                </label>
+                                    <input type="checkbox" checked={data.enabled} onChange={(e) => setData('enabled', e.target.checked)} />{i18n.t('generated.notifications_Index.enableEmailNotifications')}</label>
                                 <label className="text-sm">
-                                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Environment</span>
+                                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.notifications_Index.environment')}</span>
                                     <select value={data.environment_scope} onChange={(e) => setData('environment_scope', e.target.value)} className="w-full rounded-lg border-slate-300 text-sm">
-                                        <option value="both">Both</option>
+                                        <option value="both">{i18n.t('generated.notifications_Index.both')}</option>
                                         <option value="test">Test</option>
                                         <option value="live">Live</option>
                                     </select>
                                 </label>
                                 <label className="text-sm">
-                                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Pending older than</span>
+                                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.notifications_Index.pendingOlderThan')}</span>
                                     <input type="number" min="1" value={data.pending_threshold_minutes} onChange={(e) => setData('pending_threshold_minutes', e.target.value)} className="w-full rounded-lg border-slate-300 text-sm" />
-                                    <span className="mt-1 block text-xs text-slate-400">minutes</span>
+                                    <span className="mt-1 block text-xs text-slate-400">{i18n.t('generated.notifications_Index.minutes')}</span>
                                 </label>
                                 <label className="text-sm">
-                                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Minimum amount</span>
-                                    <input type="number" min="0" step="0.01" value={data.minimum_amount} onChange={(e) => setData('minimum_amount', e.target.value)} className="w-full rounded-lg border-slate-300 text-sm" placeholder="No minimum" />
+                                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.notifications_Index.minimumAmount')}</span>
+                                    <input type="number" min="0" step="0.01" value={data.minimum_amount} onChange={(e) => setData('minimum_amount', e.target.value)} className="w-full rounded-lg border-slate-300 text-sm" placeholder={i18n.t('generated.notifications_Index.noMinimum')} />
                                 </label>
                             </div>
                         </div>
 
                         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-semibold text-slate-900">Recipients</h2>
+                                <h2 className="text-sm font-semibold text-slate-900">{i18n.t('generated.notifications_Index.recipients')}</h2>
                                 <button type="button" onClick={addRecipient} disabled={data.recipients.length >= global.max_recipients} className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
-                                    <Plus size={13} /> Add
-                                </button>
+                                    <Plus size={13} />{i18n.t('generated.notifications_Index.add')}</button>
                             </div>
-                            <p className="mt-1 text-xs text-slate-400">Maximum {global.max_recipients} recipient email addresses.</p>
+                            <p className="mt-1 text-xs text-slate-400">{i18n.t('generated.notifications_Index.maximum')}{' '}{global.max_recipients}{' '}{i18n.t('generated.notifications_Index.recipientEmailAddresses')}</p>
                             <div className="mt-4 space-y-2">
                                 {data.recipients.map((email, index) => (
                                     <div key={index} className="flex gap-2">
-                                        <input value={email} onChange={(e) => updateRecipient(index, e.target.value)} className="flex-1 rounded-lg border-slate-300 text-sm" placeholder="alerts@example.com" />
+                                        <input value={email} onChange={(e) => updateRecipient(index, e.target.value)} className="flex-1 rounded-lg border-slate-300 text-sm" placeholder={i18n.t('generated.notifications_Index.alertsExampleCom')} />
                                         <button type="button" onClick={() => removeRecipient(index)} className="rounded-lg border border-slate-200 px-3 text-slate-500 hover:bg-slate-50">
                                             <Trash2 size={14} />
                                         </button>
@@ -115,7 +112,7 @@ export default function NotificationsIndex({ settings, recipients, preferences, 
 
                     <aside className="space-y-6">
                         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <h2 className="text-sm font-semibold text-slate-900">Events</h2>
+                            <h2 className="text-sm font-semibold text-slate-900">{i18n.t('generated.notifications_Index.events')}</h2>
                             <div className="mt-4 space-y-2">
                                 {Object.entries(events).map(([event, label]) => (
                                     <label key={event} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2 text-sm">
@@ -126,25 +123,24 @@ export default function NotificationsIndex({ settings, recipients, preferences, 
                             </div>
                         </div>
                         <button type="submit" disabled={processing} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                            <Save size={15} /> Save settings
-                        </button>
+                            <Save size={15} />{i18n.t('generated.notifications_Index.saveSettings')}</button>
                     </aside>
                 </form>
 
                 <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div className="border-b border-slate-100 px-5 py-4">
-                        <h2 className="text-sm font-semibold text-slate-900">Delivery history</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">{i18n.t('generated.notifications_Index.deliveryHistory')}</h2>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                                 <tr>
-                                    <th className="px-4 py-3">Event</th>
-                                    <th className="px-4 py-3">Payment</th>
-                                    <th className="px-4 py-3">Recipient</th>
-                                    <th className="px-4 py-3">Status</th>
-                                    <th className="px-4 py-3">Sent</th>
-                                    <th className="px-4 py-3">Failure</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.event')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.payment')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.recipient')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.status')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.sent')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.failure')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -161,7 +157,7 @@ export default function NotificationsIndex({ settings, recipients, preferences, 
                                     </tr>
                                 ))}
                                 {(deliveries.data ?? []).length === 0 && (
-                                    <tr><td colSpan="6" className="px-4 py-10 text-center text-slate-400"><Mail className="mx-auto mb-2" size={28} />No email deliveries yet.</td></tr>
+                                    <tr><td colSpan="6" className="px-4 py-10 text-center text-slate-400"><Mail className="mx-auto mb-2" size={28} />{i18n.t('generated.notifications_Index.noEmailDeliveriesYet')}</td></tr>
                                 )}
                             </tbody>
                         </table>

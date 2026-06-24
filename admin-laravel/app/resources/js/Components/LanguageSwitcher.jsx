@@ -17,6 +17,7 @@ export default function LanguageSwitcher({ compact = false }) {
         router.post(route('locale.update'), { locale: event.target.value }, {
             preserveScroll: true,
             preserveState: false,
+            onSuccess: () => window.location.reload(),
         });
     };
 

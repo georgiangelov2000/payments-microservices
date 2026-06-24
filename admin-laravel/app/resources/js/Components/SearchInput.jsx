@@ -1,4 +1,5 @@
-/**
+
+import i18n from '@/i18n';/**
  * SearchInput — text input with magnifying-glass icon and clear button.
  *
  * Props:
@@ -72,7 +73,7 @@ export default function SearchInput({
                     type="button"
                     onClick={handleClear}
                     className="absolute right-2.5 flex items-center rounded p-0.5 text-slate-400 hover:text-slate-600 transition-colors"
-                    aria-label="Clear search"
+                    aria-label={i18n.t('generated.components_SearchInput.clearSearch')}
                 >
                     <IconX />
                 </button>

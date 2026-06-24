@@ -219,7 +219,9 @@ final class RoutingWorkflowService
             if ($type === 'condition') {
                 $matches = $this->evaluateConditions($data['conditions'] ?? [], $input);
                 $handle = $matches ? 'yes' : 'no';
-                $step['decision'] = $matches ? '✓ Condition matched → yes' : '✗ No match → no';
+                $step['decision'] = $matches
+                    ? __('messages.routing.condition_matched')
+                    : __('messages.routing.condition_not_matched');
                 $path[] = $step;
                 $next = collect($outgoing)->firstWhere('handle', $handle) ?? $outgoing[0] ?? null;
                 $current = $next ? ($nodeMap[$next['target']] ?? null) : null;
@@ -230,7 +232,7 @@ final class RoutingWorkflowService
             if ($type === 'weighted') {
                 $dist = $data['distribution'] ?? [];
                 $provider = $this->pickWeighted($dist, $input);
-                $step['decision'] = "Weighted selection → {$provider}";
+                $step['decision'] = __('messages.routing.weighted_selection', ['provider' => $provider]);
                 $step['provider'] = $provider;
                 $path[] = $step;
                 $next = $outgoing[0] ?? null;
@@ -242,7 +244,9 @@ final class RoutingWorkflowService
             if ($type === 'failover') {
                 $chain = $data['chain'] ?? [];
                 $primary = $chain[0] ?? 'unknown';
-                $step['decision'] = 'Failover primary: '.$primary.(count($chain) > 1 ? ' → '.implode(' → ', array_slice($chain, 1)) : '');
+                $step['decision'] = __('messages.routing.failover_primary', [
+                    'chain' => $primary.(count($chain) > 1 ? ' → '.implode(' → ', array_slice($chain, 1)) : ''),
+                ]);
                 $step['provider'] = $primary;
                 $path[] = $step;
                 $next = $outgoing[0] ?? null;
@@ -322,15 +326,15 @@ final class RoutingWorkflowService
         // Require a start node
         $startCount = collect($nodes)->where('type', 'start')->count();
         if ($startCount === 0) {
-            $errors[] = 'Workflow must have a Start node.';
+            $errors[] = __('messages.routing.validation.start_required');
         } elseif ($startCount > 1) {
-            $errors[] = 'Workflow can only have one Start node.';
+            $errors[] = __('messages.routing.validation.one_start');
         }
 
         // Require at least one terminal node
         $terminals = collect($nodes)->whereIn('type', ['success', 'failure'])->count();
         if ($terminals === 0) {
-            $errors[] = 'Workflow must have at least one Success or Failure node.';
+            $errors[] = __('messages.routing.validation.terminal_required');
         }
 
         // Provider nodes must select a provider
@@ -340,16 +344,16 @@ final class RoutingWorkflowService
             }
             $data = $node['data'] ?? $node;
             $alias = $data['provider_alias'] ?? null;
-            $label = $data['label'] ?? 'Provider';
+            $label = $data['label'] ?? __('messages.routing.provider');
             if (blank($alias)) {
-                $errors[] = "Provider node '{$label}' must have a provider selected.";
+                $errors[] = __('messages.routing.validation.provider_required', ['label' => $label]);
             }
         }
 
         // Edges must reference real nodes
         foreach ($edges as $edge) {
             if (! in_array($edge['source'], $nodeIds, true) || ! in_array($edge['target'], $nodeIds, true)) {
-                $errors[] = 'Every workflow edge must reference existing nodes.';
+                $errors[] = __('messages.routing.validation.edge_nodes_required');
                 break;
             }
 
@@ -367,12 +371,15 @@ final class RoutingWorkflowService
                 continue;
             }
             $data = $node['data'] ?? $node;
-            $label = $data['label'] ?? 'Weighted';
+            $label = $data['label'] ?? __('messages.routing.weighted');
             $dist = $data['distribution'] ?? [];
             if (! empty($dist)) {
                 $total = (int) array_sum(array_column($dist, 'weight'));
                 if ($total !== 100) {
-                    $errors[] = "Weighted node '{$label}' distribution must sum to 100% (currently {$total}%).";
+                    $errors[] = __('messages.routing.validation.weighted_total', [
+                        'label' => $label,
+                        'total' => $total,
+                    ]);
                 }
             }
         }
@@ -385,39 +392,42 @@ final class RoutingWorkflowService
         $errors = [];
         $sourceType = $source['type'] ?? null;
         $targetType = $target['type'] ?? null;
-        $sourceLabel = $source['data']['label'] ?? $sourceType ?? 'Source';
-        $targetLabel = $target['data']['label'] ?? $targetType ?? 'Target';
+        $sourceLabel = $source['data']['label'] ?? $sourceType ?? __('messages.routing.source');
+        $targetLabel = $target['data']['label'] ?? $targetType ?? __('messages.routing.target');
         $condition = strtolower((string) ($edge['condition'] ?? $edge['label'] ?? $edge['sourceHandle'] ?? 'default'));
 
         $failureConditions = ['failed', 'failure', 'timeout', 'declined', 'error', 'no'];
         $successConditions = ['success', 'succeeded', 'yes'];
 
         if ($sourceType === 'success') {
-            $errors[] = "Success node '{$sourceLabel}' cannot route to another node.";
+            $errors[] = __('messages.routing.validation.success_terminal', ['label' => $sourceLabel]);
         }
 
         if ($sourceType === 'failure') {
-            $errors[] = "Failure node '{$sourceLabel}' cannot route to another node.";
+            $errors[] = __('messages.routing.validation.failure_terminal', ['label' => $sourceLabel]);
         }
 
         if ($sourceType === 'start' && in_array($condition, $failureConditions, true)) {
-            $errors[] = "Start node '{$sourceLabel}' cannot use a {$condition} edge. Route the payment request with a normal/default edge.";
+            $errors[] = __('messages.routing.validation.start_edge', [
+                'label' => $sourceLabel,
+                'condition' => $condition,
+            ]);
         }
 
         if ($targetType === 'success' && in_array($condition, $failureConditions, true)) {
-            $errors[] = "Failure or timeout edge from '{$sourceLabel}' cannot route directly to Success.";
+            $errors[] = __('messages.routing.validation.failure_to_success', ['label' => $sourceLabel]);
         }
 
         if ($targetType === 'failure' && in_array($condition, $successConditions, true)) {
-            $errors[] = "Success edge from '{$sourceLabel}' cannot route directly to Failure.";
+            $errors[] = __('messages.routing.validation.success_to_failure', ['label' => $sourceLabel]);
         }
 
         if ($sourceType === 'provider' && $targetType === 'provider' && in_array($condition, $successConditions, true)) {
-            $errors[] = "Success edge from provider '{$sourceLabel}' should route to Success, not another provider.";
+            $errors[] = __('messages.routing.validation.provider_success_target', ['label' => $sourceLabel]);
         }
 
         if ($sourceType === 'provider' && $targetType === 'success' && ! in_array($condition, $successConditions, true)) {
-            $errors[] = "Provider '{$sourceLabel}' may route to Success only through a success edge.";
+            $errors[] = __('messages.routing.validation.provider_success_edge', ['label' => $sourceLabel]);
         }
 
         return $errors;
@@ -476,8 +486,8 @@ final class RoutingWorkflowService
             'workflow_id' => $workflow->id,
             'version' => $workflow->current_version,
             'name' => $status === 'published'
-                ? "Published version {$workflow->current_version}"
-                : "Draft version {$workflow->current_version}",
+                ? __('messages.routing.published_version', ['version' => $workflow->current_version])
+                : __('messages.routing.draft_version', ['version' => $workflow->current_version]),
             'status' => $status,
             'nodes' => $workflow->nodes ?: [],
             'edges' => $workflow->edges ?: [],

@@ -108,7 +108,7 @@ final class PaymentController extends Controller
         );
 
         return response()->json([
-            'message' => "Your export is being prepared. We'll email it to {$user->email} when it's ready.",
+            'message' => __('messages.exports.queued', ['email' => $user->email]),
         ], 202);
     }
 }

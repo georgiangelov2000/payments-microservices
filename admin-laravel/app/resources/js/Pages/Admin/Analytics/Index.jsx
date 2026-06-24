@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import ProviderBrand, { getProviderMeta } from '@/Components/ProviderBrand';
 
+import i18n from '@/i18n';
 // ─── Summary cards ────────────────────────────────────────────────────────────
 
 function SummaryCard({ label, value, sub, Icon, iconBg, iconColor, accent }) {
@@ -45,24 +46,24 @@ function ProviderCard({ provider }) {
                     <ProviderBrand alias={provider.provider} label={provider.provider} size="md" variant="icon" />
                     <div>
                         <p className="font-semibold text-slate-900">{providerMeta.label}</p>
-                        <p className="text-xs text-slate-400">{fmt(provider.total)} total payments</p>
+                        <p className="text-xs text-slate-400">{fmt(provider.total)}{' '}{i18n.t('generated.analytics_Index.totalPayments')}</p>
                     </div>
                 </div>
                 <div className="text-right">
                     <p className="text-2xl font-bold text-green-600">{fmt(provider.succeeded)}</p>
-                    <p className="text-xs text-slate-400">paid payments</p>
+                    <p className="text-xs text-slate-400">{i18n.t('generated.analytics_Index.paidPayments')}</p>
                 </div>
             </div>
 
             {/* Stats grid */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                    { label: 'Successful', value: fmt(provider.succeeded), Icon: CheckCircle2, color: 'text-green-600 bg-green-50' },
-                    { label: 'Pending', value: fmt(provider.pending), Icon: Clock, color: 'text-amber-600 bg-amber-50' },
-                    { label: 'Failed', value: fmt(provider.failed), Icon: XCircle, color: 'text-red-600 bg-red-50' },
-                    { label: 'Paid volume', value: money(provider.paid_volume), Icon: DollarSign, color: 'text-indigo-600 bg-indigo-50' },
+                    { label: i18n.t('generated.analytics_Index.successful'), value: fmt(provider.succeeded), Icon: CheckCircle2, color: 'text-green-600 bg-green-50' },
+                    { label: i18n.t('generated.common.pending'), value: fmt(provider.pending), Icon: Clock, color: 'text-amber-600 bg-amber-50' },
+                    { label: i18n.t('generated.common.failed'), value: fmt(provider.failed), Icon: XCircle, color: 'text-red-600 bg-red-50' },
+                    { label: i18n.t('generated.analytics_Index.paidVolume'), value: money(provider.paid_volume), Icon: DollarSign, color: 'text-indigo-600 bg-indigo-50' },
                     {
-                        label: 'Avg paid',
+                        label: i18n.t('generated.analytics_Index.avgPaid'),
                         value: money(provider.avg_payment),
                         Icon: Coins,
                         color: 'text-slate-600 bg-slate-100',
@@ -78,9 +79,7 @@ function ProviderCard({ provider }) {
                 ))}
             </div>
             {hasMixedCurrencies && (
-                <p className="mt-3 text-xs text-slate-400">
-                    Mixed currencies are displayed as raw stored amounts, not converted totals.
-                </p>
+                <p className="mt-3 text-xs text-slate-400">{i18n.t('generated.analytics_Index.mixedCurrenciesAreDisplayedAsRawStoredAmounts')}</p>
             )}
         </div>
     );
@@ -97,24 +96,24 @@ const STRATEGY_COLORS = {
 
 const STRATEGY_COPY = {
     priority: {
-        label: 'Priority routing',
-        description: 'Payments follow the configured provider order, then use fallback providers when needed.',
-        impact: 'Changing the order changes which provider receives a payment first.',
+        label: i18n.t('generated.analytics_Index.priorityRouting'),
+        description: i18n.t('generated.analytics_Index.paymentsFollowTheConfiguredProviderOrderThenUse'),
+        impact: i18n.t('generated.analytics_Index.priorityImpact'),
     },
     weighted: {
-        label: 'Traffic distribution',
-        description: 'Payments are split across providers by percentage weights.',
-        impact: 'Changing weights shifts more or less traffic to each provider.',
+        label: i18n.t('generated.analytics_Index.trafficDistribution'),
+        description: i18n.t('generated.analytics_Index.paymentsAreSplitAcrossProvidersByPercentageWeights'),
+        impact: i18n.t('generated.analytics_Index.weightedImpact'),
     },
     conditional: {
-        label: 'Rule-based routing',
-        description: 'Payments are routed by rules such as country, currency, payment method, or amount.',
-        impact: 'Changing rules changes which payments qualify for each provider path.',
+        label: i18n.t('generated.analytics_Index.ruleBasedRouting'),
+        description: i18n.t('generated.analytics_Index.paymentsAreRoutedByRulesSuchAsCountry'),
+        impact: i18n.t('generated.analytics_Index.conditionalImpact'),
     },
     failover: {
-        label: 'Failover routing',
-        description: 'Payments move to the next provider after a provider error, decline, or timeout.',
-        impact: 'Changing failover paths changes how quickly payments recover from provider issues.',
+        label: i18n.t('generated.analytics_Index.failoverRouting'),
+        description: i18n.t('generated.analytics_Index.paymentsMoveToTheNextProviderAfterA'),
+        impact: i18n.t('generated.analytics_Index.failoverImpact'),
     },
 };
 
@@ -124,8 +123,8 @@ function strategyCopy(strategy) {
 
     return STRATEGY_COPY[key] ?? {
         label: fallbackLabel,
-        description: 'Payments used this routing mode during the selected period.',
-        impact: 'Review this mode before changing routing rules so traffic moves as expected.',
+        description: i18n.t('generated.analytics_Index.paymentsUsedThisRoutingModeDuringTheSelected'),
+        impact: i18n.t('generated.analytics_Index.unknownImpact'),
     };
 }
 
@@ -134,9 +133,7 @@ function RoutingBehavior({ strategies }) {
 
     if (!total) {
         return (
-            <p className="py-6 text-center text-sm text-slate-400">
-                No routing data yet for this environment.
-            </p>
+            <p className="py-6 text-center text-sm text-slate-400">{i18n.t('generated.analytics_Index.noRoutingDataYetForThisEnvironment')}</p>
         );
     }
 
@@ -162,7 +159,7 @@ function RoutingBehavior({ strategies }) {
                             </div>
                             <div className="shrink-0 text-right">
                                 <p className="text-sm font-bold text-slate-900">{fmt(count)}</p>
-                                <p className="text-[11px] text-slate-400">payments</p>
+                                <p className="text-[11px] text-slate-400">{i18n.t('generated.analytics_Index.payments')}</p>
                             </div>
                         </div>
                         <div className="mt-3 flex items-center gap-3">
@@ -194,7 +191,7 @@ function DailyTrend({ data }) {
     }));
 
     if (!points.length) return (
-        <p className="py-8 text-center text-sm text-slate-400">No data for the selected period.</p>
+        <p className="py-8 text-center text-sm text-slate-400">{i18n.t('generated.analytics_Index.noDataForTheSelectedPeriod')}</p>
     );
 
     const width = 640;
@@ -223,7 +220,7 @@ function DailyTrend({ data }) {
                     viewBox={`0 0 ${width} ${height}`}
                     className="h-52 w-full overflow-visible"
                     role="img"
-                    aria-label="Failover trend over the last 30 days"
+                    aria-label={i18n.t('generated.analytics_Index.failoverTrendOverTheLast30Days')}
                 >
                     {[0, 0.5, 1].map((ratio) => {
                         const y = paddingTop + chartHeight - ratio * chartHeight;
@@ -258,7 +255,7 @@ function DailyTrend({ data }) {
 
                         return (
                             <g key={d.date}>
-                                <title>{`${d.date}: ${d.failovers} failovers / ${d.total} total`}</title>
+                                <title>{i18n.t('generated.common.failoverTooltip', { date: d.date, failovers: d.failovers, total: d.total })}</title>
                                 <line
                                     x1={d.x}
                                     y1={d.y}
@@ -275,7 +272,7 @@ function DailyTrend({ data }) {
                 </svg>
                 <div className="mt-1 grid grid-cols-3 text-[10px] text-slate-400">
                     <span>{points[0]?.date}</span>
-                    <span className="text-center">Max {fmt(maxFailovers)} failovers</span>
+                    <span className="text-center">{i18n.t('generated.analytics_Index.max')}{' '}{fmt(maxFailovers)}{' '}{i18n.t('generated.analytics_Index.failovers')}</span>
                     <span className="text-right">{points[points.length - 1]?.date}</span>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -286,9 +283,8 @@ function DailyTrend({ data }) {
                             <div key={d.date} className="rounded-lg bg-slate-50 px-3 py-2">
                                 <p className="text-[11px] font-medium text-slate-500">{d.date}</p>
                                 <p className="mt-0.5 text-sm font-semibold text-slate-900">
-                                    {fmt(d.failovers)} failovers
-                                </p>
-                                <p className="text-[11px] text-slate-400">{rate}% of {fmt(d.total)} attempts</p>
+                                    {fmt(d.failovers)}{i18n.t('generated.analytics_Index.failovers')}</p>
+                                <p className="text-[11px] text-slate-400">{rate}{i18n.t('generated.analytics_Index.of')}{' '}{fmt(d.total)}{' '}{i18n.t('generated.analytics_Index.attempts')}</p>
                             </div>
                         );
                     })}
@@ -302,7 +298,7 @@ function DailyTrend({ data }) {
 
 function ErrorTable({ errors }) {
     if (!errors.length) return (
-        <p className="py-8 text-center text-sm text-slate-400">No errors recorded.</p>
+        <p className="py-8 text-center text-sm text-slate-400">{i18n.t('generated.analytics_Index.noErrorsRecorded')}</p>
     );
 
     return (
@@ -342,16 +338,14 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
     }
 
     return (
-        <AdminLayout title="Analytics">
-            <Head title="Analytics" />
+        <AdminLayout title={i18n.t('common.nav.analytics')}>
+            <Head title={i18n.t('common.nav.analytics')} />
 
             {/* Page header */}
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-semibold text-slate-900">Provider Analytics</h1>
-                    <p className="mt-0.5 text-sm text-slate-500">
-                        Payment status by provider, failover trends, and error breakdown across all payment providers.
-                    </p>
+                    <h1 className="text-xl font-semibold text-slate-900">{i18n.t('generated.analytics_Index.providerAnalytics')}</h1>
+                    <p className="mt-0.5 text-sm text-slate-500">{i18n.t('generated.analytics_Index.paymentStatusByProviderFailoverTrendsAndError')}</p>
                 </div>
                 {/* Environment toggle */}
                 <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
@@ -374,27 +368,27 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
             {/* Summary row */}
             <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <SummaryCard
-                    label="Total Attempts"
+                    label={i18n.t('generated.analytics_Index.totalAttempts')}
                     value={fmt(summary.total_attempts)}
                     Icon={Activity}
                     iconBg="bg-indigo-50" iconColor="text-indigo-600" accent="bg-indigo-500"
                 />
                 <SummaryCard
-                    label="Overall Approval Rate"
+                    label={i18n.t('generated.analytics_Index.overallApprovalRate')}
                     value={fmtRate(summary.overall_rate)}
-                    sub={`${fmt(summary.total_succeeded)} succeeded`}
+                    sub={i18n.t('generated.common.succeededCount', { count: fmt(summary.total_succeeded) })}
                     Icon={TrendingUp}
                     iconBg="bg-green-50" iconColor="text-green-600" accent="bg-green-500"
                 />
                 <SummaryCard
-                    label="Total Failures"
+                    label={i18n.t('generated.analytics_Index.totalFailures')}
                     value={fmt(summary.total_failed)}
                     sub="failed + timeouts"
                     Icon={XCircle}
                     iconBg="bg-red-50" iconColor="text-red-600" accent="bg-red-500"
                 />
                 <SummaryCard
-                    label="Avg Latency"
+                    label={i18n.t('generated.analytics_Index.avgLatency')}
                     value={fmtMs(summary.avg_latency_ms)}
                     sub="across all providers"
                     Icon={Zap}
@@ -404,12 +398,12 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
 
             {/* Provider performance cards */}
             <section className="mb-6">
-                <h2 className="mb-3 text-base font-semibold text-slate-900">Provider Performance</h2>
+                <h2 className="mb-3 text-base font-semibold text-slate-900">{i18n.t('generated.analytics_Index.providerPerformance')}</h2>
                 {providers?.length === 0 ? (
                     <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white p-10 text-center">
                         <BarChart2 size={32} strokeWidth={1.25} className="mx-auto mb-2 text-slate-300" />
-                        <p className="text-sm text-slate-400">No payments recorded yet for <strong>{environment}</strong> environment.</p>
-                        <p className="mt-1 text-xs text-slate-400">Process some payments to see analytics here.</p>
+                        <p className="text-sm text-slate-400">{i18n.t('generated.analytics_Index.noPaymentsRecordedYetFor')}{' '}<strong>{environment}</strong>{' '}{i18n.t('generated.analytics_Index.environment')}</p>
+                        <p className="mt-1 text-xs text-slate-400">{i18n.t('generated.analytics_Index.processSomePaymentsToSeeAnalyticsHere')}</p>
                     </div>
                 ) : (
                     <div className="grid gap-4 lg:grid-cols-2">
@@ -426,10 +420,8 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
                 {/* Strategy distribution */}
                 <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="mb-4">
-                        <h2 className="text-base font-semibold text-slate-900">Routing behavior</h2>
-                        <p className="mt-0.5 text-xs text-slate-400">
-                            How payments were routed in {environment}. Use this to see which routing mode handled traffic and what changes would affect.
-                        </p>
+                        <h2 className="text-base font-semibold text-slate-900">{i18n.t('generated.analytics_Index.routingBehavior')}</h2>
+                        <p className="mt-0.5 text-xs text-slate-400">{i18n.t('generated.analytics_Index.howPaymentsWereRoutedIn')}{environment}{i18n.t('generated.analytics_Index.useThisToSeeWhichRoutingModeHandled')}</p>
                     </div>
                     <RoutingBehavior strategies={strategies ?? []} />
                 </section>
@@ -437,11 +429,11 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
                 {/* Failover trend */}
                 <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base font-semibold text-slate-900">Failover Trend (30 days)</h2>
+                        <h2 className="text-base font-semibold text-slate-900">{i18n.t('generated.analytics_Index.failoverTrend30Days')}</h2>
                         <div className="flex items-center gap-3 text-[10px] text-slate-400">
-                            <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded bg-indigo-300" />Low</span>
-                            <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded bg-amber-400" />Medium</span>
-                            <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded bg-red-400" />High</span>
+                            <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded bg-indigo-300" />{i18n.t('generated.analytics_Index.low')}</span>
+                            <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded bg-amber-400" />{i18n.t('generated.analytics_Index.medium')}</span>
+                            <span className="flex items-center gap-1"><span className="inline-block h-2 w-3 rounded bg-red-400" />{i18n.t('generated.analytics_Index.high')}</span>
                         </div>
                     </div>
                     <DailyTrend data={dailyTrend ?? []} />
@@ -450,11 +442,10 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
                 {/* Top errors - full width */}
                 <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-base font-semibold text-slate-900">Top Error Codes</h2>
+                        <h2 className="text-base font-semibold text-slate-900">{i18n.t('generated.analytics_Index.topErrorCodes')}</h2>
                         {topErrors?.length > 0 && (
                             <span className="rounded-full bg-red-50 border border-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-600">
-                                {topErrors.length} distinct errors
-                            </span>
+                                {topErrors.length}{i18n.t('generated.analytics_Index.distinctErrors')}</span>
                         )}
                     </div>
                     <ErrorTable errors={topErrors ?? []} />
@@ -466,8 +457,7 @@ export default function AnalyticsIndex({ environment, summary, providers, strate
                 <Link
                     href={route('admin.routing.index')}
                     className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                >
-                    View routing configuration <ArrowRight size={14} strokeWidth={2} />
+                >{i18n.t('generated.analytics_Index.viewRoutingConfiguration')}<ArrowRight size={14} strokeWidth={2} />
                 </Link>
             </div>
         </AdminLayout>

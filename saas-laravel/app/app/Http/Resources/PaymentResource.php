@@ -23,7 +23,7 @@ final class PaymentResource extends JsonResource
             'merchant_id' => $this->merchant_id,
             'order_id' => $this->order_id,
             'status' => $this->status->label(),
-            'provider' => $this->provider?->name ?? 'Unknown provider',
+            'provider' => $this->provider?->name ?? __('messages.common.unknown_provider'),
             'provider_reference' => $this->provider_reference,
             'provider_checkout_url' => $this->provider_checkout_url,
             'currency' => $this->currency ?? 'USD',

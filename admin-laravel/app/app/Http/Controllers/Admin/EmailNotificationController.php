@@ -22,7 +22,7 @@ class EmailNotificationController extends Controller
 
         return Inertia::render('Admin/Notifications/Index', [
             'settings' => $this->notifications->settings(),
-            'events' => AdminEmailNotificationService::EVENTS,
+            'events' => $this->notifications->events(),
             'templates' => $this->notifications->templates()->map(fn ($template) => [
                 'id' => $template->id,
                 'event_type' => $template->event_type,
@@ -60,7 +60,7 @@ class EmailNotificationController extends Controller
             'default_events' => array_fill_keys($validated['default_events'] ?? [], true),
         ]);
 
-        return back()->with('success', 'Email notification defaults updated.');
+        return back()->with('success', __('messages.notifications.defaults_updated'));
     }
 
     public function updateTemplate(string $eventType, UpdateEmailNotificationTemplateRequest $request): RedirectResponse
@@ -69,6 +69,6 @@ class EmailNotificationController extends Controller
 
         $this->notifications->updateTemplate($eventType, $request->validated());
 
-        return back()->with('success', 'Email notification template updated.');
+        return back()->with('success', __('messages.notifications.template_updated'));
     }
 }

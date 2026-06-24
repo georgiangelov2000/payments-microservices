@@ -1,3 +1,5 @@
+
+import i18n from '@/i18n';
 import { useState } from 'react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import ProviderBrand from '@/Components/ProviderBrand'
@@ -7,7 +9,7 @@ import React from 'react'
 import { Download, SlidersHorizontal, RotateCcw, ChevronDown, ChevronUp, CreditCard, Info, Copy, Check, Clock3 } from 'lucide-react'
 import { fmtDate, fmtLogMessage, timestampMillis } from '@/utils'
 
-const formatDateTime = (value) => fmtDate(value) === '—' ? 'Not available' : fmtDate(value)
+const formatDateTime = (value) => fmtDate(value) === '—' ? i18n.t('generated.common.notAvailable') : fmtDate(value)
 
 const formatNumber = (value, decimals = 2) => {
   const number = Number(value)
@@ -16,23 +18,23 @@ const formatNumber = (value, decimals = 2) => {
 }
 
 const STATUS_META = {
-  pending:            { color: 'border-amber-200 bg-amber-50 text-amber-700',  label: 'Pending',              desc: 'Created — awaiting customer checkout' },
-  processing:         { color: 'border-indigo-200 bg-indigo-50 text-indigo-700', label: 'Processing',         desc: 'Customer submitted — awaiting provider confirmation' },
-  succeeded:          { color: 'border-green-200 bg-green-50 text-green-700',  label: 'Succeeded',            desc: 'Captured successfully' },
-  failed:             { color: 'border-red-200 bg-red-50 text-red-700',        label: 'Failed',               desc: 'Declined by provider or all providers failed' },
-  cancelled:          { color: 'border-slate-200 bg-slate-100 text-slate-600', label: 'Cancelled',            desc: 'Cancelled before capture' },
-  refunded:           { color: 'border-blue-200 bg-blue-50 text-blue-700',     label: 'Refunded',             desc: 'Full refund issued' },
-  partially_refunded: { color: 'border-blue-200 bg-blue-50 text-blue-700',     label: 'Partially refunded',   desc: 'Partial refund issued' },
-  disputed:           { color: 'border-amber-200 bg-amber-50 text-amber-700',  label: 'Disputed',             desc: 'Chargeback or dispute open' },
-  expired:            { color: 'border-slate-200 bg-slate-100 text-slate-600', label: 'Expired',              desc: 'Session expired without action' },
+  pending:            { color: 'border-amber-200 bg-amber-50 text-amber-700',  label: i18n.t('generated.common.pending'),              desc: i18n.t('generated.payments_Index.createdAwaitingCustomerCheckout') },
+  processing:         { color: 'border-indigo-200 bg-indigo-50 text-indigo-700', label: i18n.t('generated.common.processing'),         desc: i18n.t('generated.payments_Index.customerSubmittedAwaitingProviderConfirmation') },
+  succeeded:          { color: 'border-green-200 bg-green-50 text-green-700',  label: i18n.t('generated.common.succeeded'),            desc: i18n.t('generated.payments_Index.capturedSuccessfully') },
+  failed:             { color: 'border-red-200 bg-red-50 text-red-700',        label: i18n.t('generated.common.failed'),               desc: i18n.t('generated.payments_Index.declinedByProviderOrAllProvidersFailed') },
+  cancelled:          { color: 'border-slate-200 bg-slate-100 text-slate-600', label: i18n.t('generated.common.cancelled'),            desc: i18n.t('generated.payments_Index.cancelledBeforeCapture') },
+  refunded:           { color: 'border-blue-200 bg-blue-50 text-blue-700',     label: i18n.t('generated.common.refunded'),             desc: i18n.t('generated.payments_Index.fullRefundIssued') },
+  partially_refunded: { color: 'border-blue-200 bg-blue-50 text-blue-700',     label: i18n.t('generated.common.partiallyRefunded'),   desc: i18n.t('generated.payments_Index.partialRefundIssued') },
+  disputed:           { color: 'border-amber-200 bg-amber-50 text-amber-700',  label: i18n.t('generated.common.disputed'),             desc: i18n.t('generated.payments_Index.chargebackOrDisputeOpen') },
+  expired:            { color: 'border-slate-200 bg-slate-100 text-slate-600', label: i18n.t('generated.common.expired'),              desc: i18n.t('generated.payments_Index.sessionExpiredWithoutAction') },
 }
 
 const statusKey = (status) => String(status || '').toLowerCase().replace(/ /g, '_')
 
 const statusMeta = (status) => STATUS_META[statusKey(status)] ?? {
   color: 'border-slate-200 bg-slate-100 text-slate-600',
-  label: status ? String(status).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : 'Unknown',
-  desc: 'Unknown payment status',
+  label: status ? String(status).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : i18n.t('generated.common.unknown'),
+  desc: i18n.t('generated.payments_Index.unknownPaymentStatus'),
 }
 
 const statusClass = (status) => statusMeta(status).color
@@ -48,14 +50,14 @@ const isCheckoutExpired = (status, createdAt) => {
 function CheckoutExpiredBadge() {
   return (
     <span
-      title="Checkout session expired after 24 hours"
-      aria-label="Checkout link expired"
+      title={i18n.t('generated.payments_Index.checkoutSessionExpiredAfter24Hours')}
+      aria-label={i18n.t('generated.payments_Index.checkoutLinkExpired')}
       className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold leading-none text-amber-800 shadow-sm shadow-amber-950/[0.04]"
     >
       <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
         <Clock3 size={11} strokeWidth={2.4} />
       </span>
-      <span className="whitespace-nowrap">Checkout link expired</span>
+      <span className="whitespace-nowrap">{i18n.t('generated.payments_Index.checkoutLinkExpired')}</span>
     </span>
   )
 }
@@ -91,7 +93,7 @@ export default function Payments({ payments, filters = {} }) {
   }
 
   const exportPayments = async (format) => {
-    const toastId = toast.loading(`Queuing ${format.toUpperCase()} export…`)
+    const toastId = toast.loading(i18n.t('generated.common.queuingExport', { format: format.toUpperCase() }))
 
     try {
       const response = await fetch(route('payments.export'), {
@@ -115,7 +117,7 @@ export default function Payments({ payments, filters = {} }) {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.message || `Export failed (HTTP ${response.status})`)
+        throw new Error(result.message || i18n.t('generated.common.exportFailed', { status: response.status }))
       }
 
       toast.success(result.message, { id: toastId, duration: 7000 })
@@ -139,26 +141,24 @@ export default function Payments({ payments, filters = {} }) {
 
   return (
     <AuthenticatedLayout>
-      <Head title="Payments" />
+      <Head title={i18n.t('common.nav.payments')} />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold">Payments</h1>
+          <h1 className="text-2xl font-semibold">{i18n.t('common.nav.payments')}</h1>
           <button
             type="button"
             onClick={() => setShowLegend(v => !v)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
           >
-            <Info size={13} strokeWidth={2} />
-            Status guide
-            {showLegend ? <ChevronUp size={12} strokeWidth={2} /> : <ChevronDown size={12} strokeWidth={2} />}
+            <Info size={13} strokeWidth={2} />{i18n.t('generated.payments_Index.statusGuide')}{showLegend ? <ChevronUp size={12} strokeWidth={2} /> : <ChevronDown size={12} strokeWidth={2} />}
           </button>
         </div>
 
         {/* STATUS LEGEND */}
         {showLegend && (
           <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">Payment statuses</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">{i18n.t('generated.payments_Index.paymentStatuses')}</p>
             <div className="flex flex-col gap-2">
               {Object.entries(STATUS_META).map(([key, { color, label, desc }]) => (
                 <div key={key} className="flex items-center gap-3">
@@ -174,7 +174,7 @@ export default function Payments({ payments, filters = {} }) {
 
         {/* EXPORT */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-400 mr-1">Export &amp; email:</span>
+          <span className="text-xs text-slate-400 mr-1">{i18n.t('generated.payments_Index.exportEmail')}</span>
           {['csv', 'xlsx', 'json'].map(f => (
             <button
               key={f}
@@ -194,7 +194,7 @@ export default function Payments({ payments, filters = {} }) {
         >
           <input
             type="text"
-            placeholder="Order ID"
+            placeholder={i18n.t('generated.payments_Index.orderId')}
             value={data.order_id}
             onChange={e => setData('order_id', e.target.value)}
             className="rounded border-gray-300 text-sm"
@@ -205,7 +205,7 @@ export default function Payments({ payments, filters = {} }) {
             onChange={e => setData('status', e.target.value)}
             className="rounded border-gray-300 text-sm"
           >
-            <option value="">All statuses</option>
+            <option value="">{i18n.t('generated.payments_Index.allStatuses')}</option>
             {Object.entries(STATUS_META).map(([key, { label }]) => (
               <option key={key} value={key}>{label}</option>
             ))}
@@ -231,17 +231,13 @@ export default function Payments({ payments, filters = {} }) {
               disabled={processing}
               className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
             >
-              <SlidersHorizontal size={14} strokeWidth={2} />
-              Filter
-            </button>
+              <SlidersHorizontal size={14} strokeWidth={2} />{i18n.t('common.actions.filter')}</button>
             <button
               type="button"
               onClick={resetFilters}
               className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
             >
-              <RotateCcw size={14} strokeWidth={2} />
-              Reset
-            </button>
+              <RotateCcw size={14} strokeWidth={2} />{i18n.t('common.actions.reset')}</button>
           </div>
         </form>
 
@@ -251,13 +247,13 @@ export default function Payments({ payments, filters = {} }) {
             <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-2 font-medium">ID</th>
-                <th className="px-4 py-2 font-medium">Order</th>
-                <th className="px-4 py-2 font-medium">Amount</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium">Date</th>
-                <th className="px-4 py-2 font-medium">Timing</th>
-                <th className="px-4 py-2 font-medium">Provider</th>
-                <th className="px-4 py-2 font-medium">Actions</th>
+                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Index.order')}</th>
+                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Index.amount')}</th>
+                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Index.status')}</th>
+                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Index.date')}</th>
+                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Index.timing')}</th>
+                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Index.provider')}</th>
+                <th className="px-4 py-2 font-medium">{i18n.t('generated.payments_Index.actions')}</th>
               </tr>
             </thead>
 
@@ -267,7 +263,7 @@ export default function Payments({ payments, filters = {} }) {
                   <td colSpan={8} className="px-6 py-14 text-center">
                     <div className="flex flex-col items-center gap-2 text-slate-400">
                       <CreditCard size={32} strokeWidth={1.25} />
-                      <span className="text-sm font-medium">No payments found</span>
+                      <span className="text-sm font-medium">{i18n.t('generated.payments_Index.noPaymentsFound')}</span>
                     </div>
                   </td>
                 </tr>
@@ -323,17 +319,15 @@ export default function Payments({ payments, filters = {} }) {
                           <Link
                             href={route('payments.show', payment.id)}
                             className="text-indigo-600 text-xs font-medium hover:text-indigo-800 transition-colors"
-                          >
-                            View details →
-                          </Link>
+                          >{i18n.t('generated.payments_Index.viewDetails')}</Link>
                           <span className="text-gray-300">|</span>
                           <button
                             onClick={() => toggleWorkflow(payment.id)}
                             className="inline-flex items-center gap-0.5 text-slate-500 text-xs hover:text-slate-700 transition-colors"
                           >
                             {openWorkflow === payment.id
-                              ? <><ChevronUp size={11} strokeWidth={2} />Hide</>
-                              : <><ChevronDown size={11} strokeWidth={2} />Log</>
+                              ? <><ChevronUp size={11} strokeWidth={2} />{i18n.t('generated.payments_Index.hide')}</>
+                              : <><ChevronDown size={11} strokeWidth={2} />{i18n.t('generated.payments_Index.log')}</>
                             }
                           </button>
                         </div>
@@ -347,12 +341,10 @@ export default function Payments({ payments, filters = {} }) {
                             <div className="flex flex-wrap items-center justify-between gap-3">
                               <div>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <h3 className="font-semibold text-gray-900">Payment Timeline</h3>
+                                  <h3 className="font-semibold text-gray-900">{i18n.t('generated.payments_Index.paymentTimeline')}</h3>
                                   <ProviderBrand alias={payment.provider} label={payment.provider} variant="compact" />
                                 </div>
-                                <p className="text-xs text-gray-500">
-                                  Provider workflow events are shown chronologically.
-                                </p>
+                                <p className="text-xs text-gray-500">{i18n.t('generated.payments_Index.providerWorkflowEventsAreShownChronologically')}</p>
                               </div>
                             </div>
 
@@ -372,9 +364,7 @@ export default function Payments({ payments, filters = {} }) {
                                       </div>
                                       {event.technical_response && (
                                         <details className="mt-2">
-                                          <summary className="cursor-pointer text-xs text-indigo-600">
-                                            View Technical Details
-                                          </summary>
+                                          <summary className="cursor-pointer text-xs text-indigo-600">{i18n.t('generated.payments_Index.viewTechnicalDetails')}</summary>
                                           <pre className="mt-2 max-h-56 overflow-auto rounded bg-gray-950 p-3 text-xs text-gray-100">
                                             {JSON.stringify(event.technical_response, null, 2)}
                                           </pre>
@@ -385,9 +375,7 @@ export default function Payments({ payments, filters = {} }) {
                                 ))}
                               </ol>
                             ) : (
-                              <p className="mt-4 text-sm text-gray-500">
-                                No provider workflow events are available yet.
-                              </p>
+                              <p className="mt-4 text-sm text-gray-500">{i18n.t('generated.payments_Index.noProviderWorkflowEventsAreAvailableYet')}</p>
                             )}
                           </div>
                         </td>

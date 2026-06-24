@@ -148,7 +148,7 @@ class WebhookController extends Controller
             'active'      => true,
         ]);
 
-        return back()->with('success', 'Webhook endpoint created.');
+        return back()->with('success', __('messages.webhooks.created'));
     }
 
     public function destroy(MerchantWebhook $webhook): RedirectResponse
@@ -157,7 +157,7 @@ class WebhookController extends Controller
 
         $webhook->delete();
 
-        return back()->with('success', 'Webhook endpoint deleted.');
+        return back()->with('success', __('messages.webhooks.deleted'));
     }
 
     public function test(MerchantWebhook $webhook): RedirectResponse

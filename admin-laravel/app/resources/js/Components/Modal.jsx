@@ -12,6 +12,7 @@
  */
 import { useEffect, useRef } from 'react';
 
+import i18n from '@/i18n';
 const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-lg',
@@ -122,7 +123,7 @@ export default function Modal({
                             onClick={onClose}
                             className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
                         >
-                            <span className="sr-only">Close</span>
+                            <span className="sr-only">{i18n.t('common.actions.close')}</span>
                             <IconX />
                         </button>
                     </div>

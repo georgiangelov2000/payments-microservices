@@ -11,6 +11,7 @@ import '@xyflow/react/dist/style.css';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { getProviderMeta, ProviderIcon } from '@/Components/ProviderBrand';
 import toast from 'react-hot-toast';
+import i18n from '@/i18n';
 import {
     Play, GitBranch, Scale, Zap, CheckCircle2, XCircle,
     Plus, AlertTriangle, FlaskConical, RotateCcw, Save,
@@ -36,7 +37,7 @@ function StartNode({ data, selected }) {
             <div className="flex items-center gap-2.5 px-4 py-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20"><Play size={14} strokeWidth={2} fill="currentColor" /></span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">Entry Point</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">{i18n.t('generated.routing_Builder.entryPoint')}</p>
                     <p className="text-sm font-bold leading-snug">{data.label || 'Payment Request'}</p>
                 </div>
             </div>
@@ -56,14 +57,14 @@ function ProviderNode({ data, selected }) {
                 <div className="flex items-center gap-2.5 mb-2.5">
                     <ProviderIcon alias={data.provider_alias} label={data.label} size="md" className="ring-0" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Provider</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.provider')}</p>
                         <p className="text-sm font-bold text-slate-800 leading-snug">{data.label || meta.label}</p>
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                     {data.enabled !== false
                         ? <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700"><span className="h-1.5 w-1.5 rounded-full bg-green-500" />Active</span>
-                        : <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Disabled</span>}
+                        : <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{i18n.t('generated.routing_Builder.disabled')}</span>}
                     {data.weight > 0 && <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">{data.weight}%</span>}
                     {data.priority > 0 && <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">P{data.priority}</span>}
                 </div>
@@ -72,12 +73,12 @@ function ProviderNode({ data, selected }) {
                 <div className="relative flex-1 py-1.5 text-center">
                     <Handle type="source" position={Position.Bottom} id="success"
                         style={{ left: '33%', background: '#10b981', width: 10, height: 10, border: '2px solid #fff' }} />
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">Success</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">{i18n.t('generated.routing_Builder.success')}</span>
                 </div>
                 <div className="relative flex-1 border-l border-slate-100 py-1.5 text-center">
                     <Handle type="source" position={Position.Bottom} id="failure"
                         style={{ left: '67%', background: '#ef4444', width: 10, height: 10, border: '2px solid #fff' }} />
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">Failure</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">{i18n.t('generated.routing_Builder.failure')}</span>
                 </div>
             </div>
         </NodeShell>
@@ -94,7 +95,7 @@ function ConditionNode({ data, selected }) {
                 <div className="flex items-center gap-2 mb-2">
                     <GitBranch size={18} strokeWidth={2} className="text-amber-500 shrink-0" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Condition</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">{i18n.t('generated.routing_Builder.condition')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'IF / ELSE'}</p>
                     </div>
                 </div>
@@ -107,7 +108,7 @@ function ConditionNode({ data, selected }) {
                                 <span className="font-semibold">{Array.isArray(c.value) ? c.value.join(', ') : c.value}</span>
                             </div>
                         ))}
-                        {conds.length > 3 && <p className="text-[10px] text-amber-500">+{conds.length - 3} more conditions</p>}
+                        {conds.length > 3 && <p className="text-[10px] text-amber-500">+{conds.length - 3}{' '}{i18n.t('generated.routing_Builder.moreConditions')}</p>}
                     </div>
                 )}
             </div>
@@ -115,12 +116,12 @@ function ConditionNode({ data, selected }) {
                 <div className="relative flex-1 py-1.5 text-center">
                     <Handle type="source" position={Position.Bottom} id="yes"
                         style={{ left: '33%', background: '#10b981', width: 10, height: 10, border: '2px solid #fff' }} />
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">Yes</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">{i18n.t('generated.routing_Builder.yes')}</span>
                 </div>
                 <div className="relative flex-1 border-l border-amber-200 py-1.5 text-center">
                     <Handle type="source" position={Position.Bottom} id="no"
                         style={{ left: '67%', background: '#ef4444', width: 10, height: 10, border: '2px solid #fff' }} />
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">No</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">{i18n.t('generated.routing_Builder.no')}</span>
                 </div>
             </div>
         </NodeShell>
@@ -138,7 +139,7 @@ function WeightedNode({ data, selected }) {
                 <div className="flex items-center gap-2 mb-2.5">
                     <Scale size={16} strokeWidth={2} className="text-purple-500 shrink-0" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-purple-600">Weighted Split</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-purple-600">{i18n.t('generated.routing_Builder.weightedSplit')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'Traffic Split'}</p>
                     </div>
                 </div>
@@ -157,7 +158,7 @@ function WeightedNode({ data, selected }) {
                         );
                     })}
                     {total !== 100 && dist.length > 0 && (
-                        <p className="flex items-center gap-1 text-[10px] font-semibold text-red-500"><AlertTriangle size={10} strokeWidth={2} /> Total {total}% — must equal 100%</p>
+                        <p className="flex items-center gap-1 text-[10px] font-semibold text-red-500"><AlertTriangle size={10} strokeWidth={2} />{' '}{i18n.t('generated.routing_Builder.total')}{' '}{total}{i18n.t('generated.routing_Builder.mustEqual100')}</p>
                     )}
                 </div>
             </div>
@@ -177,7 +178,7 @@ function FailoverNode({ data, selected }) {
                 <div className="flex items-center gap-2 mb-2.5">
                     <Zap size={16} strokeWidth={2} className="text-orange-500 shrink-0" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">Failover Chain</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">{i18n.t('generated.routing_Builder.failoverChain')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'Auto Failover'}</p>
                     </div>
                 </div>
@@ -208,7 +209,7 @@ function SuccessNode({ data, selected }) {
             <div className="flex items-center gap-2.5 px-4 py-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 size={18} strokeWidth={2} /></span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Terminal</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">{i18n.t('generated.routing_Builder.terminal')}</p>
                     <p className="text-sm font-bold text-slate-800">{data.label || 'Payment Success'}</p>
                 </div>
             </div>
@@ -224,7 +225,7 @@ function FailureNode({ data, selected }) {
             <div className="flex items-center gap-2.5 px-4 py-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600"><XCircle size={18} strokeWidth={2} /></span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-red-600">Terminal</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-red-600">{i18n.t('generated.routing_Builder.terminal')}</p>
                     <p className="text-sm font-bold text-slate-800">{data.label || 'Payment Failed'}</p>
                 </div>
             </div>
@@ -237,13 +238,13 @@ const NODE_TYPES = { start: StartNode, provider: ProviderNode, condition: Condit
 // ─── Palette ──────────────────────────────────────────────────────────────────
 
 const PALETTE = [
-    { type: 'start',     Icon: Play,          label: 'Start',     desc: 'Entry point',    cls: 'bg-indigo-100 border-indigo-300 text-indigo-700' },
-    { type: 'provider',  Icon: Plus,           label: 'Provider',  desc: 'Route to provider', cls: 'bg-white border-slate-300 text-slate-700' },
-    { type: 'condition', Icon: GitBranch,      label: 'Condition', desc: 'IF / ELSE logic', cls: 'bg-amber-50 border-amber-300 text-amber-700' },
-    { type: 'weighted',  Icon: Scale,          label: 'Weighted',  desc: 'Traffic split',  cls: 'bg-purple-50 border-purple-300 text-purple-700' },
-    { type: 'failover',  Icon: Zap,            label: 'Failover',  desc: 'Auto-failover',  cls: 'bg-orange-50 border-orange-300 text-orange-700' },
-    { type: 'success',   Icon: CheckCircle2,   label: 'Success',   desc: 'Success terminal', cls: 'bg-emerald-50 border-emerald-300 text-emerald-700' },
-    { type: 'failure',   Icon: XCircle,        label: 'Failure',   desc: 'Failure terminal', cls: 'bg-red-50 border-red-300 text-red-700' },
+    { type: 'start',     Icon: Play,          label: i18n.t('generated.routing_Builder.start'),     desc: i18n.t('generated.routing_Builder.entryPoint82805c'),    cls: 'bg-indigo-100 border-indigo-300 text-indigo-700' },
+    { type: 'provider',  Icon: Plus,           label: i18n.t('generated.routing_Builder.provider'),  desc: i18n.t('generated.routing_Builder.routeToProvider'), cls: 'bg-white border-slate-300 text-slate-700' },
+    { type: 'condition', Icon: GitBranch,      label: i18n.t('generated.routing_Builder.condition'), desc: i18n.t('generated.routing_Builder.ifElseLogic'), cls: 'bg-amber-50 border-amber-300 text-amber-700' },
+    { type: 'weighted',  Icon: Scale,          label: i18n.t('generated.routing_Builder.weighted'),  desc: i18n.t('generated.routing_Builder.trafficSplit'),  cls: 'bg-purple-50 border-purple-300 text-purple-700' },
+    { type: 'failover',  Icon: Zap,            label: i18n.t('generated.routing_Builder.failover'),  desc: i18n.t('generated.routing_Builder.autoFailover'),  cls: 'bg-orange-50 border-orange-300 text-orange-700' },
+    { type: 'success',   Icon: CheckCircle2,   label: i18n.t('generated.routing_Builder.success'),   desc: i18n.t('generated.routing_Builder.successTerminal'), cls: 'bg-emerald-50 border-emerald-300 text-emerald-700' },
+    { type: 'failure',   Icon: XCircle,        label: i18n.t('generated.routing_Builder.failure'),   desc: i18n.t('generated.routing_Builder.failureTerminal'), cls: 'bg-red-50 border-red-300 text-red-700' },
 ];
 
 function NodePalette() {
@@ -254,7 +255,7 @@ function NodePalette() {
 
     return (
         <div className="flex flex-col gap-1.5 w-44 shrink-0">
-            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Node Types</p>
+            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{i18n.t('generated.routing_Builder.nodeTypes')}</p>
             {PALETTE.map(item => (
                 <div
                     key={item.type}
@@ -280,7 +281,7 @@ function ConfigPanel({ node, providers, onUpdate, onDelete }) {
         return (
             <div className="flex w-64 shrink-0 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
                 <span className="text-3xl">🖱</span>
-                <p className="text-xs text-slate-400 font-medium">Select a node to configure it</p>
+                <p className="text-xs text-slate-400 font-medium">{i18n.t('generated.routing_Builder.selectANodeToConfigureIt')}</p>
             </div>
         );
     }
@@ -291,9 +292,9 @@ function ConfigPanel({ node, providers, onUpdate, onDelete }) {
     return (
         <div className="flex w-64 shrink-0 flex-col overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                <p className="text-sm font-semibold text-slate-700 capitalize">{node.type} Node</p>
+                <p className="text-sm font-semibold text-slate-700 capitalize">{node.type}{' '}{i18n.t('generated.routing_Builder.node')}</p>
                 <button onClick={() => onDelete(node.id)}
-                    className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors" title="Delete node">
+                    className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors" title={i18n.t('generated.routing_Builder.deleteNode')}>
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -303,7 +304,7 @@ function ConfigPanel({ node, providers, onUpdate, onDelete }) {
             <div className="flex flex-col gap-4 p-4">
                 {/* Label — read-only for provider nodes (set automatically from provider name) */}
                 {node.type !== 'provider' && (
-                    <Field label="Label">
+                    <Field label={i18n.t('generated.routing_Builder.label')}>
                         <input value={d.label || ''} onChange={e => set('label', e.target.value)}
                             className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-100" />
                     </Field>
@@ -312,23 +313,23 @@ function ConfigPanel({ node, providers, onUpdate, onDelete }) {
                 {/* Provider-specific */}
                 {node.type === 'provider' && (
                     <>
-                        <Field label="Provider">
+                        <Field label={i18n.t('generated.routing_Builder.provider')}>
                             <select value={d.provider_alias || ''} onChange={e => set('provider_alias', e.target.value)}
                                 className="w-full min-w-0 rounded-lg border border-slate-200 py-1.5 pl-3 pr-10 text-sm focus:border-indigo-400 focus:outline-none">
-                                <option value="">Select provider…</option>
+                                <option value="">{i18n.t('generated.routing_Builder.selectProvider')}</option>
                                 {providers.map(p => <option key={p.alias} value={p.alias}>{p.name}</option>)}
                             </select>
                         </Field>
-                        <Field label="Priority">
+                        <Field label={i18n.t('generated.routing_Builder.priority')}>
                             <input type="number" min="1" value={d.priority || 1} onChange={e => set('priority', parseInt(e.target.value) || 1)}
                                 className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
                         </Field>
-                        <Field label="Weight (%)">
+                        <Field label={i18n.t('generated.routing_Builder.weight')}>
                             <input type="number" min="0" max="100" value={d.weight || 0} onChange={e => set('weight', parseInt(e.target.value) || 0)}
                                 className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none" />
                         </Field>
                         <div className="flex items-center gap-3">
-                            <span className="text-xs font-medium text-slate-500">Enabled</span>
+                            <span className="text-xs font-medium text-slate-500">{i18n.t('generated.routing_Builder.enabled')}</span>
                             <Toggle checked={d.enabled !== false} onChange={v => set('enabled', v)} />
                         </div>
                     </>
@@ -374,7 +375,7 @@ function Toggle({ checked, onChange }) {
 const OPERATORS = [
     { value: 'eq',  label: '=' },
     { value: 'neq', label: '≠' },
-    { value: 'in',  label: 'in' },
+    { value: 'in',  label: i18n.t('generated.routing_Builder.in') },
     { value: 'gt',  label: '>' },
     { value: 'lt',  label: '<' },
     { value: 'gte', label: '≥' },
@@ -390,8 +391,8 @@ function ConditionEditor({ conditions, onChange }) {
     return (
         <div>
             <div className="mb-2 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Conditions (AND)</span>
-                <button onClick={add} className="rounded px-2 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50">+ Add</button>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.conditionsAnd')}</span>
+                <button onClick={add} className="rounded px-2 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50">{i18n.t('generated.routing_Builder.add')}</button>
             </div>
             <div className="space-y-2">
                 {conditions.map((c, i) => (
@@ -412,14 +413,14 @@ function ConditionEditor({ conditions, onChange }) {
                                     const v = e.target.value;
                                     update(i, 'value', c.operator === 'in' ? v.split(',').map(s => s.trim()) : v);
                                 }}
-                                placeholder={c.operator === 'in' ? 'US, DE, FR' : 'value'}
+                                placeholder={c.operator === 'in' ? 'US, DE, FR' : i18n.t('generated.common.value')}
                                 className="flex-1 rounded border border-slate-200 px-1.5 py-1 text-xs focus:outline-none" />
                             <button onClick={() => remove(i)} className="rounded p-0.5 text-slate-300 hover:text-red-500 transition-colors"><XCircle size={14} strokeWidth={2} /></button>
                         </div>
                     </div>
                 ))}
                 {conditions.length === 0 && (
-                    <p className="text-[11px] text-slate-400 text-center py-2">No conditions — always matches</p>
+                    <p className="text-[11px] text-slate-400 text-center py-2">{i18n.t('generated.routing_Builder.noConditionsAlwaysMatches')}</p>
                 )}
             </div>
         </div>
@@ -439,15 +440,15 @@ function WeightedEditor({ distribution, providers, onChange }) {
     return (
         <div>
             <div className="mb-2 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Distribution</span>
-                <button onClick={add} className="rounded px-2 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50">+ Add</button>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.distribution')}</span>
+                <button onClick={add} className="rounded px-2 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50">{i18n.t('generated.routing_Builder.add')}</button>
             </div>
             <div className="space-y-1.5">
                 {distribution.map((d, i) => (
                     <div key={i} className="flex flex-wrap items-center gap-1.5">
                         <select value={d.provider_alias || ''} onChange={e => update(i, 'provider_alias', e.target.value)}
                             className="min-w-28 flex-1 rounded border border-slate-200 py-1 pl-1.5 pr-8 text-xs focus:outline-none">
-                            <option value="">Provider…</option>
+                            <option value="">{i18n.t('generated.routing_Builder.provider73cf70')}</option>
                             {providers.map(p => <option key={p.alias} value={p.alias}>{p.name}</option>)}
                         </select>
                         <input type="number" min="0" max="100" value={d.weight || 0}
@@ -458,8 +459,7 @@ function WeightedEditor({ distribution, providers, onChange }) {
                     </div>
                 ))}
             </div>
-            <div className={`mt-2 text-[11px] font-semibold ${total === 100 ? 'text-emerald-600' : 'text-red-500'}`}>
-                Total: {total}% {total === 100 ? <CheckCircle2 size={13} strokeWidth={2} className="inline text-emerald-500" /> : '(must be 100%)'}
+            <div className={`mt-2 text-[11px] font-semibold ${total === 100 ? 'text-emerald-600' : 'text-red-500'}`}>{i18n.t('generated.routing_Builder.total66c4c5')}{total}% {total === 100 ? <CheckCircle2 size={13} strokeWidth={2} className="inline text-emerald-500" /> : i18n.t('generated.common.mustTotal100')}
             </div>
         </div>
     );
@@ -476,8 +476,8 @@ function FailoverEditor({ chain, providers, onChange }) {
     return (
         <div>
             <div className="mb-2 flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Failover Order</span>
-                <button onClick={add} className="rounded px-2 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50">+ Add</button>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.failoverOrder')}</span>
+                <button onClick={add} className="rounded px-2 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50">{i18n.t('generated.routing_Builder.add')}</button>
             </div>
             <div className="space-y-1.5">
                 {chain.map((alias, i) => (
@@ -503,7 +503,7 @@ function clientSimulate(nodes, edges, input) {
     edges.forEach(e => { adj[e.source] = adj[e.source] || []; adj[e.source].push({ target: e.target, handle: e.sourceHandle }); });
 
     const start = nodes.find(n => n.type === 'start');
-    if (!start) return { outcome: 'error', path: [], error: 'No start node' };
+    if (!start) return { outcome: 'error', path: [], error: i18n.t('generated.common.noStartNode') };
 
     const path = [];
     let current = start;
@@ -552,7 +552,7 @@ function clientSimulate(nodes, edges, input) {
             const bucket = Math.abs(hash) % 100;
             let cursor = 0, chosen = dist[0]?.provider_alias || 'unknown';
             for (const d of dist) { cursor += d.weight || 0; if (bucket < cursor) { chosen = d.provider_alias; break; } }
-            step.decision = `→ Weighted: ${chosen}`;
+            step.decision = i18n.t('generated.common.weightedDecision', { provider: chosen });
             step.provider = chosen;
             path.push(step);
             current = outgoing[0] ? nodeMap[outgoing[0].target] : null;
@@ -560,7 +560,7 @@ function clientSimulate(nodes, edges, input) {
         }
         if (type === 'failover') {
             const p = (data.chain || [])[0] || 'unknown';
-            step.decision = `→ Failover primary: ${p}`;
+            step.decision = i18n.t('generated.common.failoverDecision', { provider: p });
             step.provider = p;
             path.push(step);
             current = outgoing[0] ? nodeMap[outgoing[0].target] : null;
@@ -586,18 +586,17 @@ function SimulationPanel({ nodes, edges }) {
         <div className="border-t border-slate-200 bg-white">
             <button onClick={() => setOpen(o => !o)}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-                <FlaskConical size={15} strokeWidth={2} className="shrink-0" /> Simulation
-                <span className="ml-auto text-slate-400">{open ? '▲' : '▼'}</span>
+                <FlaskConical size={15} strokeWidth={2} className="shrink-0" />{i18n.t('generated.routing_Builder.simulation')}<span className="ml-auto text-slate-400">{open ? '▲' : '▼'}</span>
             </button>
 
             {open && (
                 <div className="border-t border-slate-100 px-4 py-3">
                     <div className="flex flex-wrap items-end gap-3">
                         {[
-                            { key: 'country', label: 'Country', placeholder: 'US, DE…' },
-                            { key: 'currency', label: 'Currency', placeholder: 'USD' },
-                            { key: 'price',    label: 'Price',    placeholder: '99.99' },
-                            { key: 'payment_method', label: 'Method', placeholder: 'card' },
+                            { key: 'country', label: i18n.t('generated.routing_Builder.country'), placeholder: i18n.t('generated.routing_Builder.usDe') },
+                            { key: 'currency', label: i18n.t('generated.routing_Builder.currency'), placeholder: 'USD' },
+                            { key: 'price',    label: i18n.t('generated.routing_Builder.price'),    placeholder: '99.99' },
+                            { key: 'payment_method', label: i18n.t('generated.routing_Builder.method'), placeholder: i18n.t('generated.routing_Builder.card') },
                         ].map(f => (
                             <div key={f.key}>
                                 <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">{f.label}</label>
@@ -607,13 +606,12 @@ function SimulationPanel({ nodes, edges }) {
                             </div>
                         ))}
                         <div className="flex items-center gap-2 pb-1">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Recurring</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.recurring')}</span>
                             <Toggle checked={input.recurring} onChange={v => setInput(s => ({ ...s, recurring: v }))} />
                         </div>
                         <button onClick={run}
                             className="rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">
-                            <Play size={11} strokeWidth={2} fill="currentColor" className="inline mr-1" />Run
-                        </button>
+                            <Play size={11} strokeWidth={2} fill="currentColor" className="inline mr-1" />{i18n.t('generated.routing_Builder.run')}</button>
                     </div>
 
                     {result && (
@@ -693,7 +691,7 @@ function normalizeForCanvas(rawNodes) {
                 type:     n.type ?? 'provider',
                 position: hasPosition ? n.position : { x: (i % 3) * 260 + 80, y: Math.floor(i / 3) * 210 + 80 },
                 data: hasData ? n.data : {
-                    label:          n.label          ?? n.type ?? 'Node',
+                    label:          n.label          ?? n.type ?? i18n.t('generated.common.node'),
                     provider_alias: n.provider_alias ?? null,
                     enabled:        n.enabled        ?? true,
                     weight:         Number(n.weight  ?? 0),
@@ -768,13 +766,13 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
         const pos = rfInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY });
         const count = nodes.filter(n => n.type === type).length + 1;
         const defaults = {
-            start:     { label: 'Payment Request' },
-            provider:  { label: `Provider ${count}`, provider_alias: null, enabled: true, weight: 0, priority: count, conditions: [] },
-            condition: { label: `Condition ${count}`, conditions: [] },
-            weighted:  { label: `Traffic Split ${count}`, distribution: [] },
-            failover:  { label: `Failover ${count}`, chain: [] },
-            success:   { label: 'Payment Success' },
-            failure:   { label: 'Payment Failed' },
+            start:     { label: i18n.t('generated.routing_Builder.paymentRequest') },
+            provider:  { label: i18n.t('generated.common.providerNode', { count }), provider_alias: null, enabled: true, weight: 0, priority: count, conditions: [] },
+            condition: { label: i18n.t('generated.common.conditionNode', { count }), conditions: [] },
+            weighted:  { label: i18n.t('generated.common.trafficSplitNode', { count }), distribution: [] },
+            failover:  { label: i18n.t('generated.common.failoverNode', { count }), chain: [] },
+            success:   { label: i18n.t('generated.routing_Builder.paymentSuccess') },
+            failure:   { label: i18n.t('generated.routing_Builder.paymentFailed') },
         };
         setNodes(prev => [...prev, { id: `${type}-${Date.now()}`, type, position: pos, data: defaults[type] || { label: type } }]);
     }, [rfInstance, nodes, setNodes]);
@@ -860,9 +858,7 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
             {/* Top bar */}
             <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
                 <a href={route('admin.routing.index')}
-                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors">
-                    ← Routing
-                </a>
+                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors">{i18n.t('generated.routing_Builder.routing')}</a>
                 <div className="h-4 w-px bg-slate-200" />
                 <input value={name} onChange={e => setName(e.target.value)}
                     className="rounded-lg border border-transparent px-2 py-1 text-sm font-semibold text-slate-800 hover:border-slate-200 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100 transition-colors" />
@@ -876,15 +872,13 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
                     <span className="text-xs text-slate-400">{workflow.merchant.name}</span>
                 )}
                 <div className="ml-auto flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400">{nodes.length} node{nodes.length !== 1 ? 's' : ''} · {edges.length} edge{edges.length !== 1 ? 's' : ''}</span>
+                    <span className="text-[10px] text-slate-400">{nodes.length}{' '}{i18n.t('generated.routing_Builder.node36c453')}{nodes.length !== 1 ? 's' : ''} · {edges.length}{' '}{i18n.t('generated.routing_Builder.edge')}{edges.length !== 1 ? 's' : ''}</span>
 
                     {hasSaved && !isDirty && (
                         <button onClick={handleResetLayout}
                             className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors"
-                            title="Reset to automatic layout">
-                            <RotateCcw size={12} strokeWidth={2} />
-                            Reset layout
-                        </button>
+                            title={i18n.t('generated.routing_Builder.resetToAutomaticLayout')}>
+                            <RotateCcw size={12} strokeWidth={2} />{i18n.t('generated.routing_Builder.resetLayout')}</button>
                     )}
 
                     <button onClick={handleSave} disabled={!isDirty || saveState === 'saving'}
@@ -899,20 +893,18 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
                                         : 'border border-slate-200 bg-slate-50 text-slate-400 cursor-default',
                         ].join(' ')}>
                         <Save size={12} strokeWidth={2} />
-                        {saveState === 'saving' ? 'Saving…'
-                            : saveState === 'saved' ? 'Layout saved'
-                            : saveState === 'error' ? 'Save failed'
-                            : 'Save layout'}
+                        {saveState === 'saving' ? i18n.t('generated.common.saving')
+                            : saveState === 'saved' ? i18n.t('generated.common.layoutSaved')
+                            : saveState === 'error' ? i18n.t('generated.common.saveFailed')
+                            : i18n.t('generated.common.saveLayout')}
                     </button>
 
                     <button onClick={save} disabled={saving}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors">
-                        {saving ? 'Saving…' : 'Save draft'}
+                        {saving ? i18n.t('generated.common.saving') : i18n.t('generated.common.saveDraft')}
                     </button>
                     <button onClick={publish}
-                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">
-                        Publish →
-                    </button>
+                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors">{i18n.t('generated.routing_Builder.publish')}</button>
                 </div>
             </div>
 
@@ -925,7 +917,7 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
                     {/* Version history */}
                     {workflow.versions?.length > 0 && (
                         <div className="mt-4 w-44">
-                            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Versions</p>
+                            <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">{i18n.t('generated.routing_Builder.versions')}</p>
                             <div className="space-y-1">
                                 {workflow.versions.slice(0, 6).map(v => (
                                     <div key={v.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs">
@@ -969,8 +961,8 @@ function WorkflowBuilder({ workflow, providers, merchantProviders }) {
                             <Panel position="top-center">
                                 <div className="mt-16 flex flex-col items-center gap-3 text-center">
                                     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500"><Zap size={28} strokeWidth={2} /></div>
-                                    <p className="text-sm font-semibold text-slate-700">Start building your routing workflow</p>
-                                    <p className="text-xs text-slate-400">Drag nodes from the left panel onto the canvas</p>
+                                    <p className="text-sm font-semibold text-slate-700">{i18n.t('generated.routing_Builder.startBuildingYourRoutingWorkflow')}</p>
+                                    <p className="text-xs text-slate-400">{i18n.t('generated.routing_Builder.dragNodesFromTheLeftPanelOntoThe')}</p>
                                 </div>
                             </Panel>
                         )}

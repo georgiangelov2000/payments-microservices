@@ -22,7 +22,7 @@ class EnsureAdminUser
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            abort(403, 'Only active admin users may access the admin panel.');
+            abort(403, __('messages.auth.admin_only'));
         }
 
         return $next($request);

@@ -34,7 +34,7 @@ class ContactController extends Controller
             }
         );
 
-        return response()->json(['message' => 'Thank you! We will be in touch shortly.']);
+        return response()->json(['message' => __('messages.contact.thanks')]);
     }
 
     private function formatBody(array $data): string

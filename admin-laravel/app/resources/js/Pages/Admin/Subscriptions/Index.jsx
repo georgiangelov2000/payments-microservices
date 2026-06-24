@@ -3,6 +3,7 @@ import Pagination from '@/Components/Pagination';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { fmtCurrency, fmtCount } from '@/utils';
 
+import i18n from '@/i18n';
 // ── Plan Card ─────────────────────────────────────────────────────────────────
 
 function PlanCard({ plan }) {
@@ -25,7 +26,7 @@ function PlanCard({ plan }) {
                     <span className="text-4xl font-bold tracking-tight text-slate-900">
                         ${fmtCurrency(plan.monthly_fee)}
                     </span>
-                    <span className="mb-1 text-sm text-slate-500">/mo</span>
+                    <span className="mb-1 text-sm text-slate-500">{i18n.t('generated.subscriptions_Index.mo')}</span>
                 </div>
             </div>
 
@@ -34,25 +35,24 @@ function PlanCard({ plan }) {
             {/* Plan details */}
             <div className="flex flex-col gap-3 px-6 py-4 flex-1">
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Transaction fee</span>
+                    <span className="text-slate-500">{i18n.t('generated.subscriptions_Index.transactionFee')}</span>
                     <span className="font-medium text-slate-900">{txFee}</span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Included transactions</span>
+                    <span className="text-slate-500">{i18n.t('generated.subscriptions_Index.includedTransactions')}</span>
                     <span className="font-medium text-slate-900">
-                        {fmtCount(plan.included_transactions)}/mo
-                    </span>
+                        {fmtCount(plan.included_transactions)}{i18n.t('generated.subscriptions_Index.mo')}</span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Active merchants</span>
+                    <span className="text-slate-500">{i18n.t('generated.subscriptions_Index.activeMerchants')}</span>
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
                         merchantCount > 0
                             ? 'bg-green-100 text-green-700 border-green-200'
                             : 'bg-slate-100 text-slate-600 border-slate-200'
                     }`}>
-                        {merchantCount} {merchantCount === 1 ? 'merchant' : 'merchants'}
+                        {merchantCount} {merchantCount === 1 ? i18n.t('generated.common.merchant') : i18n.t('generated.common.merchants')}
                     </span>
                 </div>
             </div>
@@ -67,15 +67,13 @@ export default function SubscriptionsIndex({ subscriptions }) {
     const hasMultiplePages = (subscriptions.links || []).length > 3;
 
     return (
-        <AdminLayout title="Subscriptions">
-            <Head title="Billing Plans" />
+        <AdminLayout title={i18n.t('common.nav.subscriptions')}>
+            <Head title={i18n.t('generated.subscriptions_Index.billingPlans')} />
 
             {/* Page heading */}
             <div className="mb-6">
-                <h2 className="text-xl font-semibold text-slate-900">Billing Plans</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                    Manage pricing tiers and monitor merchant subscriptions.
-                </p>
+                <h2 className="text-xl font-semibold text-slate-900">{i18n.t('generated.subscriptions_Index.billingPlans')}</h2>
+                <p className="mt-1 text-sm text-slate-500">{i18n.t('generated.subscriptions_Index.managePricingTiersAndMonitorMerchantSubscriptions')}</p>
             </div>
 
             {/* Plan cards — 3-column grid */}
@@ -89,7 +87,7 @@ export default function SubscriptionsIndex({ subscriptions }) {
                             <line x1="8" y1="21" x2="16" y2="21" />
                             <line x1="12" y1="17" x2="12" y2="21" />
                         </svg>
-                        <span className="text-sm font-medium">No billing plans configured</span>
+                        <span className="text-sm font-medium">{i18n.t('generated.subscriptions_Index.noBillingPlansConfigured')}</span>
                     </div>
                 </div>
             ) : (
@@ -104,10 +102,8 @@ export default function SubscriptionsIndex({ subscriptions }) {
             {plans.length > 0 && (
                 <section className="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div className="border-b border-slate-200 px-6 py-4">
-                        <h3 className="text-xl font-semibold text-slate-900">Plan Comparison</h3>
-                        <p className="mt-0.5 text-sm text-slate-500">
-                            Side-by-side view of all pricing tiers and subscriber counts.
-                        </p>
+                        <h3 className="text-xl font-semibold text-slate-900">{i18n.t('generated.subscriptions_Index.planComparison')}</h3>
+                        <p className="mt-0.5 text-sm text-slate-500">{i18n.t('generated.subscriptions_Index.sideBySideViewOfAllPricingTiers')}</p>
                     </div>
 
                     <div className="overflow-x-auto">

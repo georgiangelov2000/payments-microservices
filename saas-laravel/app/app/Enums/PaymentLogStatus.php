@@ -16,12 +16,12 @@ enum PaymentLogStatus: int
     public function label(): string
     {
         return match ($this) {
-            self::PENDING => 'Pending',
-            self::SUCCESS => 'Successful',
-            self::FAILED => 'Failed',
-            self::RETRYING => 'Retrying',
-            self::BLOCKED => 'Blocked',
-            self::PROCESSING => 'Processing'
+            self::PENDING => __('messages.log_statuses.pending'),
+            self::SUCCESS => __('messages.log_statuses.successful'),
+            self::FAILED => __('messages.log_statuses.failed'),
+            self::RETRYING => __('messages.log_statuses.retrying'),
+            self::BLOCKED => __('messages.log_statuses.blocked'),
+            self::PROCESSING => __('messages.log_statuses.processing')
         };
     }
 }

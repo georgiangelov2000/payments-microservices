@@ -46,7 +46,7 @@ final class MerchantController extends Controller
         $merchant = $this->merchantService->create($request->validated());
 
         return redirect()->route('admin.merchants.edit', $merchant)
-            ->with('success', 'Merchant created. You can now assign payment providers.');
+            ->with('success', __('messages.merchants.created'));
     }
 
     public function edit(User $merchant): Response
@@ -68,7 +68,7 @@ final class MerchantController extends Controller
         abort_unless($merchant->isMerchant(), 404);
         $this->merchantService->update($merchant, $request->validated());
 
-        return back()->with('success', 'Merchant updated.');
+        return back()->with('success', __('messages.merchants.updated'));
     }
 
     public function storeProvider(StoreProviderCredentialRequest $request, User $merchant): RedirectResponse
@@ -76,13 +76,13 @@ final class MerchantController extends Controller
         abort_unless($merchant->isMerchant(), 404);
         $this->merchantService->assignProvider($merchant, $request->validated());
 
-        return back()->with('success', 'Provider assignment saved.');
+        return back()->with('success', __('messages.merchants.provider_assigned'));
     }
 
     public function updateProvider(UpdateProviderCredentialRequest $request, MerchantProviderCredential $credential): RedirectResponse
     {
         $this->merchantService->updateProviderCredential($credential, $request->validated());
 
-        return back()->with('success', 'Provider credentials updated.');
+        return back()->with('success', __('messages.merchants.provider_updated'));
     }
 }

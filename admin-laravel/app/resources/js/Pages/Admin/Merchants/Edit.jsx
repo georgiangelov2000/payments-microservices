@@ -5,6 +5,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import FormSection from '@/Components/FormSection';
 import Field from '@/Components/Field';
 import { fmtDate } from '@/utils';
+import i18n from '@/i18n';
 import {
     CheckCircle2, XCircle, Clock, Circle, Plus,
     Copy, ChevronDown, ChevronRight, CreditCard, Key, GitBranch,
@@ -35,7 +36,7 @@ function SaveButton({ processing, label = 'Save Changes' }) {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3-3-3h4z"/>
                 </svg>
             )}
-            {processing ? 'Saving…' : label}
+            {processing ? i18n.t('generated.common.saving') : label}
         </button>
     );
 }
@@ -71,9 +72,7 @@ function CopyButton({ value, label = 'Copy', size = 'md' }) {
                 <>
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Copied!
-                </>
+                    </svg>{i18n.t('common.actions.copied')}</>
             ) : (
                 <>
                     <Copy size={13} strokeWidth={2} />
@@ -87,10 +86,10 @@ function CopyButton({ value, label = 'Copy', size = 'md' }) {
 // ─── Status picker (merchant account) ────────────────────────────────────────
 
 const STATUS_OPTIONS = [
-    { value: 'pending',   Icon: Clock,         iconColor: 'text-amber-500', label: 'Pending',   desc: 'Awaiting setup',     ring: 'border-amber-400 bg-amber-50 ring-amber-300',  idle: 'border-slate-200 hover:border-amber-300 hover:bg-amber-50/40' },
-    { value: 'active',    Icon: CheckCircle2,  iconColor: 'text-green-500', label: 'Active',    desc: 'Accepting payments', ring: 'border-green-400 bg-green-50 ring-green-300',  idle: 'border-slate-200 hover:border-green-300 hover:bg-green-50/40' },
-    { value: 'inactive',  Icon: Circle,        iconColor: 'text-slate-400', label: 'Inactive',  desc: 'Account disabled',   ring: 'border-slate-400 bg-slate-100 ring-slate-300', idle: 'border-slate-200 hover:border-slate-300 hover:bg-slate-50' },
-    { value: 'suspended', Icon: XCircle,       iconColor: 'text-red-500',   label: 'Suspended', desc: 'Suspended by admin', ring: 'border-red-400 bg-red-50 ring-red-300',        idle: 'border-slate-200 hover:border-red-300 hover:bg-red-50/40' },
+    { value: 'pending',   Icon: Clock,         iconColor: 'text-amber-500', label: i18n.t('generated.common.pending'),   desc: i18n.t('generated.merchants_Edit.awaitingSetup'),     ring: 'border-amber-400 bg-amber-50 ring-amber-300',  idle: 'border-slate-200 hover:border-amber-300 hover:bg-amber-50/40' },
+    { value: 'active',    Icon: CheckCircle2,  iconColor: 'text-green-500', label: i18n.t('generated.common.active'),    desc: i18n.t('generated.merchants_Edit.acceptingPayments'), ring: 'border-green-400 bg-green-50 ring-green-300',  idle: 'border-slate-200 hover:border-green-300 hover:bg-green-50/40' },
+    { value: 'inactive',  Icon: Circle,        iconColor: 'text-slate-400', label: i18n.t('generated.common.inactive'),  desc: i18n.t('generated.merchants_Edit.accountDisabled'),   ring: 'border-slate-400 bg-slate-100 ring-slate-300', idle: 'border-slate-200 hover:border-slate-300 hover:bg-slate-50' },
+    { value: 'suspended', Icon: XCircle,       iconColor: 'text-red-500',   label: i18n.t('generated.common.suspended'), desc: i18n.t('generated.merchants_Edit.suspendedByAdmin'), ring: 'border-red-400 bg-red-50 ring-red-300',        idle: 'border-slate-200 hover:border-red-300 hover:bg-red-50/40' },
 ];
 
 function StatusPicker({ value, onChange }) {
@@ -115,30 +114,30 @@ function StatusPicker({ value, onChange }) {
 
 const PROVIDER_STATUS_META = {
     pending: {
-        label: 'Pending',
+        label: i18n.t('generated.common.pending'),
         Icon:  Clock,
-        desc:  'Credentials saved but not yet tested. Provider will not receive live payments.',
+        desc:  i18n.t('generated.merchants_Edit.credentialsSavedButNotYetTestedProviderWill'),
         cls:   'border-amber-200 bg-amber-50 text-amber-700',
         dot:   'bg-amber-400',
     },
     active: {
-        label: 'Active',
+        label: i18n.t('generated.common.active'),
         Icon:  CheckCircle2,
-        desc:  'Manually activated. This provider will receive payments according to the routing rules.',
+        desc:  i18n.t('generated.merchants_Edit.manuallyActivatedThisProviderWillReceivePaymentsAccording'),
         cls:   'border-green-200 bg-green-50 text-green-700',
         dot:   'bg-green-500',
     },
     validated: {
-        label: 'Validated',
+        label: i18n.t('generated.common.validated'),
         Icon:  CheckCircle2,
-        desc:  'Credentials verified by the system. Fully trusted for live payment processing.',
+        desc:  i18n.t('generated.merchants_Edit.credentialsVerifiedByTheSystemFullyTrustedFor'),
         cls:   'border-emerald-200 bg-emerald-50 text-emerald-700',
         dot:   'bg-emerald-500',
     },
     disabled: {
-        label: 'Disabled',
+        label: i18n.t('generated.common.disabled'),
         Icon:  Circle,
-        desc:  'Provider is disabled. No payments will be routed through it until re-enabled.',
+        desc:  i18n.t('generated.merchants_Edit.providerIsDisabledNoPaymentsWillBeRouted'),
         cls:   'border-slate-200 bg-slate-100 text-slate-600',
         dot:   'bg-slate-400',
     },
@@ -146,28 +145,28 @@ const PROVIDER_STATUS_META = {
 
 const PROVIDER_FIELD_HELP = {
     stripe: {
-        publicLabel: 'Publishable key',
+        publicLabel: i18n.t('generated.common.publishableKey'),
         publicPlaceholder: 'pk_test_...',
-        publicHint: 'Safe browser key from Stripe test mode.',
-        secretLabel: 'Secret key',
+        publicHint: i18n.t('generated.common.safeBrowserKeyStripeTest'),
+        secretLabel: i18n.t('generated.common.secretKey'),
         secretPlaceholder: 'sk_test_...',
-        secretHint: 'Server key used to create Stripe Checkout sessions.',
+        secretHint: i18n.t('generated.common.stripeSecretHint'),
     },
     paypal: {
-        publicLabel: 'Client ID',
-        publicPlaceholder: 'PayPal sandbox client ID',
-        publicHint: 'Client ID from your PayPal REST app.',
-        secretLabel: 'Client secret',
-        secretPlaceholder: 'PayPal sandbox client secret',
-        secretHint: 'Secret used to request PayPal access tokens.',
+        publicLabel: i18n.t('generated.common.clientId'),
+        publicPlaceholder: i18n.t('generated.common.paypalSandboxClientId'),
+        publicHint: i18n.t('generated.common.paypalClientIdHint'),
+        secretLabel: i18n.t('generated.common.clientSecret'),
+        secretPlaceholder: i18n.t('generated.common.paypalSandboxClientSecret'),
+        secretHint: i18n.t('generated.common.paypalSecretHint'),
     },
     default: {
-        publicLabel: 'Public key',
-        publicPlaceholder: 'Provider public key or client ID',
-        publicHint: 'The provider identifier safe to reference in client-side setup.',
-        secretLabel: 'Secret key',
-        secretPlaceholder: 'Provider secret key',
-        secretHint: 'Stored securely and used only by the backend.',
+        publicLabel: i18n.t('generated.common.publicKey'),
+        publicPlaceholder: i18n.t('generated.common.providerPublicKeyPlaceholder'),
+        publicHint: i18n.t('generated.common.providerPublicKeyHint'),
+        secretLabel: i18n.t('generated.common.secretKey'),
+        secretPlaceholder: i18n.t('generated.common.providerSecretKey'),
+        secretHint: i18n.t('generated.common.providerSecretHint'),
     },
 };
 
@@ -210,7 +209,7 @@ function ProviderStatusSelect({ value, onChange, disabled }) {
                                 <div>
                                     <p className={`text-sm font-semibold ${value === status ? 'text-indigo-700' : 'text-slate-800'}`}>
                                         {meta.label}
-                                        {value === status && <span className="ml-1.5 text-xs font-normal text-indigo-500">current</span>}
+                                        {value === status && <span className="ml-1.5 text-xs font-normal text-indigo-500">{i18n.t('generated.merchants_Edit.current')}</span>}
                                     </p>
                                     <p className="text-xs text-slate-500 mt-0.5 leading-snug">{meta.desc}</p>
                                 </div>
@@ -296,14 +295,14 @@ function ProviderRow({ credential }) {
                 <div className="flex flex-col items-end gap-1.5 min-w-[180px]">
                     <ProviderStatusSelect value={status} onChange={handleChange} disabled={saving} />
                     {credential.last_validated_at && (
-                        <span className="text-xs text-slate-400">Validated {credential.last_validated_at}</span>
+                        <span className="text-xs text-slate-400">{i18n.t('generated.merchants_Edit.validated')}{' '}{credential.last_validated_at}</span>
                     )}
                     <button
                         type="button"
                         onClick={() => setEditing((value) => !value)}
                         className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                     >
-                        {editing ? 'Close editor' : 'Edit credentials'}
+                        {editing ? i18n.t('generated.common.closeEditor') : i18n.t('generated.common.editCredentials')}
                     </button>
                 </div>
             </div>
@@ -325,7 +324,7 @@ function ProviderRow({ credential }) {
                 <div>
                     <p className="text-xs font-medium text-slate-500 mb-1">{fieldHelp.secretLabel}</p>
                     <code className="text-xs text-slate-700 bg-white border border-slate-200 rounded-lg px-2 py-1 block">
-                        {credential.has_secret ? '••••••••••••' : 'Not stored'}
+                        {credential.has_secret ? '••••••••••••' : i18n.t('generated.common.notStored')}
                     </code>
                 </div>
             </div>
@@ -333,7 +332,7 @@ function ProviderRow({ credential }) {
             {editing && (
                 <form onSubmit={submit} className="mt-4 rounded-xl border border-indigo-100 bg-white p-4">
                     <div className="grid gap-4 md:grid-cols-2">
-                        <Field label="Display name" hint="Optional label shown only in PayFlow." error={form.errors.display_name}>
+                        <Field label={i18n.t('generated.merchants_Edit.displayName')} hint={i18n.t('generated.merchants_Edit.optionalLabelShownOnlyInPayflow')} error={form.errors.display_name}>
                             <TextInput
                                 value={form.data.display_name}
                                 onChange={(e) => form.setData('display_name', e.target.value)}
@@ -341,7 +340,7 @@ function ProviderRow({ credential }) {
                                 error={form.errors.display_name}
                             />
                         </Field>
-                        <Field label="Status" error={form.errors.status}>
+                        <Field label={i18n.t('generated.merchants_Edit.status')} error={form.errors.status}>
                             <ProviderStatusSelect
                                 value={form.data.status}
                                 onChange={(value) => {
@@ -377,15 +376,13 @@ function ProviderRow({ credential }) {
                             type="button"
                             onClick={() => setEditing(false)}
                             className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                        >
-                            Cancel
-                        </button>
+                        >{i18n.t('common.actions.cancel')}</button>
                         <button
                             type="submit"
                             disabled={form.processing}
                             className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
                         >
-                            {form.processing ? 'Saving...' : 'Save credentials'}
+                            {form.processing ? i18n.t('generated.common.saving') : i18n.t('generated.common.saveCredentials')}
                         </button>
                     </div>
                 </form>
@@ -424,12 +421,12 @@ function AddProviderForm({ merchantId, availableProviders, onSuccess }) {
     return (
         <form onSubmit={submit} className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-5 shadow-sm space-y-4">
             <div>
-                <h4 className="text-sm font-semibold text-slate-900">Add payment provider credentials</h4>
-                <p className="mt-1 text-xs text-slate-500">Connect this merchant to a processor account for routing and checkout creation.</p>
+                <h4 className="text-sm font-semibold text-slate-900">{i18n.t('generated.merchants_Edit.addPaymentProviderCredentials')}</h4>
+                <p className="mt-1 text-xs text-slate-500">{i18n.t('generated.merchants_Edit.connectThisMerchantToAProcessorAccountFor')}</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Provider" required error={form.errors.provider_id}>
+                <Field label={i18n.t('generated.merchants_Edit.provider')} required error={form.errors.provider_id}>
                     {selectedProvider && (
                         <div className="mb-2">
                             <ProviderBrand alias={selectedProvider.alias} label={selectedProvider.name} />
@@ -443,7 +440,7 @@ function AddProviderForm({ merchantId, availableProviders, onSuccess }) {
                         {availableProviders.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                 </Field>
-                <Field label="Environment" required>
+                <Field label={i18n.t('generated.merchants_Edit.environment')} required>
                     <div className="flex gap-2">
                         {['test', 'live'].map((env) => (
                             <button key={env} type="button" onClick={() => form.setData('environment', env)}
@@ -459,8 +456,8 @@ function AddProviderForm({ merchantId, availableProviders, onSuccess }) {
                 </Field>
             </div>
 
-            <Field label="Display name" hint="Optional label for admins, such as Stripe sandbox or PayPal EU." error={form.errors.display_name}>
-                <TextInput placeholder={`${selectedProvider?.name ?? 'Provider'} sandbox`} value={form.data.display_name}
+            <Field label={i18n.t('generated.merchants_Edit.displayName')} hint={i18n.t('generated.merchants_Edit.optionalLabelForAdminsSuchAsStripeSandbox')} error={form.errors.display_name}>
+                <TextInput placeholder={i18n.t('generated.common.providerSandbox', { provider: selectedProvider?.name ?? i18n.t('generated.common.provider') })} value={form.data.display_name}
                     onChange={(e) => form.setData('display_name', e.target.value)} error={form.errors.display_name} />
             </Field>
 
@@ -478,7 +475,7 @@ function AddProviderForm({ merchantId, availableProviders, onSuccess }) {
             </div>
 
             {/* Status picker with descriptions */}
-            <Field label="Initial Status">
+            <Field label={i18n.t('generated.merchants_Edit.initialStatus')}>
                 <div className="space-y-2">
                     {PROVIDER_STATUSES.map((s) => {
                         const meta = PROVIDER_STATUS_META[s];
@@ -507,12 +504,10 @@ function AddProviderForm({ merchantId, availableProviders, onSuccess }) {
 
             <div className="flex justify-end gap-3 pt-1">
                 <button type="button" onClick={onSuccess}
-                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                    Cancel
-                </button>
+                    className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">{i18n.t('common.actions.cancel')}</button>
                 <button type="submit" disabled={form.processing}
                     className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
-                    {form.processing ? 'Assigning…' : 'Assign Provider'}
+                    {form.processing ? i18n.t('generated.common.assigning') : i18n.t('generated.common.assignProvider')}
                 </button>
             </div>
         </form>
@@ -558,7 +553,7 @@ function ApiKeysSection({ merchant, generatedKey }) {
     };
 
     const revoke = (id) => {
-        if (!window.confirm('Revoke this API key? This cannot be undone.')) return;
+        if (!window.confirm(i18n.t('generated.merchants_Edit.revokeThisApiKeyThisCannotBeUndone'))) return;
         setRevokingId(id);
         router.post(route('admin.api-keys.revoke', id), {}, {
             preserveScroll: true,
@@ -572,17 +567,15 @@ function ApiKeysSection({ merchant, generatedKey }) {
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                 <div>
-                    <h2 className="text-base font-semibold text-slate-900">API Keys</h2>
+                    <h2 className="text-base font-semibold text-slate-900">{i18n.t('common.nav.apiKeys')}</h2>
                     <p className="mt-0.5 text-sm text-slate-500">
-                        {apiKeys.length === 0 ? 'No API keys yet.' : `${apiKeys.length} key${apiKeys.length > 1 ? 's' : ''} — use these to authenticate gateway requests.`}
+                        {apiKeys.length === 0 ? i18n.t('generated.common.noApiKeysYet') : i18n.t('generated.common.apiKeySummary', { count: apiKeys.length })}
                     </p>
                 </div>
                 {!showNewKeyForm && (
                     <button onClick={() => setShowNewKeyForm(true)}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition-colors">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-                        Generate Key
-                    </button>
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>{i18n.t('generated.merchants_Edit.generateKey')}</button>
                 )}
             </div>
 
@@ -593,10 +586,8 @@ function ApiKeysSection({ merchant, generatedKey }) {
                         <div className="flex items-start justify-between gap-3">
                             <div>
                                 <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800">
-                                    <CheckCircle2 size={14} strokeWidth={2} />
-                                    API key generated — copy it now
-                                </p>
-                                <p className="mt-0.5 text-xs text-emerald-600">This key will not be shown again after you leave this page.</p>
+                                    <CheckCircle2 size={14} strokeWidth={2} />{i18n.t('generated.merchants_Edit.apiKeyGeneratedCopyItNow')}</p>
+                                <p className="mt-0.5 text-xs text-emerald-600">{i18n.t('generated.merchants_Edit.thisKeyWillNotBeShownAgainAfter')}</p>
                             </div>
                             <button onClick={() => setGeneratedKeyDismissed(true)}
                                 className="text-emerald-400 hover:text-emerald-600 text-lg leading-none">×</button>
@@ -605,7 +596,7 @@ function ApiKeysSection({ merchant, generatedKey }) {
                             <code className="flex-1 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-mono text-slate-800 break-all">
                                 {generatedKey}
                             </code>
-                            <CopyButton value={generatedKey} label="Copy key" />
+                            <CopyButton value={generatedKey} label={i18n.t('generated.merchants_Edit.copyKey')} />
                         </div>
                     </div>
                 )}
@@ -613,12 +604,12 @@ function ApiKeysSection({ merchant, generatedKey }) {
                 {/* New key form */}
                 {showNewKeyForm && (
                     <form onSubmit={submit} className="rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 p-4 space-y-3">
-                        <h4 className="text-sm font-semibold text-slate-800">Generate a new API key</h4>
-                        <Field label="Key Name">
-                            <TextInput placeholder="e.g. Production gateway key"
+                        <h4 className="text-sm font-semibold text-slate-800">{i18n.t('generated.merchants_Edit.generateANewApiKey')}</h4>
+                        <Field label={i18n.t('generated.merchants_Edit.keyName')}>
+                            <TextInput placeholder={i18n.t('generated.merchants_Edit.eGProductionGatewayKey')}
                                 value={form.data.name} onChange={e => form.setData('name', e.target.value)} />
                         </Field>
-                        <Field label="Environment">
+                        <Field label={i18n.t('generated.merchants_Edit.environment')}>
                             <div className="flex gap-2">
                                 {['test', 'live'].map(env => (
                                     <button key={env} type="button" onClick={() => form.setData('environment', env)}
@@ -634,12 +625,10 @@ function ApiKeysSection({ merchant, generatedKey }) {
                         </Field>
                         <div className="flex justify-end gap-2">
                             <button type="button" onClick={() => setShowNewKeyForm(false)}
-                                className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
-                                Cancel
-                            </button>
+                                className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">{i18n.t('common.actions.cancel')}</button>
                             <button type="submit" disabled={form.processing}
                                 className="rounded-xl bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
-                                {form.processing ? 'Generating…' : 'Generate'}
+                                {form.processing ? i18n.t('generated.common.generating') : i18n.t('generated.common.generate')}
                             </button>
                         </div>
                     </form>
@@ -649,8 +638,8 @@ function ApiKeysSection({ merchant, generatedKey }) {
                 {apiKeys.length === 0 && !showNewKeyForm ? (
                     <div className="rounded-xl border-2 border-dashed border-slate-200 p-8 text-center">
                         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400"><Key size={22} strokeWidth={1.75} /></div>
-                        <p className="text-sm font-medium text-slate-700">No API keys yet</p>
-                        <p className="mt-1 text-xs text-slate-400">Generate a key so this merchant can authenticate gateway requests.</p>
+                        <p className="text-sm font-medium text-slate-700">{i18n.t('generated.merchants_Edit.noApiKeysYet')}</p>
+                        <p className="mt-1 text-xs text-slate-400">{i18n.t('generated.merchants_Edit.generateAKeySoThisMerchantCanAuthenticate')}</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -669,11 +658,11 @@ function ApiKeysSection({ merchant, generatedKey }) {
                                                 key.status === 'active' ? 'border-green-200 bg-green-50 text-green-700' :
                                                 'border-slate-200 bg-slate-100 text-slate-600'
                                             }`}>
-                                                {key.revoked_at ? 'Revoked' : key.status}
+                                                {key.revoked_at ? i18n.t('generated.common.revoked') : key.status}
                                             </span>
                                         </div>
                                         {key.last_rotated_at && (
-                                            <p className="mt-1 text-xs text-slate-400">Last rotated: {fmtDate(key.last_rotated_at)}</p>
+                                            <p className="mt-1 text-xs text-slate-400">{i18n.t('generated.merchants_Edit.lastRotated')}{' '}{fmtDate(key.last_rotated_at)}</p>
                                         )}
                                     </div>
 
@@ -682,11 +671,11 @@ function ApiKeysSection({ merchant, generatedKey }) {
                                         <div className="flex items-center gap-2 shrink-0">
                                             <button onClick={() => rotate(key.id)} disabled={rotatingId === key.id}
                                                 className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors">
-                                                {rotatingId === key.id ? 'Rotating…' : '↻ Rotate'}
+                                                {rotatingId === key.id ? i18n.t('generated.common.rotating') : i18n.t('generated.common.rotate')}
                                             </button>
                                             <button onClick={() => revoke(key.id)} disabled={revokingId === key.id}
                                                 className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50 transition-colors">
-                                                {revokingId === key.id ? 'Revoking…' : 'Revoke'}
+                                                {revokingId === key.id ? i18n.t('generated.common.revoking') : i18n.t('generated.common.revoke')}
                                             </button>
                                         </div>
                                     )}
@@ -695,12 +684,12 @@ function ApiKeysSection({ merchant, generatedKey }) {
                                 {/* Key prefix + copy */}
                                 <div className="mt-3 flex items-center gap-2">
                                     <div className="flex-1">
-                                        <p className="text-xs font-medium text-slate-500 mb-1">Key prefix (first 14 characters)</p>
+                                        <p className="text-xs font-medium text-slate-500 mb-1">{i18n.t('generated.merchants_Edit.keyPrefixFirst14Characters')}</p>
                                         <div className="flex items-center gap-2">
                                             <code className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-mono text-slate-700">
                                                 {key.key_prefix}••••••••••••••••••••
                                             </code>
-                                            <CopyButton value={key.key_prefix} label="Copy prefix" size="sm" />
+                                            <CopyButton value={key.key_prefix} label={i18n.t('generated.merchants_Edit.copyPrefix')} size="sm" />
                                         </div>
                                     </div>
                                 </div>
@@ -766,7 +755,7 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
             <Head title={`Edit — ${merchant.name}`} />
 
             <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
-                <Link href={route('admin.merchants.index')} className="hover:text-slate-700 transition-colors">Merchants</Link>
+                <Link href={route('admin.merchants.index')} className="hover:text-slate-700 transition-colors">{i18n.t('common.nav.merchants')}</Link>
                 <svg className="h-4 w-4 text-slate-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6"/></svg>
                 <span className="font-medium text-slate-900 truncate">{merchant.name}</span>
             </nav>
@@ -800,16 +789,16 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                                     {currentStatus.icon} {currentStatus.label}
                                 </span>
                             )}
-                            <span className="text-xs text-slate-400">Member since {fmtDate(merchant.created_at)}</span>
+                            <span className="text-xs text-slate-400">{i18n.t('generated.merchants_Edit.memberSince')}{' '}{fmtDate(merchant.created_at)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div className="mb-6 grid grid-cols-3 gap-3 sm:w-fit">
-                <StatChip label="Payments"      value={merchant.payments_count}      color="text-indigo-700" />
-                <StatChip label="API Keys"      value={merchant.api_keys_count}      color="text-slate-900" />
-                <StatChip label="Subscriptions" value={merchant.subscriptions_count} color="text-slate-900" />
+                <StatChip label={i18n.t('common.nav.payments')}      value={merchant.payments_count}      color="text-indigo-700" />
+                <StatChip label={i18n.t('common.nav.apiKeys')}      value={merchant.api_keys_count}      color="text-slate-900" />
+                <StatChip label={i18n.t('common.nav.subscriptions')} value={merchant.subscriptions_count} color="text-slate-900" />
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -818,59 +807,59 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
 
                     {/* Account information */}
                     <form onSubmit={saveInfo}>
-                        <FormSection title="Account & Company Information" description="Update the merchant contact, brand, legal details and business address."
+                        <FormSection title={i18n.t('generated.merchants_Edit.accountCompanyInformation')} description={i18n.t('generated.merchants_Edit.updateTheMerchantContactBrandLegalDetailsAnd')}
                             actions={<SaveButton processing={infoForm.processing} />}>
                             <div className="grid gap-5 sm:grid-cols-2">
-                                <Field label="Contact Name" error={infoForm.errors.name} required>
+                                <Field label={i18n.t('generated.merchants_Edit.contactName')} error={infoForm.errors.name} required>
                                     <TextInput type="text" value={infoForm.data.name}
                                         onChange={(e) => infoForm.setData('name', e.target.value)} error={infoForm.errors.name} />
                                 </Field>
-                                <Field label="Email Address" hint="Also updates the merchant's login." error={infoForm.errors.email} required>
+                                <Field label={i18n.t('generated.merchants_Edit.emailAddress')} hint={i18n.t('generated.merchants_Edit.alsoUpdatesTheMerchantsLogin')} error={infoForm.errors.email} required>
                                     <TextInput type="email" value={infoForm.data.email}
                                         onChange={(e) => infoForm.setData('email', e.target.value)} error={infoForm.errors.email} />
                                 </Field>
-                                <Field label="Trading Name" error={infoForm.errors.company_name}>
+                                <Field label={i18n.t('generated.merchants_Edit.tradingName')} error={infoForm.errors.company_name}>
                                     <TextInput type="text" value={infoForm.data.company_name}
                                         onChange={(e) => infoForm.setData('company_name', e.target.value)} error={infoForm.errors.company_name} />
                                 </Field>
-                                <Field label="Legal Company Name" error={infoForm.errors.legal_name}>
+                                <Field label={i18n.t('generated.merchants_Edit.legalCompanyName')} error={infoForm.errors.legal_name}>
                                     <TextInput type="text" value={infoForm.data.legal_name}
                                         onChange={(e) => infoForm.setData('legal_name', e.target.value)} error={infoForm.errors.legal_name} />
                                 </Field>
-                                <Field label="Website" error={infoForm.errors.website}>
+                                <Field label={i18n.t('generated.merchants_Edit.website')} error={infoForm.errors.website}>
                                     <TextInput type="url" placeholder="https://example.com" value={infoForm.data.website}
                                         onChange={(e) => infoForm.setData('website', e.target.value)} error={infoForm.errors.website} />
                                 </Field>
-                                <Field label="Phone" error={infoForm.errors.phone}>
+                                <Field label={i18n.t('generated.merchants_Edit.phone')} error={infoForm.errors.phone}>
                                     <TextInput type="tel" value={infoForm.data.phone}
                                         onChange={(e) => infoForm.setData('phone', e.target.value)} error={infoForm.errors.phone} />
                                 </Field>
-                                <Field label="Tax / VAT ID" error={infoForm.errors.tax_id}>
+                                <Field label={i18n.t('generated.merchants_Edit.taxVatId')} error={infoForm.errors.tax_id}>
                                     <TextInput type="text" value={infoForm.data.tax_id}
                                         onChange={(e) => infoForm.setData('tax_id', e.target.value)} error={infoForm.errors.tax_id} />
                                 </Field>
-                                <Field label="Country Code" hint="Two-letter ISO code." error={infoForm.errors.country}>
+                                <Field label={i18n.t('generated.merchants_Edit.countryCode')} hint={i18n.t('generated.merchants_Edit.twoLetterIsoCode')} error={infoForm.errors.country}>
                                     <TextInput type="text" maxLength={2} value={infoForm.data.country}
                                         onChange={(e) => infoForm.setData('country', e.target.value.toUpperCase())} error={infoForm.errors.country} />
                                 </Field>
-                                <Field label="Address Line 1" error={infoForm.errors.address_line1}>
+                                <Field label={i18n.t('generated.merchants_Edit.addressLine1')} error={infoForm.errors.address_line1}>
                                     <TextInput type="text" value={infoForm.data.address_line1}
                                         onChange={(e) => infoForm.setData('address_line1', e.target.value)} error={infoForm.errors.address_line1} />
                                 </Field>
-                                <Field label="Address Line 2" error={infoForm.errors.address_line2}>
+                                <Field label={i18n.t('generated.merchants_Edit.addressLine2')} error={infoForm.errors.address_line2}>
                                     <TextInput type="text" value={infoForm.data.address_line2}
                                         onChange={(e) => infoForm.setData('address_line2', e.target.value)} error={infoForm.errors.address_line2} />
                                 </Field>
-                                <Field label="City" error={infoForm.errors.city}>
+                                <Field label={i18n.t('generated.merchants_Edit.city')} error={infoForm.errors.city}>
                                     <TextInput type="text" value={infoForm.data.city}
                                         onChange={(e) => infoForm.setData('city', e.target.value)} error={infoForm.errors.city} />
                                 </Field>
-                                <Field label="Postal Code" error={infoForm.errors.postal_code}>
+                                <Field label={i18n.t('generated.merchants_Edit.postalCode')} error={infoForm.errors.postal_code}>
                                     <TextInput type="text" value={infoForm.data.postal_code}
                                         onChange={(e) => infoForm.setData('postal_code', e.target.value)} error={infoForm.errors.postal_code} />
                                 </Field>
                             </div>
-                            <Field label="Company Logo" hint="JPG, PNG or WebP, up to 2 MB." error={infoForm.errors.logo}>
+                            <Field label={i18n.t('generated.merchants_Edit.companyLogo')} hint={i18n.t('generated.merchants_Edit.jpgPngOrWebpUpTo2Mb')} error={infoForm.errors.logo}>
                                 <div className="flex flex-wrap items-center gap-3">
                                     <input type="file" accept="image/jpeg,image/png,image/webp"
                                         onChange={(e) => {
@@ -882,9 +871,7 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                                         <button type="button" onClick={() => {
                                             infoForm.setData('logo', null);
                                             infoForm.setData('remove_logo', true);
-                                        }} className="text-sm font-medium text-red-600 hover:text-red-700">
-                                            Remove logo
-                                        </button>
+                                        }} className="text-sm font-medium text-red-600 hover:text-red-700">{i18n.t('generated.merchants_Edit.removeLogo')}</button>
                                     )}
                                 </div>
                             </Field>
@@ -893,14 +880,12 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
 
                     {/* Account status */}
                     <form onSubmit={saveStatus}>
-                        <FormSection title="Account Status" description="Control whether this merchant can accept payments."
-                            actions={<SaveButton processing={statusForm.processing} label="Update Status" />}>
+                        <FormSection title={i18n.t('generated.merchants_Edit.accountStatus')} description={i18n.t('generated.merchants_Edit.controlWhetherThisMerchantCanAcceptPayments')}
+                            actions={<SaveButton processing={statusForm.processing} label={i18n.t('generated.merchants_Edit.updateStatus')} />}>
                             <StatusPicker value={statusForm.data.status} onChange={(v) => statusForm.setData('status', v)} />
                             {statusForm.data.status === 'suspended' && (
                                 <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                                    <AlertTriangle size={15} strokeWidth={2} className="mt-0.5 shrink-0" />
-                                    Suspending this merchant will immediately prevent all payment processing for their account.
-                                </div>
+                                    <AlertTriangle size={15} strokeWidth={2} className="mt-0.5 shrink-0" />{i18n.t('generated.merchants_Edit.suspendingThisMerchantWillImmediatelyPreventAllPayment')}</div>
                             )}
                         </FormSection>
                     </form>
@@ -909,19 +894,17 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                             <div>
-                                <h2 className="text-base font-semibold text-slate-900">Payment Providers</h2>
+                                <h2 className="text-base font-semibold text-slate-900">{i18n.t('generated.merchants_Edit.paymentProviders')}</h2>
                                 <p className="mt-0.5 text-sm text-slate-500">
                                     {merchant.provider_credentials.length === 0
-                                        ? 'No providers assigned yet.'
-                                        : `${merchant.provider_credentials.length} provider credential${merchant.provider_credentials.length > 1 ? 's' : ''} configured.`}
+                                        ? i18n.t('generated.common.noProvidersAssigned')
+                                        : i18n.t('generated.common.providersConfigured', { count: merchant.provider_credentials.length })}
                                 </p>
                             </div>
                             {!showAddProvider && (
                                 <button type="button" onClick={() => setShowAddProvider(true)}
                                     className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition-colors">
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-                                    Add Provider
-                                </button>
+                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>{i18n.t('generated.merchants_Edit.addProvider')}</button>
                             )}
                         </div>
                         <div className="px-6 py-5 space-y-4">
@@ -930,12 +913,11 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                                 : !showAddProvider && (
                                     <div className="rounded-xl border-2 border-dashed border-slate-200 p-8 text-center">
                                         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400"><CreditCard size={22} strokeWidth={1.75} /></div>
-                                        <p className="text-sm font-medium text-slate-700">No payment providers yet</p>
-                                        <p className="mt-1 text-xs text-slate-400">Assign a provider to allow this merchant to start routing payments.</p>
+                                        <p className="text-sm font-medium text-slate-700">{i18n.t('generated.merchants_Edit.noPaymentProvidersYet')}</p>
+                                        <p className="mt-1 text-xs text-slate-400">{i18n.t('generated.merchants_Edit.assignAProviderToAllowThisMerchantTo')}</p>
                                         <button type="button" onClick={() => setShowAddProvider(true)}
                                             className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors">
-                                            <Plus size={14} strokeWidth={2.5} /> Assign first provider
-                                        </button>
+                                            <Plus size={14} strokeWidth={2.5} />{i18n.t('generated.merchants_Edit.assignFirstProvider')}</button>
                                     </div>
                                 )}
                             {showAddProvider && (
@@ -953,11 +935,11 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                 {/* Sidebar */}
                 <div className="space-y-4">
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
-                        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Quick links</h3>
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">{i18n.t('generated.merchants_Edit.quickLinks')}</h3>
                         {[
-                            { label: 'View Payments',   href: route('admin.payments.index'), Icon: CreditCard },
-                            { label: 'Manage API Keys', href: route('admin.api-keys.index'), Icon: Key },
-                            { label: 'Payment Routing', href: route('admin.routing.index'),  Icon: GitBranch },
+                            { label: i18n.t('generated.merchants_Edit.viewPayments'),   href: route('admin.payments.index'), Icon: CreditCard },
+                            { label: i18n.t('generated.merchants_Edit.manageApiKeys'), href: route('admin.api-keys.index'), Icon: Key },
+                            { label: i18n.t('generated.merchants_Edit.paymentRouting'), href: route('admin.routing.index'),  Icon: GitBranch },
                         ].map(({ label, href, Icon }) => (
                             <Link key={href} href={href}
                                 className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:border-slate-200 transition-colors">
@@ -969,13 +951,13 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Account details</h3>
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">{i18n.t('generated.merchants_Edit.accountDetails')}</h3>
                         <dl className="space-y-3">
                             <div>
-                                <dt className="text-xs font-medium text-slate-500">Merchant ID</dt>
+                                <dt className="text-xs font-medium text-slate-500">{i18n.t('generated.merchants_Edit.merchantId')}</dt>
                                 <div className="mt-1 flex items-center gap-2">
                                     <dd className="flex-1 font-mono text-xs text-slate-600 break-all">{merchant.id}</dd>
-                                    <CopyButton value={merchant.id} size="sm" label="Copy" />
+                                    <CopyButton value={merchant.id} size="sm" label={i18n.t('common.actions.copy')} />
                                 </div>
                             </div>
                             <div>
@@ -987,9 +969,7 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
 
                     <Link href={route('admin.merchants.index')}
                         className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6"/></svg>
-                        Back to Merchants
-                    </Link>
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6"/></svg>{i18n.t('generated.merchants_Edit.backToMerchants')}</Link>
                 </div>
             </div>
         </AdminLayout>

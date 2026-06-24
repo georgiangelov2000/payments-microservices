@@ -5,6 +5,7 @@ import ProviderBrand from '@/Components/ProviderBrand';
 import { fmt, fmtCurrency, fmtDate } from '@/utils';
 import { Users, CreditCard, DollarSign, Key } from 'lucide-react';
 
+import i18n from '@/i18n';
 function getGreeting() {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -62,23 +63,20 @@ function StatCard({ label, value, accent }) {
 
 export default function Dashboard({ metrics, recentPayments }) {
     return (
-        <AdminLayout title="Dashboard">
-            <Head title="Dashboard" />
+        <AdminLayout title={i18n.t('common.nav.dashboard')}>
+            <Head title={i18n.t('common.nav.dashboard')} />
 
             {/* Greeting */}
             <div className="mb-6">
                 <h2 className="text-xl font-semibold text-slate-900">
-                    {getGreeting()} — Platform Overview
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                    Here's what's happening across your payment infrastructure.
-                </p>
+                    {getGreeting()}{i18n.t('generated.dashboard.platformOverview')}</h2>
+                <p className="mt-1 text-sm text-slate-500">{i18n.t('generated.dashboard.heresWhatsHappeningAcrossYourPaymentInfrastructure')}</p>
             </div>
 
             {/* Top KPI row — 4 large cards */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
-                    label="Total Merchants"
+                    label={i18n.t('generated.dashboard.totalMerchants')}
                     value={fmt(metrics.merchants)}
                     icon={<Users size={20} strokeWidth={1.75} className="text-indigo-600" />}
                     iconBg="bg-indigo-50"
@@ -86,7 +84,7 @@ export default function Dashboard({ metrics, recentPayments }) {
                     routeName="admin.merchants.index"
                 />
                 <KpiCard
-                    label="Total Payments"
+                    label={i18n.t('generated.dashboard.totalPayments')}
                     value={fmt(metrics.payments)}
                     icon={<CreditCard size={20} strokeWidth={1.75} className="text-blue-600" />}
                     iconBg="bg-blue-50"
@@ -94,7 +92,7 @@ export default function Dashboard({ metrics, recentPayments }) {
                     routeName="admin.payments.index"
                 />
                 <KpiCard
-                    label="Paid Volume"
+                    label={i18n.t('generated.dashboard.paidVolume')}
                     value={fmtCurrency(metrics.paymentVolume)}
                     prefix="$"
                     icon={<DollarSign size={20} strokeWidth={1.75} className="text-green-600" />}
@@ -103,7 +101,7 @@ export default function Dashboard({ metrics, recentPayments }) {
                     routeName="admin.payments.index"
                 />
                 <KpiCard
-                    label="Active API Keys"
+                    label={i18n.t('generated.dashboard.activeApiKeys')}
                     value={fmt(metrics.activeApiKeys)}
                     icon={<Key size={20} strokeWidth={1.75} className="text-violet-600" />}
                     iconBg="bg-violet-50"
@@ -114,26 +112,24 @@ export default function Dashboard({ metrics, recentPayments }) {
 
             {/* Secondary metrics — 8 smaller cards */}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Active Merchants"    value={fmt(metrics.activeMerchants)}    accent="green" />
-                <StatCard label="Pending Payments"    value={fmt(metrics.pendingPayments)}    accent="amber" />
-                <StatCard label="Finished Payments"   value={fmt(metrics.finishedPayments)}   accent="green" />
-                <StatCard label="Failed Payments"     value={fmt(metrics.failedPayments)}     accent="red"   />
-                <StatCard label="Routing Workflows"   value={fmt(metrics.routingWorkflows)}   accent="slate" />
-                <StatCard label="Published Workflows" value={fmt(metrics.publishedWorkflows)} accent="green" />
-                <StatCard label="Unhealthy Providers" value={fmt(metrics.unhealthyProviders)} accent="red"   />
-                <StatCard label="Routing Failovers"   value={fmt(metrics.routingFailovers)}   accent="amber" />
+                <StatCard label={i18n.t('generated.dashboard.activeMerchants')}    value={fmt(metrics.activeMerchants)}    accent="green" />
+                <StatCard label={i18n.t('generated.dashboard.pendingPayments')}    value={fmt(metrics.pendingPayments)}    accent="amber" />
+                <StatCard label={i18n.t('generated.dashboard.finishedPayments')}   value={fmt(metrics.finishedPayments)}   accent="green" />
+                <StatCard label={i18n.t('generated.dashboard.failedPayments')}     value={fmt(metrics.failedPayments)}     accent="red"   />
+                <StatCard label={i18n.t('generated.dashboard.routingWorkflows')}   value={fmt(metrics.routingWorkflows)}   accent="slate" />
+                <StatCard label={i18n.t('generated.dashboard.publishedWorkflows')} value={fmt(metrics.publishedWorkflows)} accent="green" />
+                <StatCard label={i18n.t('generated.dashboard.unhealthyProviders')} value={fmt(metrics.unhealthyProviders)} accent="red"   />
+                <StatCard label={i18n.t('generated.dashboard.routingFailovers')}   value={fmt(metrics.routingFailovers)}   accent="amber" />
             </div>
 
             {/* Recent transactions */}
             <section className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-                    <h2 className="text-xl font-semibold text-slate-900">Recent Transactions</h2>
+                    <h2 className="text-xl font-semibold text-slate-900">{i18n.t('generated.dashboard.recentTransactions')}</h2>
                     <Link
                         href={route('admin.payments.index')}
                         className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
-                    >
-                        View all →
-                    </Link>
+                    >{i18n.t('generated.dashboard.viewAll')}</Link>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -156,7 +152,7 @@ export default function Dashboard({ metrics, recentPayments }) {
                                     <td colSpan={6} className="px-6 py-14 text-center">
                                         <div className="flex flex-col items-center gap-2 text-slate-400">
                                             <CreditCard size={32} strokeWidth={1.25} />
-                                            <span className="text-sm font-medium">No transactions recorded yet</span>
+                                            <span className="text-sm font-medium">{i18n.t('generated.dashboard.noTransactionsRecordedYet')}</span>
                                         </div>
                                     </td>
                                 </tr>

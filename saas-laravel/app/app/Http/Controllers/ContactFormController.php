@@ -23,6 +23,6 @@ class ContactFormController extends Controller
         // Here you would typically handle the support request,
         // such as saving it to the database or sending an email.
 
-        return redirect()->route('support.index')->with('success', 'Your message has been sent successfully!');
+        return redirect()->route('support.index')->with('success', __('messages.contact.sent'));
     }
 }

@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import ProviderBrand from '@/Components/ProviderBrand';
 import { fmt, fmtDate, fmtLogMessage } from '@/utils';
+import i18n from '@/i18n';
 import {
     ArrowLeft, CreditCard, CheckCircle2, XCircle, Clock, Zap,
     AlertTriangle, RefreshCcw, SkipForward, Globe, Hash,
@@ -12,27 +13,27 @@ import {
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_META = {
-    finished:             { Icon: CheckCircle2, label: 'Finished',             color: 'text-green-700 bg-green-50 border-green-200' },
-    payment_finished:     { Icon: CheckCircle2, label: 'Finished',             color: 'text-green-700 bg-green-50 border-green-200' },
-    failed:               { Icon: XCircle,      label: 'Failed',               color: 'text-red-700 bg-red-50 border-red-200' },
-    payment_failed:       { Icon: XCircle,      label: 'Failed',               color: 'text-red-700 bg-red-50 border-red-200' },
-    pending:              { Icon: Clock,        label: 'Pending',              color: 'text-amber-700 bg-amber-50 border-amber-200' },
-    payment_pending:      { Icon: Clock,        label: 'Pending',              color: 'text-amber-700 bg-amber-50 border-amber-200' },
-    processing:           { Icon: Clock,        label: 'Processing',           color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
-    payment_processing:   { Icon: Clock,        label: 'Processing',           color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
-    cancelled:            { Icon: XCircle,      label: 'Cancelled',            color: 'text-slate-600 bg-slate-100 border-slate-200' },
-    payment_cancelled:    { Icon: XCircle,      label: 'Cancelled',            color: 'text-slate-600 bg-slate-100 border-slate-200' },
-    refunded:             { Icon: RefreshCcw,   label: 'Refunded',             color: 'text-blue-700 bg-blue-50 border-blue-200' },
-    partially_refunded:   { Icon: RefreshCcw,   label: 'Partially refunded',   color: 'text-blue-700 bg-blue-50 border-blue-200' },
-    disputed:             { Icon: AlertTriangle, label: 'Disputed',            color: 'text-amber-700 bg-amber-50 border-amber-200' },
-    expired:              { Icon: XCircle,      label: 'Expired',              color: 'text-slate-600 bg-slate-100 border-slate-200' },
+    finished:             { Icon: CheckCircle2, label: i18n.t('generated.common.finished'),             color: 'text-green-700 bg-green-50 border-green-200' },
+    payment_finished:     { Icon: CheckCircle2, label: i18n.t('generated.common.finished'),             color: 'text-green-700 bg-green-50 border-green-200' },
+    failed:               { Icon: XCircle,      label: i18n.t('generated.common.failed'),               color: 'text-red-700 bg-red-50 border-red-200' },
+    payment_failed:       { Icon: XCircle,      label: i18n.t('generated.common.failed'),               color: 'text-red-700 bg-red-50 border-red-200' },
+    pending:              { Icon: Clock,        label: i18n.t('generated.common.pending'),              color: 'text-amber-700 bg-amber-50 border-amber-200' },
+    payment_pending:      { Icon: Clock,        label: i18n.t('generated.common.pending'),              color: 'text-amber-700 bg-amber-50 border-amber-200' },
+    processing:           { Icon: Clock,        label: i18n.t('generated.common.processing'),           color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
+    payment_processing:   { Icon: Clock,        label: i18n.t('generated.common.processing'),           color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
+    cancelled:            { Icon: XCircle,      label: i18n.t('generated.common.cancelled'),            color: 'text-slate-600 bg-slate-100 border-slate-200' },
+    payment_cancelled:    { Icon: XCircle,      label: i18n.t('generated.common.cancelled'),            color: 'text-slate-600 bg-slate-100 border-slate-200' },
+    refunded:             { Icon: RefreshCcw,   label: i18n.t('generated.common.refunded'),             color: 'text-blue-700 bg-blue-50 border-blue-200' },
+    partially_refunded:   { Icon: RefreshCcw,   label: i18n.t('generated.common.partiallyRefunded'),   color: 'text-blue-700 bg-blue-50 border-blue-200' },
+    disputed:             { Icon: AlertTriangle, label: i18n.t('generated.common.disputed'),            color: 'text-amber-700 bg-amber-50 border-amber-200' },
+    expired:              { Icon: XCircle,      label: i18n.t('generated.common.expired'),              color: 'text-slate-600 bg-slate-100 border-slate-200' },
 };
 
 function StatusBadge({ status }) {
     const key = status?.toLowerCase().replace(/ /g, '_');
     const meta = STATUS_META[key] ?? {
         Icon: AlertTriangle,
-        label: status ? String(status).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : 'Unknown',
+        label: status ? String(status).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase()) : i18n.t('generated.common.unknown'),
         color: 'text-slate-600 bg-slate-100 border-slate-200',
     };
     const { Icon } = meta;
@@ -69,7 +70,7 @@ function providerLabel(alias) {
 
 function attemptStatusLabel(status) {
     if (status === 'succeeded') return 'Routed';
-    return status ? String(status).replace(/_/g, ' ') : 'Unknown';
+    return status ? String(status).replace(/_/g, ' ') : i18n.t('generated.common.unknown');
 }
 
 function attemptSummary(attempt) {
@@ -78,22 +79,22 @@ function attemptSummary(attempt) {
     const provider = providerLabel(attempt.provider_alias);
 
     if (attempt.status === 'succeeded') {
-        return `Checkout session created with ${provider}; awaiting payment confirmation.`;
+        return i18n.t('generated.common.checkoutCreatedAwaiting', { provider });
     }
 
     if (attempt.status === 'timeout') {
-        return `${provider} did not respond before the timeout.`;
+        return i18n.t('generated.common.providerTimeout', { provider });
     }
 
     if (attempt.status === 'skipped') {
-        return `${provider} was skipped by the routing rules.`;
+        return i18n.t('generated.common.providerSkipped', { provider });
     }
 
     if (attempt.error_code) {
         return `${provider} returned ${attempt.error_code}.`;
     }
 
-    return `${provider} attempt recorded.`;
+    return i18n.t('generated.common.providerAttemptRecorded', { provider });
 }
 
 // ─── Info row ─────────────────────────────────────────────────────────────────
@@ -157,9 +158,7 @@ function TimelineEvent({ event, isLast }) {
 
                 {event.payload && typeof event.payload === 'object' && Object.keys(event.payload).length > 0 && (
                     <details className="mt-2">
-                        <summary className="cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-800">
-                            View payload
-                        </summary>
+                        <summary className="cursor-pointer text-xs font-medium text-indigo-600 hover:text-indigo-800">{i18n.t('generated.payments_Show.viewPayload')}</summary>
                         <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-900 p-3 text-[11px] text-slate-100 max-h-48">
                             {JSON.stringify(event.payload, null, 2)}
                         </pre>
@@ -191,14 +190,13 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                     href={route('payments.index')}
                     className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
                 >
-                    <ArrowLeft size={15} strokeWidth={2} /> Back to payments
-                </Link>
+                    <ArrowLeft size={15} strokeWidth={2} />{i18n.t('generated.payments_Show.backToPayments')}</Link>
 
                 {/* ── Header card ── */}
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Order</p>
+                            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">{i18n.t('generated.payments_Show.order')}</p>
                             <h1 className="mt-0.5 font-mono text-2xl font-bold text-slate-900">
                                 #{payment.order_id}
                             </h1>
@@ -243,11 +241,11 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                         {/* Provider attempt trail */}
                         <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
                             <div className="border-b border-slate-100 px-5 py-4">
-                                <h2 className="text-base font-semibold text-slate-900">Provider Attempt Trail</h2>
+                                <h2 className="text-base font-semibold text-slate-900">{i18n.t('generated.payments_Show.providerAttemptTrail')}</h2>
                                 <p className="mt-0.5 text-xs text-slate-400">
                                     {routing_attempts.length === 0
-                                        ? 'No provider attempts recorded'
-                                        : `${routing_attempts.length} attempt${routing_attempts.length > 1 ? 's' : ''} — strategy: ${payment.routing_strategy ?? '—'}`
+                                        ? i18n.t('generated.common.noProviderAttemptsRecorded')
+                                        : i18n.t('generated.common.attemptSummary', { count: routing_attempts.length, strategy: payment.routing_strategy ?? '—' })
                                     }
                                 </p>
                             </div>
@@ -255,7 +253,7 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                             {routing_attempts.length === 0 ? (
                                 <div className="px-5 py-10 text-center">
                                     <CreditCard size={28} strokeWidth={1.25} className="mx-auto mb-2 text-slate-300" />
-                                    <p className="text-sm text-slate-400">No routing attempts recorded yet.</p>
+                                    <p className="text-sm text-slate-400">{i18n.t('generated.payments_Show.noRoutingAttemptsRecordedYet')}</p>
                                 </div>
                             ) : (
                                 <div className="divide-y divide-slate-100">
@@ -313,7 +311,7 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                                             {i < routing_attempts.length - 1 && attempt.status !== 'succeeded' && (
                                                 <div className="mt-2 flex items-center gap-2 px-3">
                                                     <div className="flex-1 border-t border-dashed border-slate-300" />
-                                                    <span className="text-[10px] font-medium text-slate-400">failover</span>
+                                                    <span className="text-[10px] font-medium text-slate-400">{i18n.t('generated.payments_Show.failover')}</span>
                                                     <RefreshCcw size={11} strokeWidth={2} className="text-slate-400" />
                                                     <div className="flex-1 border-t border-dashed border-slate-300" />
                                                 </div>
@@ -326,9 +324,9 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
 
                         {/* Event log timeline */}
                         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <h2 className="mb-5 text-base font-semibold text-slate-900">Event Timeline</h2>
+                            <h2 className="mb-5 text-base font-semibold text-slate-900">{i18n.t('generated.payments_Show.eventTimeline')}</h2>
                             {timeline.length === 0 ? (
-                                <p className="text-center text-sm text-slate-400 py-6">No events logged.</p>
+                                <p className="text-center text-sm text-slate-400 py-6">{i18n.t('generated.payments_Show.noEventsLogged')}</p>
                             ) : (
                                 <div>
                                     {timeline.map((event, i) => (
@@ -344,31 +342,29 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
 
                         {/* Payment details */}
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <h3 className="mb-3 text-sm font-semibold text-slate-700">Payment Details</h3>
-                            <InfoRow label="Payment ID"      value={payment.id}              mono />
-                            <InfoRow label="Order ID"        value={payment.order_id}         />
+                            <h3 className="mb-3 text-sm font-semibold text-slate-700">{i18n.t('generated.payments_Show.paymentDetails')}</h3>
+                            <InfoRow label={i18n.t('generated.payments_Show.paymentId')}      value={payment.id}              mono />
+                            <InfoRow label={i18n.t('generated.payments_Show.orderId')}        value={payment.order_id}         />
                             <InfoRow
-                                label="Provider"
+                                label={i18n.t('generated.payments_Show.provider')}
                                 value={<ProviderValue alias={payment.provider} label={payment.provider_name ?? payment.provider} />}
                             />
-                            <InfoRow label="Reference"       value={payment.provider_reference} mono />
-                            <InfoRow label="Idempotency Key" value={payment.idempotency_key}  mono />
+                            <InfoRow label={i18n.t('generated.payments_Show.reference')}       value={payment.provider_reference} mono />
+                            <InfoRow label={i18n.t('generated.payments_Show.idempotencyKey')} value={payment.idempotency_key}  mono />
                             <InfoRow label="Created"         value={fmtDate(payment.created_at)} />
-                            <InfoRow label="Updated"         value={fmtDate(payment.updated_at)} />
+                            <InfoRow label={i18n.t('generated.payments_Show.updated')}         value={fmtDate(payment.updated_at)} />
                         </div>
 
                         {/* Routing decision */}
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <h3 className="mb-3 text-sm font-semibold text-slate-700">Routing Decision</h3>
-                            <InfoRow label="Strategy"     value={payment.routing_strategy} />
+                            <h3 className="mb-3 text-sm font-semibold text-slate-700">{i18n.t('generated.payments_Show.routingDecision')}</h3>
+                            <InfoRow label={i18n.t('generated.payments_Show.strategy')}     value={payment.routing_strategy} />
                             {matchedRule && (
-                                <InfoRow label="Matched Rule" value={matchedRule} mono />
+                                <InfoRow label={i18n.t('generated.payments_Show.matchedRule')} value={matchedRule} mono />
                             )}
                             {candidates.length > 0 && (
                                 <div className="py-2.5 border-b border-slate-100">
-                                    <span className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                                        Candidate Order
-                                    </span>
+                                    <span className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">{i18n.t('generated.payments_Show.candidateOrder')}</span>
                                     <div className="flex flex-wrap gap-1.5">
                                         {candidates.map((alias, i) => (
                                             <span key={alias} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-700">
@@ -383,9 +379,7 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                             )}
                             {snapshot.weights && (
                                 <div className="py-2.5">
-                                    <span className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                                        Weight Distribution
-                                    </span>
+                                    <span className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">{i18n.t('generated.payments_Show.weightDistribution')}</span>
                                     {Object.entries(snapshot.weights).map(([alias, w]) => (
                                         <div key={alias} className="flex items-center gap-2 mb-1">
                                             <ProviderBrand alias={alias} label={alias} variant="compact" className="w-24" />
@@ -402,7 +396,7 @@ export default function PaymentShow({ payment, timeline, routing_attempts }) {
                         {/* Provider checkout link */}
                         {payment.provider_checkout_url && (
                             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                                <h3 className="mb-3 text-sm font-semibold text-slate-700">Checkout URL</h3>
+                                <h3 className="mb-3 text-sm font-semibold text-slate-700">{i18n.t('generated.payments_Show.checkoutUrl')}</h3>
                                 <a
                                     href={payment.provider_checkout_url}
                                     target="_blank"

@@ -6,6 +6,7 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
+import i18n from '@/i18n';
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
@@ -23,17 +24,13 @@ export default function Login({ status, canResetPassword }) {
 
     return (
         <GuestLayout>
-            <Head title="Sign in" />
+            <Head title={i18n.t('generated.auth_Login.signIn')} />
 
             <div className="mx-auto max-w-md">
                 {/* Header */}
                 <div className="mb-8 text-center">
-                    <h1 className="text-3xl font-bold tracking-tight">
-                        Sign in to your account
-                    </h1>
-                    <p className="mt-2 text-sm text-gray-600">
-                        Manage payments, subscriptions, and billing.
-                    </p>
+                    <h1 className="text-3xl font-bold tracking-tight">{i18n.t('generated.auth_Login.signInToYourAccount')}</h1>
+                    <p className="mt-2 text-sm text-gray-600">{i18n.t('generated.auth_Login.managePaymentsSubscriptionsAndBilling')}</p>
                 </div>
 
                 {status && (
@@ -89,38 +86,29 @@ export default function Login({ status, canResetPassword }) {
                                     setData('remember', e.target.checked)
                                 }
                             />
-                            <span className="ms-2 text-sm text-gray-600">
-                                Remember me
-                            </span>
+                            <span className="ms-2 text-sm text-gray-600">{i18n.t('generated.auth_Login.rememberMe')}</span>
                         </label>
 
                         {canResetPassword && (
                             <Link
                                 href={route('password.request')}
                                 className="text-sm text-indigo-600 hover:text-indigo-700"
-                            >
-                                Forgot password?
-                            </Link>
+                            >{i18n.t('generated.auth_Login.forgotPassword')}</Link>
                         )}
                     </div>
 
                     <PrimaryButton
                         className="w-full justify-center py-3 text-base"
                         disabled={processing}
-                    >
-                        Sign in
-                    </PrimaryButton>
+                    >{i18n.t('generated.auth_Login.signIn')}</PrimaryButton>
                 </form>
 
                 {/* Footer */}
-                <p className="mt-6 text-center text-sm text-gray-600">
-                    Don’t have an account?{' '}
+                <p className="mt-6 text-center text-sm text-gray-600">{i18n.t('generated.auth_Login.dontHaveAnAccount')}{' '}
                     <Link
                         href={route('register')}
                         className="font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                        Create one
-                    </Link>
+                    >{i18n.t('generated.auth_Login.createOne')}</Link>
                 </p>
             </div>
         </GuestLayout>

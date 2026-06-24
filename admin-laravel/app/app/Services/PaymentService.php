@@ -78,12 +78,12 @@ final class PaymentService
                 'pending_count' => (int) $merchant->pending_count,
                 'failed_count' => (int) $merchant->failed_count,
                 'refunded_count' => (int) $merchant->refunded_count,
-                'latest_order_id' => $latest?->order_id ?? ($hasPayments ? '—' : 'No Payments'),
+                'latest_order_id' => $latest?->order_id ?? ($hasPayments ? '—' : __('messages.merchants.no_payments')),
                 'latest_amount' => $latest ? (float) $latest->price : 0,
                 'latest_currency' => $latest?->currency ?? ($hasPayments ? '—' : '—'),
                 'latest_provider' => $latest?->provider?->alias ?? ($hasPayments ? '—' : '—'),
-                'latest_status' => $latest?->status?->label() ?? ($hasPayments ? '—' : 'No Payments'),
-                'latest_payment_at' => $latest?->created_at?->toDateTimeString() ?? ($hasPayments ? '—' : 'No Payments'),
+                'latest_status' => $latest?->status?->label() ?? ($hasPayments ? '—' : __('messages.merchants.no_payments')),
+                'latest_payment_at' => $latest?->created_at?->toDateTimeString() ?? ($hasPayments ? '—' : __('messages.merchants.no_payments')),
             ];
         })->values()->all();
 

@@ -1,4 +1,7 @@
+import generated from './generated/bg';
+
 export default {
+    generated,
     common: {
         actions: {
             cancel: 'Отказ',

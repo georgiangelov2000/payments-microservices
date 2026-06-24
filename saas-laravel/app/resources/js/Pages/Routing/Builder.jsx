@@ -1,3 +1,5 @@
+
+import i18n from '@/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Head, Link, router } from '@inertiajs/react'
 import {
@@ -36,7 +38,7 @@ function StartNode({ data }) {
                     <Play size={14} fill="currentColor" />
                 </span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">Entry Point</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">{i18n.t('generated.routing_Builder.entryPoint')}</p>
                     <p className="text-sm font-bold leading-snug">{data.label || 'Payment Request'}</p>
                 </div>
             </div>
@@ -54,14 +56,14 @@ function ProviderNode({ data }) {
                 <div className="mb-2.5 flex items-center gap-2.5">
                     <ProviderIcon alias={data.provider_alias} label={data.label} size="md" className="ring-0" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Provider</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.provider')}</p>
                         <p className="text-sm font-bold leading-snug text-slate-800">{data.label || meta.label}</p>
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                     {data.enabled !== false
                         ? <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Active</span>
-                        : <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Disabled</span>}
+                        : <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{i18n.t('generated.routing_Builder.disabled')}</span>}
                     {Number(data.weight) > 0 && <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">{data.weight}%</span>}
                     {Number(data.priority) > 0 && <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">P{data.priority}</span>}
                 </div>
@@ -69,11 +71,11 @@ function ProviderNode({ data }) {
             <div className="flex border-t border-slate-100">
                 <div className="relative flex-1 py-1.5 text-center">
                     <Handle type="source" position={Position.Bottom} id="success" className="opacity-0" />
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">Success</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">{i18n.t('generated.routing_Builder.success')}</span>
                 </div>
                 <div className="relative flex-1 border-l border-slate-100 py-1.5 text-center">
                     <Handle type="source" position={Position.Bottom} id="failure" className="opacity-0" />
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">Failure</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">{i18n.t('generated.routing_Builder.failure')}</span>
                 </div>
             </div>
         </NodeShell>
@@ -88,7 +90,7 @@ function ConditionNode({ data }) {
                 <div className="mb-2 flex items-center gap-2">
                     <GitBranch size={18} className="shrink-0 text-amber-500" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Condition</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">{i18n.t('generated.routing_Builder.condition')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'IF / ELSE'}</p>
                     </div>
                 </div>
@@ -99,8 +101,8 @@ function ConditionNode({ data }) {
                 ))}
             </div>
             <div className="flex border-t border-amber-200">
-                <div className="relative flex-1 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="yes" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">Yes</span></div>
-                <div className="relative flex-1 border-l border-amber-200 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="no" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-red-500">No</span></div>
+                <div className="relative flex-1 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="yes" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">{i18n.t('generated.routing_Builder.yes')}</span></div>
+                <div className="relative flex-1 border-l border-amber-200 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="no" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-red-500">{i18n.t('generated.routing_Builder.no')}</span></div>
             </div>
         </NodeShell>
     )
@@ -114,7 +116,7 @@ function WeightedNode({ data }) {
                 <div className="mb-2.5 flex items-center gap-2">
                     <Scale size={16} className="shrink-0 text-purple-500" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-purple-600">Weighted Split</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-purple-600">{i18n.t('generated.routing_Builder.weightedSplit')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'Traffic Split'}</p>
                     </div>
                 </div>
@@ -140,7 +142,7 @@ function FailoverNode({ data }) {
                 <div className="mb-2.5 flex items-center gap-2">
                     <Zap size={16} className="shrink-0 text-orange-500" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">Failover Chain</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">{i18n.t('generated.routing_Builder.failoverChain')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'Auto Failover'}</p>
                     </div>
                 </div>
@@ -168,8 +170,8 @@ function TerminalNode({ data, type }) {
                     {ok ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
                 </span>
                 <div>
-                    <p className={`text-[10px] font-bold uppercase tracking-widest ${ok ? 'text-emerald-600' : 'text-red-600'}`}>Terminal</p>
-                    <p className="text-sm font-bold text-slate-800">{data.label || (ok ? 'Payment Success' : 'Payment Failed')}</p>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${ok ? 'text-emerald-600' : 'text-red-600'}`}>{i18n.t('generated.routing_Builder.terminal')}</p>
+                    <p className="text-sm font-bold text-slate-800">{data.label || (ok ? i18n.t('generated.common.paymentSuccess') : i18n.t('generated.common.paymentFailed'))}</p>
                 </div>
             </div>
         </NodeShell>
@@ -191,13 +193,13 @@ const FLOW_NODE_TYPES = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NODE_PALETTE = [
-    { type: 'start',     label: 'Start',     desc: 'Entry point',       cls: 'border-indigo-300 bg-indigo-50 text-indigo-700',   Icon: Play },
-    { type: 'provider',  label: 'Provider',  desc: 'Route to provider', cls: 'border-slate-300 bg-white text-slate-700',          Icon: null },
-    { type: 'condition', label: 'Condition', desc: 'IF / ELSE logic',   cls: 'border-amber-300 bg-amber-50 text-amber-700',       Icon: GitBranch },
-    { type: 'weighted',  label: 'Weighted',  desc: 'Traffic split',     cls: 'border-purple-300 bg-purple-50 text-purple-700',    Icon: Scale },
-    { type: 'failover',  label: 'Failover',  desc: 'Auto-failover',     cls: 'border-orange-300 bg-orange-50 text-orange-700',    Icon: Zap },
-    { type: 'success',   label: 'Success',   desc: 'Success terminal',  cls: 'border-emerald-300 bg-emerald-50 text-emerald-700', Icon: CheckCircle2 },
-    { type: 'failure',   label: 'Failure',   desc: 'Failure terminal',  cls: 'border-red-300 bg-red-50 text-red-700',             Icon: XCircle },
+    { type: 'start',     label: i18n.t('generated.routing_Builder.start'),     desc: i18n.t('generated.routing_Builder.entryPoint82805c'),       cls: 'border-indigo-300 bg-indigo-50 text-indigo-700',   Icon: Play },
+    { type: 'provider',  label: i18n.t('generated.routing_Builder.provider'),  desc: i18n.t('generated.routing_Builder.routeToProvider'), cls: 'border-slate-300 bg-white text-slate-700',          Icon: null },
+    { type: 'condition', label: i18n.t('generated.routing_Builder.condition'), desc: i18n.t('generated.routing_Builder.ifElseLogic'),   cls: 'border-amber-300 bg-amber-50 text-amber-700',       Icon: GitBranch },
+    { type: 'weighted',  label: i18n.t('generated.routing_Builder.weighted'),  desc: i18n.t('generated.routing_Builder.trafficSplit'),     cls: 'border-purple-300 bg-purple-50 text-purple-700',    Icon: Scale },
+    { type: 'failover',  label: i18n.t('generated.routing_Builder.failover'),  desc: i18n.t('generated.routing_Builder.autoFailover'),     cls: 'border-orange-300 bg-orange-50 text-orange-700',    Icon: Zap },
+    { type: 'success',   label: i18n.t('generated.routing_Builder.success'),   desc: i18n.t('generated.routing_Builder.successTerminal'),  cls: 'border-emerald-300 bg-emerald-50 text-emerald-700', Icon: CheckCircle2 },
+    { type: 'failure',   label: i18n.t('generated.routing_Builder.failure'),   desc: i18n.t('generated.routing_Builder.failureTerminal'),  cls: 'border-red-300 bg-red-50 text-red-700',             Icon: XCircle },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -288,7 +290,7 @@ function NodeInspector({ node }) {
         return (
             <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
                 <LayoutGrid size={28} strokeWidth={1} className="text-slate-300" />
-                <p className="text-sm text-slate-400">Select a node to view its details</p>
+                <p className="text-sm text-slate-400">{i18n.t('generated.routing_Builder.selectANodeToViewItsDetails')}</p>
             </div>
         )
     }
@@ -304,7 +306,7 @@ function NodeInspector({ node }) {
             </div>
 
             <div>
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Label</p>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.label')}</p>
                 <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{d.label || '—'}</p>
             </div>
 
@@ -312,7 +314,7 @@ function NodeInspector({ node }) {
                 <>
                     {d.provider_alias && (
                         <div>
-                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Provider</p>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.provider')}</p>
                             <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                                 <ProviderIcon alias={d.provider_alias} size="sm" className="ring-0 shadow-none" />
                                 <span className="text-sm text-slate-700">{capitalize(d.provider_alias)}</span>
@@ -321,20 +323,20 @@ function NodeInspector({ node }) {
                     )}
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority</p>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.priority')}</p>
                             <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{d.priority ?? '—'}</p>
                         </div>
                         <div>
-                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Weight</p>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.weight')}</p>
                             <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{d.weight ? `${d.weight}%` : '—'}</p>
                         </div>
                     </div>
                     <div>
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</p>
+                        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.status')}</p>
                         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                             {d.enabled !== false
                                 ? <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Active</span>
-                                : <span className="text-sm text-slate-500">Disabled</span>}
+                                : <span className="text-sm text-slate-500">{i18n.t('generated.routing_Builder.disabled')}</span>}
                         </div>
                     </div>
                 </>
@@ -342,7 +344,7 @@ function NodeInspector({ node }) {
 
             {node.type === 'condition' && d.conditions?.length > 0 && (
                 <div>
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Conditions</p>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.conditions')}</p>
                     <div className="space-y-1.5">
                         {d.conditions.map((c, i) => (
                             <div key={i} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-slate-600">
@@ -357,7 +359,7 @@ function NodeInspector({ node }) {
 
             {node.type === 'weighted' && d.distribution?.length > 0 && (
                 <div>
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Distribution</p>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.distribution')}</p>
                     <div className="space-y-2">
                         {d.distribution.map((item, i) => (
                             <div key={i} className="flex items-center gap-2">
@@ -375,7 +377,7 @@ function NodeInspector({ node }) {
 
             {node.type === 'failover' && d.chain?.length > 0 && (
                 <div>
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Failover chain</p>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.failoverChain9802dd')}</p>
                     <div className="flex flex-wrap items-center gap-2">
                         {d.chain.map((alias, i) => (
                             <div key={i} className="flex items-center gap-1.5">
@@ -391,9 +393,7 @@ function NodeInspector({ node }) {
             )}
 
             <div className="mt-auto rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 flex items-center gap-2 text-xs text-slate-400">
-                <Lock size={12} strokeWidth={2} />
-                Node properties are read-only. Contact your administrator to make changes.
-            </div>
+                <Lock size={12} strokeWidth={2} />{i18n.t('generated.routing_Builder.nodePropertiesAreReadOnlyContactYourAdministrator')}</div>
         </div>
     )
 }
@@ -419,9 +419,7 @@ function BuilderCanvas({ workflow, onNodeSelect, onPositionsChange }) {
 
     if (!initialNodes.length) {
         return (
-            <div className="flex h-full items-center justify-center text-sm text-slate-400">
-                No workflow canvas configured yet.
-            </div>
+            <div className="flex h-full items-center justify-center text-sm text-slate-400">{i18n.t('generated.routing_Builder.noWorkflowCanvasConfiguredYet')}</div>
         )
     }
 
@@ -464,7 +462,7 @@ export default function Builder({ workflow }) {
     const nodeCount  = workflow.nodes?.length ?? 0
     const edgeCount  = workflow.edges?.length ?? 0
     const isPublished = workflow.status === 'published'
-    const envLabel   = workflow.environment === 'live' ? 'Live' : 'Test'
+    const envLabel   = workflow.environment === 'live' ? i18n.t('generated.common.live') : i18n.t('generated.common.test')
     const hasSaved   = Object.keys(workflow.canvas_layout ?? {}).length > 0
 
     const handlePositionsChange = useCallback((positions) => {
@@ -515,9 +513,7 @@ export default function Builder({ workflow }) {
                             href={route('routing.index')}
                             className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
                         >
-                            <ArrowLeft size={15} strokeWidth={2} />
-                            Routing
-                        </Link>
+                            <ArrowLeft size={15} strokeWidth={2} />{i18n.t('common.nav.routing')}</Link>
                         <span className="text-slate-300">|</span>
                         <span className="truncate text-sm font-semibold text-slate-800">{workflow.name}</span>
 
@@ -541,18 +537,16 @@ export default function Builder({ workflow }) {
                     {/* Right */}
                     <div className="flex shrink-0 items-center gap-2">
                         <span className="hidden text-xs text-slate-400 sm:block mr-1">
-                            {nodeCount} node{nodeCount !== 1 ? 's' : ''} · {edgeCount} edge{edgeCount !== 1 ? 's' : ''}
+                            {i18n.t('generated.common.nodesAndEdges', { nodes: nodeCount, edges: edgeCount })}
                         </span>
 
                         {hasSaved && !isDirty && (
                             <button
                                 onClick={handleResetLayout}
                                 className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors"
-                                title="Reset to automatic layout"
+                                title={i18n.t('generated.routing_Builder.resetToAutomaticLayout')}
                             >
-                                <RotateCcw size={12} strokeWidth={2} />
-                                Reset layout
-                            </button>
+                                <RotateCcw size={12} strokeWidth={2} />{i18n.t('generated.routing_Builder.resetLayout')}</button>
                         )}
 
                         <button
@@ -570,16 +564,14 @@ export default function Builder({ workflow }) {
                             ].join(' ')}
                         >
                             <Save size={12} strokeWidth={2} />
-                            {saveState === 'saving' ? 'Saving…'
-                                : saveState === 'saved'  ? 'Layout saved'
-                                : saveState === 'error'  ? 'Save failed'
-                                : 'Save layout'}
+                            {saveState === 'saving' ? i18n.t('generated.common.saving')
+                                : saveState === 'saved'  ? i18n.t('generated.common.layoutSaved')
+                                : saveState === 'error'  ? i18n.t('generated.common.saveFailed')
+                                : i18n.t('generated.common.saveLayout')}
                         </button>
 
                         <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
-                            <Lock size={12} strokeWidth={2} />
-                            Read-only
-                        </div>
+                            <Lock size={12} strokeWidth={2} />{i18n.t('generated.routing_Builder.readOnly')}</div>
                     </div>
                 </div>
 
@@ -590,7 +582,7 @@ export default function Builder({ workflow }) {
                     <aside className="hidden w-48 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
                         <div className="flex-1 overflow-y-auto p-3 space-y-5">
                             <div>
-                                <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Node Types</p>
+                                <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.nodeTypes')}</p>
                                 <div className="space-y-1.5">
                                     {NODE_PALETTE.map(({ type, label, desc, cls, Icon }) => (
                                         <div key={type} className={`flex cursor-default items-center gap-2.5 rounded-lg border px-3 py-2.5 ${cls} opacity-75`}>
@@ -606,7 +598,7 @@ export default function Builder({ workflow }) {
 
                             {workflow.versions?.length > 0 && (
                                 <div>
-                                    <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Versions</p>
+                                    <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Builder.versions')}</p>
                                     <div className="space-y-1.5">
                                         {workflow.versions.map(v => (
                                             <div key={v.id} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
@@ -631,7 +623,7 @@ export default function Builder({ workflow }) {
                             <p className="text-[10px] leading-relaxed text-slate-400">
                                 {hasSaved
                                     ? '✓ Custom layout saved. Drag nodes to rearrange.'
-                                    : 'Drag nodes to rearrange, then click Save layout.'}
+                                    : i18n.t('generated.common.dragNodesSaveLayout')}
                             </p>
                         </div>
                     </aside>
@@ -651,7 +643,7 @@ export default function Builder({ workflow }) {
                     <aside className="hidden w-64 shrink-0 flex-col border-l border-slate-200 bg-white xl:flex">
                         <div className="border-b border-slate-100 px-4 py-3">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                                {selectedNode ? 'Node details' : 'Inspector'}
+                                {selectedNode ? i18n.t('generated.common.nodeDetails') : i18n.t('generated.common.inspector')}
                             </p>
                         </div>
                         <div className="flex-1 overflow-hidden">

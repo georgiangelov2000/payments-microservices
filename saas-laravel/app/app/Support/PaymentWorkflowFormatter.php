@@ -62,20 +62,20 @@ final class PaymentWorkflowFormatter
      */
     public static function summaryForPayment(Payment $payment, Collection $logs): array
     {
-        $provider = $payment->provider?->name ?? 'Provider';
+        $provider = $payment->provider?->name ?? __('messages.workflow.provider');
         $latestPayload = self::latestReadablePayload($logs);
         $hasCheckoutUrl = filled($payment->provider_checkout_url);
 
         $summary = match ($payment->status->label()) {
-            'finished'           => 'Payment approved',
+            'finished'           => __('messages.workflow.payment_approved'),
             'failed'             => self::failureSummary($latestPayload),
-            'cancelled'          => 'Customer cancelled checkout',
-            'refunded'           => 'Payment refunded',
-            'partially_refunded' => 'Payment partially refunded',
-            'disputed'           => 'Payment disputed',
-            'expired'            => 'Checkout session expired',
+            'cancelled'          => __('messages.workflow.customer_cancelled'),
+            'refunded'           => __('messages.workflow.payment_refunded'),
+            'partially_refunded' => __('messages.workflow.payment_partially_refunded'),
+            'disputed'           => __('messages.workflow.payment_disputed'),
+            'expired'            => __('messages.workflow.checkout_expired'),
             default              => $hasCheckoutUrl
-                ? "Redirect customer to {$provider}"
+                ? __('messages.workflow.redirect_customer', ['provider' => $provider])
                 : self::pendingSummary($latestPayload),
         };
 
@@ -154,17 +154,17 @@ final class PaymentWorkflowFormatter
         $message = preg_replace('/\s+/', ' ', $message);
 
         if ($message === '') {
-            return 'Provider response received without a readable summary';
+            return __('messages.workflow.empty_provider_response');
         }
 
         // Translate legacy raw Python log strings stored in the DB into plain English.
         $simpleTranslations = [
-            '/Provider return processed:\s*PAYMENT_CANCELLED/i'       => 'Customer cancelled the checkout session.',
-            '/Provider return processed:\s*PAYMENT_FINISHED/i'        => 'Payment captured successfully by the provider.',
-            '/Provider return processed:\s*PAYMENT_FAILED/i'          => 'Payment was declined by the provider.',
-            '/Provider return processed:\s*PAYMENT_\w+/i'             => 'Payment status updated by provider.',
-            '/Payment is pending and waiting for customer action\.?/i' => 'Customer redirect ready — awaiting payment at checkout.',
-            '/Payment created with (\w+) routing/i'                   => 'Payment initiated with $1 routing strategy.',
+            '/Provider return processed:\s*PAYMENT_CANCELLED/i'       => __('messages.workflow.provider_cancelled'),
+            '/Provider return processed:\s*PAYMENT_FINISHED/i'        => __('messages.workflow.provider_captured'),
+            '/Provider return processed:\s*PAYMENT_FAILED/i'          => __('messages.workflow.provider_declined'),
+            '/Provider return processed:\s*PAYMENT_\w+/i'             => __('messages.workflow.provider_updated'),
+            '/Payment is pending and waiting for customer action\.?/i' => __('messages.workflow.redirect_ready'),
+            '/Payment created with (\w+) routing/i'                   => __('messages.workflow.routing_initiated'),
         ];
 
         foreach ($simpleTranslations as $pattern => $replacement) {
@@ -177,7 +177,10 @@ final class PaymentWorkflowFormatter
         // Provider checkout — capitalize provider name via callback.
         $translated = preg_replace_callback(
             '/Provider checkout request sent to (\w+) \(attempt (\d+)\)/i',
-            fn ($m) => 'Checkout session created with ' . ucfirst(strtolower($m[1])) . ' (attempt ' . $m[2] . ').',
+            fn ($m) => __('messages.workflow.checkout_created', [
+                'provider' => ucfirst(strtolower($m[1])),
+                'attempt' => $m[2],
+            ]),
             $message
         );
         if ($translated !== $message) {
@@ -218,14 +221,14 @@ final class PaymentWorkflowFormatter
         $reason = self::payloadValue($payload, ['failure_message', 'decline_code', 'reason', 'message', 'error_description']);
 
         if ($reason === 'customer_cancelled') {
-            return 'Customer cancelled checkout';
+            return __('messages.workflow.customer_cancelled');
         }
 
         if (filled($reason)) {
             return ucfirst(str_replace('_', ' ', (string) $reason));
         }
 
-        return 'Payment failed';
+        return __('messages.workflow.payment_failed');
     }
 
     private static function pendingSummary(array|string|null $payload): string
@@ -233,24 +236,26 @@ final class PaymentWorkflowFormatter
         $message = self::payloadValue($payload, ['message']);
 
         if (filled($message)) {
-            return 'Waiting for provider update: '.ucfirst(str_replace('_', ' ', (string) $message));
+            return __('messages.workflow.waiting_provider_update', [
+                'message' => ucfirst(str_replace('_', ' ', (string) $message)),
+            ]);
         }
 
-        return 'Payment request sent successfully';
+        return __('messages.workflow.request_sent');
     }
 
     private static function nextStep(string $status, bool $hasCheckoutUrl, string $provider): string
     {
         return match ($status) {
-            'finished'                        => 'No action required',
-            'failed'                          => 'Review provider message and ask the customer to retry if needed',
-            'cancelled'                       => 'No action required — payment was cancelled',
-            'refunded', 'partially_refunded'  => 'Refund has been issued',
-            'disputed'                        => 'Review and respond to the dispute',
-            'expired'                         => 'Ask the customer to initiate a new payment',
+            'finished'                        => __('messages.workflow.no_action'),
+            'failed'                          => __('messages.workflow.review_retry'),
+            'cancelled'                       => __('messages.workflow.cancelled_no_action'),
+            'refunded', 'partially_refunded'  => __('messages.workflow.refund_issued'),
+            'disputed'                        => __('messages.workflow.review_dispute'),
+            'expired'                         => __('messages.workflow.start_new_payment'),
             default                           => $hasCheckoutUrl
-                ? "Customer must complete checkout on {$provider}"
-                : 'Wait for the next provider response',
+                ? __('messages.workflow.complete_checkout', ['provider' => $provider])
+                : __('messages.workflow.wait_provider'),
         };
     }
 
@@ -321,7 +326,7 @@ final class PaymentWorkflowFormatter
     private static function humanDuration(?int $seconds): string
     {
         if ($seconds === null) {
-            return 'Not available';
+            return __('messages.workflow.not_available');
         }
 
         if ($seconds < 1) {
@@ -346,15 +351,15 @@ final class PaymentWorkflowFormatter
     private static function stateLabel(string $status): string
     {
         return match ($status) {
-            'finished'           => 'Completed',
-            'failed'             => 'Failed',
-            'cancelled'          => 'Cancelled',
-            'processing'         => 'Processing',
-            'refunded'           => 'Refunded',
-            'partially_refunded' => 'Partially Refunded',
-            'disputed'           => 'Disputed',
-            'expired'            => 'Expired',
-            default              => 'Pending provider response',
+            'finished'           => __('messages.workflow.completed'),
+            'failed'             => __('messages.workflow.failed'),
+            'cancelled'          => __('messages.workflow.cancelled'),
+            'processing'         => __('messages.workflow.processing'),
+            'refunded'           => __('messages.workflow.refunded'),
+            'partially_refunded' => __('messages.workflow.partially_refunded'),
+            'disputed'           => __('messages.workflow.disputed'),
+            'expired'            => __('messages.workflow.expired'),
+            default              => __('messages.workflow.pending_provider'),
         };
     }
 }

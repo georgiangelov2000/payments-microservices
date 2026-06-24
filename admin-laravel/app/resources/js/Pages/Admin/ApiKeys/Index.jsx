@@ -454,7 +454,7 @@ export default function ApiKeysIndex({ apiKeys, merchants, generatedKey, filters
                             disabled={form.processing || !form.data.merchant_id}
                             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-colors"
                         >
-                            {form.processing ? `${t('common.actions.generate', { defaultValue: 'Generate' })}...` : t('apiKeys.modal.create')}
+                            {form.processing ? `${t('common.actions.generate')}...` : t('apiKeys.modal.create')}
                         </button>
                     </div>
                 </form>

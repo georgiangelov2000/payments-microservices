@@ -7,6 +7,7 @@
  */
 import { Link } from '@inertiajs/react';
 
+import i18n from '@/i18n';
 function IconChevronLeft() {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -44,8 +45,7 @@ export default function Pagination({ links = [], meta }) {
         <div className="mt-5 flex flex-col items-center justify-between gap-3 sm:flex-row">
             {/* Results summary */}
             {meta && meta.total != null ? (
-                <p className="text-sm text-slate-500">
-                    Showing{' '}
+                <p className="text-sm text-slate-500">{i18n.t('generated.components_Pagination.showing')}{' '}
                     <span className="font-medium text-slate-700">{meta.from ?? 1}</span>
                     {' – '}
                     <span className="font-medium text-slate-700">{meta.to ?? meta.total}</span>
@@ -58,14 +58,14 @@ export default function Pagination({ links = [], meta }) {
             )}
 
             {/* Page controls */}
-            <nav className="flex items-center gap-1" aria-label="Pagination">
+            <nav className="flex items-center gap-1" aria-label={i18n.t('generated.components_Pagination.pagination')}>
                 {/* Previous */}
                 {prevLink.url ? (
                     <Link
                         href={prevLink.url}
                         preserveScroll
                         className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
-                        aria-label="Previous page"
+                        aria-label={i18n.t('generated.components_Pagination.previousPage')}
                     >
                         <IconChevronLeft />
                     </Link>
@@ -128,7 +128,7 @@ export default function Pagination({ links = [], meta }) {
                         href={nextLink.url}
                         preserveScroll
                         className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
-                        aria-label="Next page"
+                        aria-label={i18n.t('generated.components_Pagination.nextPage')}
                     >
                         <IconChevronRight />
                     </Link>

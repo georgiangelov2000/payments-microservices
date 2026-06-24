@@ -7,6 +7,7 @@ import ProviderBrand from '@/Components/ProviderBrand';
 import { fmtDate, fmtLogMessage, timestampMillis } from '@/utils';
 import { ChevronDown, Clock3, ListTree, Search, X, SlidersHorizontal, ReceiptText } from 'lucide-react';
 
+import i18n from '@/i18n';
 function formatNumber(value, decimals = 2) {
     const number = Number(value);
 
@@ -14,16 +15,16 @@ function formatNumber(value, decimals = 2) {
 }
 
 const STATUS_OPTIONS = [
-    { value: '', label: 'All statuses' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'processing', label: 'Processing' },
-    { value: 'succeeded', label: 'Succeeded' },
-    { value: 'failed', label: 'Failed' },
-    { value: 'cancelled', label: 'Cancelled' },
-    { value: 'refunded', label: 'Refunded' },
-    { value: 'partially_refunded', label: 'Partially refunded' },
-    { value: 'disputed', label: 'Disputed' },
-    { value: 'expired', label: 'Expired' },
+    { value: '', label: i18n.t('generated.payments_Index.allStatuses') },
+    { value: 'pending', label: i18n.t('generated.common.pending') },
+    { value: 'processing', label: i18n.t('generated.common.processing') },
+    { value: 'succeeded', label: i18n.t('generated.common.succeeded') },
+    { value: 'failed', label: i18n.t('generated.common.failed') },
+    { value: 'cancelled', label: i18n.t('generated.common.cancelled') },
+    { value: 'refunded', label: i18n.t('generated.common.refunded') },
+    { value: 'partially_refunded', label: i18n.t('generated.common.partiallyRefunded') },
+    { value: 'disputed', label: i18n.t('generated.common.disputed') },
+    { value: 'expired', label: i18n.t('generated.common.expired') },
 ];
 const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -38,14 +39,14 @@ function isCheckoutExpired(status, createdAt) {
 function CheckoutExpiredBadge() {
     return (
         <span
-            title="Checkout session expired after 24 hours"
-            aria-label="Checkout link expired"
+            title={i18n.t('generated.payments_Index.checkoutSessionExpiredAfter24Hours')}
+            aria-label={i18n.t('generated.payments_Index.checkoutLinkExpired')}
             className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold leading-none text-amber-800 shadow-sm shadow-amber-950/[0.04]"
         >
             <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
                 <Clock3 size={11} strokeWidth={2.4} />
             </span>
-            <span className="whitespace-nowrap">Checkout link expired</span>
+            <span className="whitespace-nowrap">{i18n.t('generated.payments_Index.checkoutLinkExpired')}</span>
         </span>
     );
 }
@@ -111,24 +112,20 @@ export default function PaymentsIndex({ payments, filters = {} }) {
     const total  = meta.total  ?? data.length;
 
     return (
-        <AdminLayout title="Payments">
-            <Head title="Payments" />
+        <AdminLayout title={i18n.t('common.nav.payments')}>
+            <Head title={i18n.t('common.nav.payments')} />
 
             {/* Page heading */}
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-xl font-semibold text-slate-900">Payment Operations</h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                        Browse, search, and filter all payment transactions.
-                    </p>
+                    <h2 className="text-xl font-semibold text-slate-900">{i18n.t('generated.payments_Index.paymentOperations')}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{i18n.t('generated.payments_Index.browseSearchAndFilterAllPaymentTransactions')}</p>
                 </div>
                 <Link
                     href={route('admin.payments.merchants')}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                 >
-                    <ReceiptText size={15} strokeWidth={2} />
-                    Merchant payments
-                </Link>
+                    <ReceiptText size={15} strokeWidth={2} />{i18n.t('generated.payments_Index.merchantPayments')}</Link>
             </div>
 
             {/* Filter bar */}
@@ -139,23 +136,19 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                 <div className="flex flex-wrap items-end gap-3">
                     {/* Search */}
                     <div className="min-w-0 flex-1" style={{ minWidth: '200px' }}>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                            Search
-                        </label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">{i18n.t('generated.payments_Index.search')}</label>
                         <input
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Order ID or merchant…"
+                            placeholder={i18n.t('generated.payments_Index.orderIdOrMerchant')}
                             className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         />
                     </div>
 
                     {/* Status */}
                     <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                            Status
-                        </label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">{i18n.t('generated.payments_Index.status')}</label>
                         <select
                             value={status}
                             onChange={(e) => setStatus(e.target.value)}
@@ -171,9 +164,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
 
                     {/* Date from */}
                     <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                            From
-                        </label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">{i18n.t('generated.payments_Index.from')}</label>
                         <input
                             type="date"
                             value={dateFrom}
@@ -184,9 +175,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
 
                     {/* Date to */}
                     <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                            To
-                        </label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">{i18n.t('generated.payments_Index.to')}</label>
                         <input
                             type="date"
                             value={dateTo}
@@ -201,17 +190,13 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                             type="submit"
                             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 transition-colors"
                         >
-                            <SlidersHorizontal size={14} strokeWidth={2} />
-                            Apply Filters
-                        </button>
+                            <SlidersHorizontal size={14} strokeWidth={2} />{i18n.t('generated.payments_Index.applyFilters')}</button>
                         <button
                             type="button"
                             onClick={clearFilters}
                             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-1 transition-colors"
                         >
-                            <X size={14} strokeWidth={2} />
-                            Clear
-                        </button>
+                            <X size={14} strokeWidth={2} />{i18n.t('generated.payments_Index.clear')}</button>
                     </div>
                 </div>
             </form>
@@ -219,10 +204,10 @@ export default function PaymentsIndex({ payments, filters = {} }) {
             {/* Summary row */}
             <div className="mb-4 flex flex-wrap gap-3">
                 {[
-                    { label: 'Shown', value: counts.total, color: 'text-slate-700' },
-                    { label: 'Succeeded', value: counts.succeeded, color: 'text-green-600' },
-                    { label: 'Pending', value: counts.pending, color: 'text-amber-600' },
-                    { label: 'Failed', value: counts.failed, color: 'text-red-600' },
+                    { label: i18n.t('generated.payments_Index.shown'), value: counts.total, color: 'text-slate-700' },
+                    { label: i18n.t('generated.common.succeeded'), value: counts.succeeded, color: 'text-green-600' },
+                    { label: i18n.t('generated.common.pending'), value: counts.pending, color: 'text-amber-600' },
+                    { label: i18n.t('generated.common.failed'), value: counts.failed, color: 'text-red-600' },
                 ].map(({ label, value, color }) => (
                     <div key={label} className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
                         <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</span>
@@ -237,13 +222,13 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                             <tr>
-                                <th className="px-4 py-2 font-medium w-12">Logs</th>
-                                <th className="px-4 py-2 font-medium w-40">Order ID</th>
-                                <th className="px-4 py-2 font-medium w-48">Merchant</th>
-                                <th className="px-4 py-2 font-medium w-32">Provider</th>
-                                <th className="px-4 py-2 font-medium w-44">Amount</th>
-                                <th className="px-4 py-2 font-medium w-28">Status</th>
-                                <th className="px-4 py-2 font-medium w-40">Timing</th>
+                                <th className="px-4 py-2 font-medium w-12">{i18n.t('generated.payments_Index.logs')}</th>
+                                <th className="px-4 py-2 font-medium w-40">{i18n.t('generated.payments_Index.orderId')}</th>
+                                <th className="px-4 py-2 font-medium w-48">{i18n.t('generated.payments_Index.merchant')}</th>
+                                <th className="px-4 py-2 font-medium w-32">{i18n.t('generated.payments_Index.provider')}</th>
+                                <th className="px-4 py-2 font-medium w-44">{i18n.t('generated.payments_Index.amount')}</th>
+                                <th className="px-4 py-2 font-medium w-28">{i18n.t('generated.payments_Index.status')}</th>
+                                <th className="px-4 py-2 font-medium w-40">{i18n.t('generated.payments_Index.timing')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -252,14 +237,12 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                     <td colSpan={7} className="px-6 py-14 text-center">
                                         <div className="flex flex-col items-center gap-2 text-slate-400">
                                             <Search size={32} strokeWidth={1.25} />
-                                            <span className="text-sm font-medium">No payments match your filters</span>
+                                            <span className="text-sm font-medium">{i18n.t('generated.payments_Index.noPaymentsMatchYourFilters')}</span>
                                             <button
                                                 type="button"
                                                 onClick={clearFilters}
                                                 className="mt-1 text-xs text-indigo-600 hover:underline"
-                                            >
-                                                Clear filters
-                                            </button>
+                                            >{i18n.t('generated.payments_Index.clearFilters')}</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -279,7 +262,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                         onClick={() => toggleRow(payment.id)}
                                                         disabled={!hasDetails}
                                                         className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
-                                                        title={hasDetails ? 'Show payment logs' : 'No logs available'}
+                                                        title={hasDetails ? i18n.t('generated.common.showPaymentLogs') : i18n.t('generated.common.noLogsAvailable')}
                                                     >
                                                         <ChevronDown
                                                             size={16}
@@ -295,8 +278,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                     {hasDetails && (
                                                         <span className="mt-1 flex items-center gap-1 text-[11px] font-medium text-slate-400">
                                                             <ListTree size={11} strokeWidth={2} />
-                                                            {logs.length} logs · {attempts.length} attempts
-                                                        </span>
+                                                            {logs.length}{' '}{i18n.t('generated.payments_Index.logsd6bc0f')}{' '}{attempts.length}{i18n.t('generated.payments_Index.attempts')}</span>
                                                     )}
                                                 </td>
                                                 <td className="max-w-48 px-4 py-2">
@@ -354,11 +336,11 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]">
                                                             <div className="rounded-lg border border-slate-200 bg-white p-4">
                                                                 <div className="mb-3 flex items-center justify-between gap-3">
-                                                                    <h3 className="text-sm font-semibold text-slate-900">Payment timeline</h3>
-                                                                    <span className="text-xs font-medium text-slate-400">{logs.length} events</span>
+                                                                    <h3 className="text-sm font-semibold text-slate-900">{i18n.t('generated.payments_Index.paymentTimeline')}</h3>
+                                                                    <span className="text-xs font-medium text-slate-400">{logs.length}{' '}{i18n.t('generated.payments_Index.events')}</span>
                                                                 </div>
                                                                 {logs.length === 0 ? (
-                                                                    <p className="text-sm text-slate-500">No payment logs recorded yet.</p>
+                                                                    <p className="text-sm text-slate-500">{i18n.t('generated.payments_Index.noPaymentLogsRecordedYet')}</p>
                                                                 ) : (
                                                                     <ol className="space-y-3">
                                                                         {logs.map((log) => (
@@ -380,11 +362,11 @@ export default function PaymentsIndex({ payments, filters = {} }) {
 
                                                             <div className="rounded-lg border border-slate-200 bg-white p-4">
                                                                 <div className="mb-3 flex items-center justify-between gap-3">
-                                                                    <h3 className="text-sm font-semibold text-slate-900">Provider attempts</h3>
-                                                                    <span className="text-xs font-medium text-slate-400">{attempts.length} attempts</span>
+                                                                    <h3 className="text-sm font-semibold text-slate-900">{i18n.t('generated.payments_Index.providerAttempts')}</h3>
+                                                                    <span className="text-xs font-medium text-slate-400">{attempts.length}{' '}{i18n.t('generated.payments_Index.attempts')}</span>
                                                                 </div>
                                                                 {attempts.length === 0 ? (
-                                                                    <p className="text-sm text-slate-500">No provider attempts recorded yet.</p>
+                                                                    <p className="text-sm text-slate-500">{i18n.t('generated.payments_Index.noProviderAttemptsRecordedYet')}</p>
                                                                 ) : (
                                                                     <div className="space-y-3">
                                                                         {attempts.map((attempt) => (
@@ -401,7 +383,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                                                                                 {(attempt.error_code || attempt.error_message) && (
                                                                                     <div className="mt-2 rounded-md border border-red-100 bg-red-50 px-3 py-2">
                                                                                         {attempt.error_code && (
-                                                                                            <p className="text-xs font-semibold text-red-700">Error {attempt.error_code}</p>
+                                                                                            <p className="text-xs font-semibold text-red-700">{i18n.t('generated.payments_Index.error')}{' '}{attempt.error_code}</p>
                                                                                         )}
                                                                                         {attempt.error_message && (
                                                                                             <p className="mt-1 break-words text-xs leading-5 text-red-700">{attempt.error_message}</p>
@@ -434,9 +416,7 @@ export default function PaymentsIndex({ payments, filters = {} }) {
                 {/* Pagination footer */}
                 {data.length > 0 && (
                     <div className="flex items-center justify-between border-t border-slate-100 px-6 py-3">
-                        <p className="text-sm text-slate-500">
-                            Showing <span className="font-medium text-slate-700">{from}</span>–<span className="font-medium text-slate-700">{to}</span> of <span className="font-medium text-slate-700">{total}</span> payments
-                        </p>
+                        <p className="text-sm text-slate-500">{i18n.t('generated.payments_Index.showing')}<span className="font-medium text-slate-700">{from}</span>–<span className="font-medium text-slate-700">{to}</span>{' '}{i18n.t('generated.payments_Index.of')}{' '}<span className="font-medium text-slate-700">{total}</span>{i18n.t('generated.payments_Index.payments')}</p>
                         <Pagination links={payments.links || []} />
                     </div>
                 )}

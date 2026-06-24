@@ -65,12 +65,12 @@ final class PaymentController extends Controller
             'format' => $format,
             'status' => 'queued',
             'filters' => $payload,
-            'message' => 'Export queued. Horizon will process it shortly.',
+            'message' => __('messages.exports.queued_detail'),
         ]);
 
         MerchantPaymentsExportJob::dispatch($export->id);
 
-        return back()->with('success', strtoupper($format).' merchant payments export queued.');
+        return back()->with('success', __('messages.exports.queued', ['format' => strtoupper($format)]));
     }
 
     public function downloadMerchantExport(AdminExportFile $export): StreamedResponse

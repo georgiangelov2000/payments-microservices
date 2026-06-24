@@ -12,6 +12,7 @@ import { ProviderIcon } from '@/Components/ProviderBrand';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { fmtDate, timestampMillis } from '@/utils';
 
+import i18n from '@/i18n';
 // ─── Lightweight modal ────────────────────────────────────────────────────────
 
 function Modal({ show, title, size = 'md', onClose, children }) {
@@ -55,9 +56,9 @@ function StatusStrip({ summary, health }) {
                     {unhealthy > 0 ? <AlertTriangle size={22} strokeWidth={2} /> : <CheckCircle2 size={22} strokeWidth={2} />}
                 </div>
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">System Status</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.routing_Index.systemStatus')}</p>
                     <p className={`text-sm font-semibold mt-0.5 ${unhealthy > 0 ? 'text-red-700' : 'text-green-700'}`}>
-                        {unhealthy > 0 ? `${unhealthy} processor${unhealthy > 1 ? 's' : ''} need attention` : 'All processors running normally'}
+                        {unhealthy > 0 ? i18n.t('generated.common.processorsNeedAttention', { count: unhealthy }) : i18n.t('generated.common.allProcessorsRunningNormally')}
                     </p>
                 </div>
             </div>
@@ -68,9 +69,9 @@ function StatusStrip({ summary, health }) {
                     {published}
                 </div>
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Live Payment Routes</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.routing_Index.livePaymentRoutes')}</p>
                     <p className="text-sm font-semibold text-slate-800 mt-0.5">
-                        {published === 0 ? 'No routes are live yet' : `${published} route${published > 1 ? 's' : ''} actively routing payments`}
+                        {published === 0 ? i18n.t('generated.common.noRoutesLiveYet') : i18n.t('generated.common.routesActivelyRoutingPayments', { count: published })}
                     </p>
                 </div>
             </div>
@@ -81,9 +82,9 @@ function StatusStrip({ summary, health }) {
                     {failed}
                 </div>
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Failed Attempts</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.routing_Index.failedAttempts')}</p>
                     <p className={`text-sm font-semibold mt-0.5 ${failed > 0 ? 'text-amber-800' : 'text-slate-600'}`}>
-                        {failed === 0 ? 'No failed routing attempts' : `${failed} payment${failed > 1 ? 's' : ''} failed to route`}
+                        {failed === 0 ? i18n.t('generated.common.noFailedRoutingAttempts') : i18n.t('generated.common.paymentsFailedToRoute', { count: failed })}
                     </p>
                 </div>
             </div>
@@ -128,14 +129,14 @@ function ProviderFlow({ nodes, edges }) {
     const isVisualFlow = all.some(n => ['start', 'condition', 'weighted', 'failover', 'success', 'failure'].includes(n.type));
 
     if (all.length === 0) {
-        return <span className="text-xs text-slate-400 italic">No processors configured yet</span>;
+        return <span className="text-xs text-slate-400 italic">{i18n.t('generated.routing_Index.noProcessorsConfiguredYet')}</span>;
     }
 
     if (isVisualFlow) {
         // Show all non-trivial nodes in a compact pill row
         const display = all.filter(n => !['start', 'success', 'failure'].includes(n.type));
         if (display.length === 0) {
-            return <span className="text-xs text-slate-400 italic">Open the Visual Builder to configure this route</span>;
+            return <span className="text-xs text-slate-400 italic">{i18n.t('generated.routing_Index.openTheVisualBuilderToConfigureThisRoute')}</span>;
         }
         return (
             <div className="flex flex-wrap items-center gap-2">
@@ -158,7 +159,7 @@ function ProviderFlow({ nodes, edges }) {
                         </div>
                     );
                 })}
-                <span className="text-[10px] text-slate-400 italic ml-1">Visual workflow</span>
+                <span className="text-[10px] text-slate-400 italic ml-1">{i18n.t('generated.routing_Index.visualWorkflow')}</span>
             </div>
         );
     }
@@ -184,7 +185,7 @@ function ProviderFlow({ nodes, edges }) {
                         <div className="flex flex-col items-center">
                             <ArrowRight size={14} strokeWidth={2} className="text-slate-300" />
                             {edges?.some(e => e.source === sorted[i].id && e.target === sorted[i + 1].id) && (
-                                <span className="text-[10px] text-slate-400 -mt-0.5">fallback</span>
+                                <span className="text-[10px] text-slate-400 -mt-0.5">{i18n.t('generated.routing_Index.fallback')}</span>
                             )}
                         </div>
                     )}
@@ -212,14 +213,14 @@ function RouteCard({ workflow, onEdit }) {
                     <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-base font-semibold text-slate-900 truncate">{workflow.name}</h3>
                         {isLive  && <span className="inline-flex items-center gap-1 rounded-full bg-green-100 border border-green-200 px-2.5 py-0.5 text-xs font-semibold text-green-700"><span className="h-1.5 w-1.5 rounded-full bg-green-500" />Live</span>}
-                        {isDraft && <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">Draft — not live yet</span>}
+                        {isDraft && <span className="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">{i18n.t('generated.routing_Index.draftNotLiveYet')}</span>}
                     </div>
                     <p className="mt-0.5 text-sm text-slate-500">
                         {workflow.merchant?.name}
                         <span className="mx-1.5 text-slate-300">·</span>
                         {workflow.environment === 'live'
-                            ? <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700"><span className="h-1.5 w-1.5 rounded-full bg-violet-500" />Live payments</span>
-                            : <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600"><span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />Test mode</span>
+                            ? <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700"><span className="h-1.5 w-1.5 rounded-full bg-violet-500" />{i18n.t('generated.routing_Index.livePayments')}</span>
+                            : <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600"><span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />{i18n.t('generated.routing_Index.testMode')}</span>
                         }
                         <span className="mx-1.5 text-slate-300">·</span>
                         v{workflow.current_version}
@@ -230,22 +231,18 @@ function RouteCard({ workflow, onEdit }) {
                         href={route('admin.routing.workflows.builder', workflow.id)}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
                     >
-                        <LayoutGrid size={14} strokeWidth={2} />
-                        Visual Builder
-                    </Link>
+                        <LayoutGrid size={14} strokeWidth={2} />{i18n.t('generated.routing_Index.visualBuilder')}</Link>
                     <button
                         onClick={() => onEdit(workflow)}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors"
-                    >
-                        Edit
-                    </button>
+                    >{i18n.t('generated.routing_Index.edit')}</button>
                 </div>
             </div>
 
             {/* Validation errors */}
             {hasErrors && (
                 <div className="border-b border-red-100 bg-red-50 px-5 py-2.5">
-                    <p className="inline-flex items-center gap-1.5 text-xs font-medium text-red-700"><AlertTriangle size={13} strokeWidth={2} /> This route has issues that need to be fixed before going live:</p>
+                    <p className="inline-flex items-center gap-1.5 text-xs font-medium text-red-700"><AlertTriangle size={13} strokeWidth={2} />{' '}{i18n.t('generated.routing_Index.thisRouteHasIssuesThatNeedToBe')}</p>
                     <ul className="mt-1 list-inside list-disc space-y-0.5">
                         {workflow.validation_errors.map((e, i) => <li key={i} className="text-xs text-red-600">{e}</li>)}
                     </ul>
@@ -254,10 +251,10 @@ function RouteCard({ workflow, onEdit }) {
 
             {/* Provider flow */}
             <div className="px-5 py-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Payment flow</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">{i18n.t('generated.routing_Index.paymentFlow')}</p>
                 {typeBadge && (
                     <p className="mb-2 text-xs text-slate-500">
-                        <span className="font-medium text-slate-400">Routing type:</span>{' '}
+                        <span className="font-medium text-slate-400">{i18n.t('generated.routing_Index.routingType')}</span>{' '}
                         <span className={`inline-flex items-center gap-1 font-semibold ${typeBadge.cls.replace(/bg-\S+|border-\S+/g, '').trim()}`}>
                             <typeBadge.Icon size={11} strokeWidth={2.5} />
                             {typeBadge.label}
@@ -277,7 +274,7 @@ function RouteCard({ workflow, onEdit }) {
             {/* Version strip */}
             {workflow.versions?.length > 0 && (
                 <div className="border-t border-slate-100 px-5 py-2.5 flex items-center gap-2">
-                    <span className="text-xs text-slate-400">Version history:</span>
+                    <span className="text-xs text-slate-400">{i18n.t('generated.routing_Index.versionHistory')}</span>
                     {workflow.versions.slice(0, 4).map((v) => (
                         <span key={v.id} className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs border font-medium ${v.status === 'published' ? 'border-green-200 bg-green-50 text-green-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
                             v{v.version}
@@ -300,24 +297,24 @@ function routingTypeBadge(nodes) {
         if (providers.length === 0) return null;
         const hasWeights = providers.some(n => n.weight > 0);
         return hasWeights
-            ? { label: 'Weighted split', cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale }
-            : { label: 'Priority fallback', cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
+            ? { label: i18n.t('generated.routing_Index.weightedSplit'), cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale }
+            : { label: i18n.t('generated.routing_Index.priorityFallback'), cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
     }
 
     const hasCondition = has('condition');
     const hasWeighted  = has('weighted');
     const hasFailover  = has('failover');
 
-    if (hasCondition && hasWeighted) return { label: 'Conditional + weighted', cls: 'bg-amber-50 border-amber-200 text-amber-700', Icon: GitBranch };
-    if (hasCondition) return { label: 'Conditional routing', cls: 'bg-amber-50 border-amber-200 text-amber-700', Icon: GitBranch };
-    if (hasWeighted)  return { label: 'Weighted split', cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale };
-    if (hasFailover)  return { label: 'Failover routing', cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
+    if (hasCondition && hasWeighted) return { label: i18n.t('generated.routing_Index.conditionalWeighted'), cls: 'bg-amber-50 border-amber-200 text-amber-700', Icon: GitBranch };
+    if (hasCondition) return { label: i18n.t('generated.routing_Index.conditionalRouting'), cls: 'bg-amber-50 border-amber-200 text-amber-700', Icon: GitBranch };
+    if (hasWeighted)  return { label: i18n.t('generated.routing_Index.weightedSplit'), cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale };
+    if (hasFailover)  return { label: i18n.t('generated.routing_Index.failoverRouting'), cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
     // Visual builder with only provider nodes → priority fallback chain
     const providers = all.filter(n => n.type === 'provider');
     const hasWeightsInProviders = providers.some(n => n.weight > 0);
     return hasWeightsInProviders
-        ? { label: 'Weighted split', cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale }
-        : { label: 'Priority fallback', cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
+        ? { label: i18n.t('generated.routing_Index.weightedSplit'), cls: 'bg-purple-50 border-purple-200 text-purple-700', Icon: Scale }
+        : { label: i18n.t('generated.routing_Index.priorityFallback'), cls: 'bg-orange-50 border-orange-200 text-orange-700', Icon: RefreshCcw };
 }
 
 // Build a plain-English summary of the routing flow
@@ -335,8 +332,10 @@ function buildFlowSummary(nodes, edges) {
         if (hasCondition) parts.push('conditional rules');
         if (hasWeighted)  parts.push('weighted traffic splitting');
         if (hasFailover)  parts.push('automatic failover');
-        if (providers.length) parts.push(`processors: ${providers.join(', ')}`);
-        return parts.length ? `Visual workflow with ${parts.join(', ')}.` : 'Visual routing workflow.';
+        if (providers.length) parts.push(i18n.t('generated.common.processorsPart', { providers: providers.join(', ') }));
+        return parts.length
+            ? i18n.t('generated.common.visualWorkflow', { parts: parts.join(', ') })
+            : i18n.t('generated.common.visualRoutingWorkflow');
     }
 
     // Simple editor: provider nodes only
@@ -349,17 +348,20 @@ function buildFlowSummary(nodes, edges) {
     if (hasWeight) {
         const parts  = sorted.filter(n => n.weight > 0).map(n => `${n.weight}% to ${n.label}`).join(', ');
         const backup = sorted.find(n => n.weight === 0);
-        return `Payments are split: ${parts}.${backup ? ` If all fail, ${backup.label} is used as a last resort.` : ''}`;
+        return i18n.t('generated.common.splitDescription', {
+            parts,
+            backup: backup ? i18n.t('generated.common.splitBackup', { provider: backup.label }) : '',
+        });
     }
 
-    if (names.length === 1) return `All payments go to ${names[0]}.`;
+    if (names.length === 1) return i18n.t('generated.common.singleProviderDescription', { provider: names[0] });
 
     const hasFailover = edges?.some(e => e.condition === 'failed' || e.condition === 'timeout');
     if (hasFailover) {
         return `Payments go to ${names[0]} first. If ${names[0]} is unavailable, they automatically switch to ${names.slice(1).join(', then ')}.`;
     }
 
-    return `Payments attempt ${names.join(', then ')} in order.`;
+    return i18n.t('generated.common.orderedProvidersDescription', { providers: names.join(', ') });
 }
 
 // ─── Smart rules list (read-only display per route card) ─────────────────────
@@ -369,7 +371,7 @@ function SmartRulesList({ rules }) {
 
     return (
         <div className="mt-4 border-t border-slate-100 px-5 py-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Smart routing rules</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">{i18n.t('generated.routing_Index.smartRoutingRules')}</p>
             <div className="space-y-1.5">
                 {rules.map((rule) => (
                     <div key={rule.id} className="flex items-start gap-2">
@@ -387,15 +389,17 @@ function SmartRulesList({ rules }) {
 function humanizeRule(rule) {
     const cond = rule.conditions ?? {};
     const parts = [];
-    if (cond.currency)       parts.push(`currency is ${cond.currency.toUpperCase()}`);
-    if (cond.min_price)      parts.push(`price is over $${cond.min_price}`);
-    if (cond.max_price)      parts.push(`price is under $${cond.max_price}`);
-    if (cond.country)        parts.push(`country is ${cond.country.toUpperCase()}`);
-    if (cond.payment_method) parts.push(`method is ${cond.payment_method}`);
+    if (cond.currency)       parts.push(i18n.t('generated.common.currencyCondition', { value: cond.currency.toUpperCase() }));
+    if (cond.min_price)      parts.push(i18n.t('generated.common.minPriceCondition', { value: cond.min_price }));
+    if (cond.max_price)      parts.push(i18n.t('generated.common.maxPriceCondition', { value: cond.max_price }));
+    if (cond.country)        parts.push(i18n.t('generated.common.countryCondition', { value: cond.country.toUpperCase() }));
+    if (cond.payment_method) parts.push(i18n.t('generated.common.methodCondition', { value: cond.payment_method }));
     if (cond.recurring === true || cond.recurring === 'true') parts.push('payment is recurring');
 
     const provider = rule.provider_alias?.charAt(0).toUpperCase() + rule.provider_alias?.slice(1);
-    const condition = parts.length ? `when ${parts.join(' and ')}` : 'always';
+    const condition = parts.length
+        ? i18n.t('generated.common.conditionWhen', { conditions: parts.join(' and ') })
+        : i18n.t('generated.common.conditionAlways');
     return `Route to ${provider} ${condition} (priority ${rule.priority})`;
 }
 
@@ -585,8 +589,8 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
 
                     {/* Section 1 — How should payments flow? */}
                     <div className="border-b border-slate-100 px-6 py-5">
-                        <h3 className="text-sm font-semibold text-slate-900 mb-1">How should payments flow?</h3>
-                        <p className="text-xs text-slate-500 mb-4">Choose whether payments go to one processor at a time, or get split across multiple processors simultaneously.</p>
+                        <h3 className="text-sm font-semibold text-slate-900 mb-1">{i18n.t('generated.routing_Index.howShouldPaymentsFlow')}</h3>
+                        <p className="text-xs text-slate-500 mb-4">{i18n.t('generated.routing_Index.chooseWhetherPaymentsGoToOneProcessorAt')}</p>
 
                         {/* Mode toggle */}
                         <div className="mb-5 grid grid-cols-2 gap-3">
@@ -596,8 +600,8 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                                 className={`rounded-xl border p-4 text-left transition-colors ${mode === 'order' ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
                             >
                                 <ArrowRight size={18} strokeWidth={2.5} className="mb-1 text-indigo-500" />
-                                <p className="text-sm font-semibold text-slate-900">Try in order</p>
-                                <p className="text-xs text-slate-500 mt-0.5">Stripe first, PayPal as backup if Stripe fails</p>
+                                <p className="text-sm font-semibold text-slate-900">{i18n.t('generated.routing_Index.tryInOrder')}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{i18n.t('generated.routing_Index.stripeFirstPaypalAsBackupIfStripeFails')}</p>
                             </button>
                             <button
                                 type="button"
@@ -605,14 +609,14 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                                 className={`rounded-xl border p-4 text-left transition-colors ${mode === 'split' ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
                             >
                                 <Scale size={18} strokeWidth={2} className="mb-1 text-purple-500" />
-                                <p className="text-sm font-semibold text-slate-900">Split traffic</p>
-                                <p className="text-xs text-slate-500 mt-0.5">Send 70% to Stripe, 30% to PayPal at the same time</p>
+                                <p className="text-sm font-semibold text-slate-900">{i18n.t('generated.routing_Index.splitTraffic')}</p>
+                                <p className="text-xs text-slate-500 mt-0.5">{i18n.t('generated.routing_Index.send70ToStripe30ToPaypalAt')}</p>
                             </button>
                         </div>
 
                         {/* Add providers */}
                         <div className="mb-4">
-                            <p className="text-xs font-medium text-slate-600 mb-2">Add payment processors to this route:</p>
+                            <p className="text-xs font-medium text-slate-600 mb-2">{i18n.t('generated.routing_Index.addPaymentProcessorsToThisRoute')}</p>
                             <div className="flex flex-wrap gap-2">
                                 {providerOptions.map((p) => {
                                     const already = nodes.some((n) => n.provider_alias === p.alias);
@@ -642,8 +646,8 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                         {/* Processors list */}
                         {sortedNodes.length === 0 ? (
                             <div className="rounded-xl border-2 border-dashed border-slate-200 p-6 text-center">
-                                <p className="text-sm text-slate-400">No processors added yet.</p>
-                                <p className="text-xs text-slate-400 mt-1">Use the buttons above to add payment processors.</p>
+                                <p className="text-sm text-slate-400">{i18n.t('generated.routing_Index.noProcessorsAddedYet')}</p>
+                                <p className="text-xs text-slate-400 mt-1">{i18n.t('generated.routing_Index.useTheButtonsAboveToAddPaymentProcessors')}</p>
                             </div>
                         ) : mode === 'order' ? (
                             // Priority order list
@@ -669,7 +673,7 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
 
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-semibold text-slate-900">{node.label}</p>
-                                            <p className="text-xs text-slate-500">{i === 0 ? 'Primary processor' : `Backup #${i} — used if the ${sortedNodes[0].label} fails`}</p>
+                                            <p className="text-xs text-slate-500">{i === 0 ? i18n.t('generated.common.primaryProcessor') : i18n.t('generated.common.backupProcessor', { index: i, provider: sortedNodes[0].label })}</p>
                                         </div>
 
                                         {/* Enable toggle */}
@@ -678,7 +682,7 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                                             onClick={() => toggleEnabled(node.id)}
                                             className={`text-xs font-medium px-2 py-1 rounded-lg border transition-colors ${node.enabled ? 'border-green-200 bg-green-50 text-green-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}
                                         >
-                                            {node.enabled ? 'Active' : 'Paused'}
+                                            {node.enabled ? i18n.t('generated.common.active') : i18n.t('generated.common.paused')}
                                         </button>
 
                                         <button type="button" onClick={() => removeProvider(node.id)} className="text-slate-300 hover:text-red-500 transition-colors">
@@ -691,8 +695,8 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                                 {sortedNodes.length > 1 && (
                                     <div className="mt-3 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                                         <div>
-                                            <p className="text-sm font-medium text-slate-800">Automatic failover</p>
-                                            <p className="text-xs text-slate-500 mt-0.5">If a processor fails, automatically try the next one</p>
+                                            <p className="text-sm font-medium text-slate-800">{i18n.t('generated.routing_Index.automaticFailover')}</p>
+                                            <p className="text-xs text-slate-500 mt-0.5">{i18n.t('generated.routing_Index.ifAProcessorFailsAutomaticallyTryTheNext')}</p>
                                         </div>
                                         <button
                                             type="button"
@@ -710,8 +714,7 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                                 {/* Weight validation */}
                                 {totalWeight !== 100 && totalWeight > 0 && (
                                     <div className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                                        <AlertTriangle size={13} strokeWidth={2} />
-                                        Traffic split must total 100%. Currently: {totalWeight}%
+                                        <AlertTriangle size={13} strokeWidth={2} />{i18n.t('generated.routing_Index.trafficSplitMustTotal100Currently')}{totalWeight}%
                                     </div>
                                 )}
 
@@ -766,11 +769,11 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                             className="flex w-full items-center justify-between text-left"
                         >
                             <div>
-                                <p className="text-sm font-semibold text-slate-900">Smart routing rules</p>
+                                <p className="text-sm font-semibold text-slate-900">{i18n.t('generated.routing_Index.smartRoutingRules')}</p>
                                 <p className="text-xs text-slate-500 mt-0.5">
                                     {merchantRules?.length
-                                        ? `${merchantRules.length} rule${merchantRules.length > 1 ? 's' : ''} active — click to view`
-                                        : 'Optionally route specific payments differently'}
+                                        ? i18n.t('generated.common.rulesActive', { count: merchantRules.length })
+                                        : i18n.t('generated.common.optionalSmartRules')}
                                 </p>
                             </div>
                             <ChevronDown
@@ -790,14 +793,14 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                                                     <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${rule.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
                                                     <p className="text-sm text-slate-700">{humanizeRule(rule)}</p>
                                                 </div>
-                                                <span className="shrink-0 text-xs text-slate-400">Priority {rule.priority}</span>
+                                                <span className="shrink-0 text-xs text-slate-400">{i18n.t('generated.routing_Index.priority')}{' '}{rule.priority}</span>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
                                     <div className="rounded-xl border-2 border-dashed border-slate-200 p-5 text-center">
-                                        <p className="text-sm text-slate-500">No smart rules yet.</p>
-                                        <p className="text-xs text-slate-400 mt-1">Smart rules let you route specific payments differently — for example, high-value orders always going through Stripe, or recurring payments going through PayPal.</p>
+                                        <p className="text-sm text-slate-500">{i18n.t('generated.routing_Index.noSmartRulesYet')}</p>
+                                        <p className="text-xs text-slate-400 mt-1">{i18n.t('generated.routing_Index.smartRulesLetYouRouteSpecificPaymentsDifferently')}</p>
                                     </div>
                                 )}
                             </div>
@@ -827,7 +830,7 @@ function RouteEditorDrawer({ workflow, providers, merchants, merchantRules, onCl
                 {/* Drawer footer — always visible */}
                 <div className="shrink-0 border-t border-slate-200 bg-slate-50 px-6 py-4">
                     {totalWeight > 0 && totalWeight !== 100 && mode === 'split' && (
-                        <p className="mb-3 flex items-center gap-1.5 text-xs text-amber-700 font-medium"><AlertTriangle size={13} strokeWidth={2} /> Traffic split must total 100% before you can go live. Currently {totalWeight}%.</p>
+                        <p className="mb-3 flex items-center gap-1.5 text-xs text-amber-700 font-medium"><AlertTriangle size={13} strokeWidth={2} />{' '}{i18n.t('generated.routing_Index.trafficSplitMustTotal100BeforeYouCan')}{' '}{totalWeight}%.</p>
                     )}
                     <div className="flex items-center gap-3">
                         <button
@@ -944,7 +947,7 @@ function CreateRouteWizard({ merchants, onClose }) {
     };
 
     return (
-        <Modal show title={`New payment route — Step ${step} of 3`} size="md" onClose={onClose}>
+        <Modal show title={i18n.t('generated.common.newRouteStep', { step })} size="md" onClose={onClose}>
             <form onSubmit={submit}>
 
                 {/* Step indicator */}
@@ -963,8 +966,8 @@ function CreateRouteWizard({ merchants, onClose }) {
                 {step === 1 && (
                     <div className="space-y-4">
                         <div>
-                            <h4 className="text-sm font-semibold text-slate-900 mb-1">Who is this route for?</h4>
-                            <p className="text-xs text-slate-500 mb-3">Choose the merchant account this payment route will apply to.</p>
+                            <h4 className="text-sm font-semibold text-slate-900 mb-1">{i18n.t('generated.routing_Index.whoIsThisRouteFor')}</h4>
+                            <p className="text-xs text-slate-500 mb-3">{i18n.t('generated.routing_Index.chooseTheMerchantAccountThisPaymentRouteWill')}</p>
                             <div className="space-y-2">
                                 {merchants.map((m) => (
                                     <button
@@ -986,11 +989,11 @@ function CreateRouteWizard({ merchants, onClose }) {
                 {step === 2 && (
                     <div className="space-y-4">
                         <div>
-                            <h4 className="text-sm font-semibold text-slate-900 mb-1">Give this route a name</h4>
-                            <p className="text-xs text-slate-500 mb-3">A descriptive name helps you identify the purpose of this route, e.g. "Default", "High Value Orders", "Europe".</p>
+                            <h4 className="text-sm font-semibold text-slate-900 mb-1">{i18n.t('generated.routing_Index.giveThisRouteAName')}</h4>
+                            <p className="text-xs text-slate-500 mb-3">{i18n.t('generated.routing_Index.aDescriptiveNameHelpsYouIdentifyThePurpose')}</p>
                             <input
                                 className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                placeholder="e.g. Default payment route"
+                                placeholder={i18n.t('generated.routing_Index.eGDefaultPaymentRoute')}
                                 value={form.data.name}
                                 onChange={(e) => form.setData('name', e.target.value)}
                                 autoFocus
@@ -1004,8 +1007,8 @@ function CreateRouteWizard({ merchants, onClose }) {
                 {step === 3 && (
                     <div className="space-y-4">
                         <div>
-                            <h4 className="text-sm font-semibold text-slate-900 mb-1">Is this for testing or real payments?</h4>
-                            <p className="text-xs text-slate-500 mb-3">Start in test mode to try things out before going live with real customer payments.</p>
+                            <h4 className="text-sm font-semibold text-slate-900 mb-1">{i18n.t('generated.routing_Index.isThisForTestingOrRealPayments')}</h4>
+                            <p className="text-xs text-slate-500 mb-3">{i18n.t('generated.routing_Index.startInTestModeToTryThingsOut')}</p>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     type="button"
@@ -1013,8 +1016,8 @@ function CreateRouteWizard({ merchants, onClose }) {
                                     className={`rounded-xl border p-4 text-left transition-colors ${form.data.environment === 'test' ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500' : 'border-slate-200 hover:border-slate-300'}`}
                                 >
                                     <FlaskConical size={22} strokeWidth={1.75} className="mb-1.5 text-indigo-500" />
-                                    <p className="text-sm font-semibold text-slate-900">Test mode</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Safe for experimenting — no real money involved</p>
+                                    <p className="text-sm font-semibold text-slate-900">{i18n.t('generated.routing_Index.testMode')}</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">{i18n.t('generated.routing_Index.safeForExperimentingNoRealMoneyInvolved')}</p>
                                 </button>
                                 <button
                                     type="button"
@@ -1022,8 +1025,8 @@ function CreateRouteWizard({ merchants, onClose }) {
                                     className={`rounded-xl border p-4 text-left transition-colors ${form.data.environment === 'live' ? 'border-violet-500 bg-violet-50 ring-1 ring-violet-500' : 'border-slate-200 hover:border-slate-300'}`}
                                 >
                                     <CreditCard size={22} strokeWidth={1.75} className="mb-1.5 text-violet-500" />
-                                    <p className="text-sm font-semibold text-slate-900">Live payments</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Real customer payments — use when ready</p>
+                                    <p className="text-sm font-semibold text-slate-900">{i18n.t('generated.routing_Index.livePayments')}</p>
+                                    <p className="text-xs text-slate-500 mt-0.5">{i18n.t('generated.routing_Index.realCustomerPaymentsUseWhenReady')}</p>
                                 </button>
                             </div>
                         </div>
@@ -1033,7 +1036,7 @@ function CreateRouteWizard({ merchants, onClose }) {
                 {/* Footer buttons */}
                 <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
                     <button type="button" onClick={step === 1 ? onClose : back} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                        {step === 1 ? 'Cancel' : '← Back'}
+                        {step === 1 ? i18n.t('common.actions.cancel') : i18n.t('generated.common.back')}
                     </button>
                     {step < 3 ? (
                         <button
@@ -1041,16 +1044,14 @@ function CreateRouteWizard({ merchants, onClose }) {
                             onClick={next}
                             disabled={step === 1 && !form.data.merchant_id || step === 2 && !form.data.name.trim()}
                             className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                        >
-                            Continue →
-                        </button>
+                        >{i18n.t('generated.routing_Index.continue')}</button>
                     ) : (
                         <button
                             type="submit"
                             disabled={form.processing}
                             className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
                         >
-                            {form.processing ? 'Creating…' : 'Create route'}
+                            {form.processing ? i18n.t('generated.common.creating') : i18n.t('generated.common.createRoute')}
                         </button>
                     )}
                 </div>
@@ -1083,7 +1084,7 @@ function FilterBar({ filters, merchants, onChange }) {
                 <input
                     value={search}
                     onChange={e => handleSearch(e.target.value)}
-                    placeholder="Search by name or merchant…"
+                    placeholder={i18n.t('generated.routing_Index.searchByNameOrMerchant')}
                     className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100"
                 />
             </div>
@@ -1094,9 +1095,9 @@ function FilterBar({ filters, merchants, onChange }) {
                 onChange={e => apply({ environment: e.target.value })}
                 className="rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none"
             >
-                <option value="">All environments</option>
-                <option value="test">Test mode</option>
-                <option value="live">Live payments</option>
+                <option value="">{i18n.t('generated.routing_Index.allEnvironments')}</option>
+                <option value="test">{i18n.t('generated.routing_Index.testMode')}</option>
+                <option value="live">{i18n.t('generated.routing_Index.livePayments')}</option>
             </select>
 
             {/* Status */}
@@ -1105,9 +1106,9 @@ function FilterBar({ filters, merchants, onChange }) {
                 onChange={e => apply({ status: e.target.value })}
                 className="rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none"
             >
-                <option value="">All statuses</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
+                <option value="">{i18n.t('generated.routing_Index.allStatuses')}</option>
+                <option value="published">{i18n.t('common.badges.published')}</option>
+                <option value="draft">{i18n.t('common.badges.draft')}</option>
             </select>
 
             {/* Merchant */}
@@ -1116,7 +1117,7 @@ function FilterBar({ filters, merchants, onChange }) {
                 onChange={e => apply({ merchant_id: e.target.value })}
                 className="rounded-xl border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none"
             >
-                <option value="">All merchants</option>
+                <option value="">{i18n.t('generated.routing_Index.allMerchants')}</option>
                 {merchants.map(m => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
@@ -1128,9 +1129,7 @@ function FilterBar({ filters, merchants, onChange }) {
                     onClick={() => { setSearch(''); onChange({}); }}
                     className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 hover:bg-slate-50 transition-colors"
                 >
-                    <X size={13} strokeWidth={2} />
-                    Clear
-                </button>
+                    <X size={13} strokeWidth={2} />{i18n.t('generated.routing_Index.clear')}</button>
             )}
         </div>
     );
@@ -1150,9 +1149,7 @@ function Pagination({ meta, onPage }) {
 
     return (
         <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-slate-500">
-                Showing {from}–{to} of <span className="font-semibold text-slate-700">{total}</span> workflows
-            </p>
+            <p className="text-sm text-slate-500">{i18n.t('generated.routing_Index.showing')}{from}–{to}{' '}{i18n.t('generated.routing_Index.of')}{' '}<span className="font-semibold text-slate-700">{total}</span>{i18n.t('generated.routing_Index.workflows')}</p>
             <div className="flex items-center gap-1">
                 <button
                     onClick={() => onPage(current_page - 1)}
@@ -1205,7 +1202,7 @@ function ProviderHealthPanel({ health }) {
         return (
             <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 flex items-center gap-3">
                 <CheckCircle2 size={20} strokeWidth={2} className="shrink-0 text-green-500" />
-                <p className="text-sm font-medium text-green-700">All payment processors are running normally — no issues detected.</p>
+                <p className="text-sm font-medium text-green-700">{i18n.t('generated.routing_Index.allPaymentProcessorsAreRunningNormallyNoIssues')}</p>
             </div>
         );
     }
@@ -1221,23 +1218,22 @@ function ProviderHealthPanel({ health }) {
                             <ProviderIcon alias={row.provider_alias} size="lg" />
                             <div>
                                 <p className="text-sm font-semibold text-slate-900 capitalize">{row.provider_alias}</p>
-                                <p className="text-xs text-slate-500">{row.merchant?.name ?? 'Global'} · {row.environment}</p>
+                                <p className="text-xs text-slate-500">{row.merchant?.name ?? i18n.t('generated.common.global')} · {row.environment}</p>
                             </div>
                             <div className="ml-auto">
                                 <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${isUnhealthy ? 'border-red-300 bg-red-100 text-red-700' : isDegraded ? 'border-amber-300 bg-amber-100 text-amber-700' : 'border-green-300 bg-green-100 text-green-700'}`}>
                                     <span className={`h-1.5 w-1.5 rounded-full ${isUnhealthy ? 'bg-red-500' : isDegraded ? 'bg-amber-500' : 'bg-green-500'}`} />
-                                    {isUnhealthy ? 'Down' : isDegraded ? 'Degraded' : 'Healthy'}
+                                    {isUnhealthy ? i18n.t('generated.common.down') : isDegraded ? i18n.t('generated.common.degraded') : i18n.t('generated.common.healthy')}
                                 </span>
                             </div>
                         </div>
 
                         {row.consecutive_failures > 0 && (
                             <p className="text-xs text-red-600 font-medium mb-1">
-                                {row.consecutive_failures} failed attempt{row.consecutive_failures > 1 ? 's' : ''} in a row
-                            </p>
+                                {i18n.t('generated.common.failedAttemptsInRow', { count: row.consecutive_failures })}</p>
                         )}
                         {row.disabled_until && (
-                            <p className="text-xs text-amber-700">Automatically paused until {row.disabled_until}</p>
+                            <p className="text-xs text-amber-700">{i18n.t('generated.routing_Index.automaticallyPausedUntil')}{' '}{row.disabled_until}</p>
                         )}
                         {row.last_error && (
                             <p className="mt-2 text-xs text-slate-500 bg-white/70 rounded-lg px-2 py-1.5 border border-white truncate" title={row.last_error}>
@@ -1275,7 +1271,7 @@ function ActivityFeed({ attempts, audits }) {
     ].sort((a, b) => (timestampMillis(b.time) ?? 0) - (timestampMillis(a.time) ?? 0)).slice(0, 10);
 
     if (!items.length) {
-        return <p className="text-sm text-slate-400 py-4 text-center">No recent activity.</p>;
+        return <p className="text-sm text-slate-400 py-4 text-center">{i18n.t('generated.routing_Index.noRecentActivity')}</p>;
     }
 
     return (
@@ -1292,7 +1288,7 @@ function ActivityFeed({ attempts, audits }) {
                                 className="mt-1 inline-flex max-w-full items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-indigo-700 ring-1 ring-indigo-100 hover:bg-indigo-100 hover:text-indigo-900"
                             >
                                 <CreditCard size={11} strokeWidth={2} />
-                                <span className="truncate">Payment {shortPaymentId(item.paymentId)}</span>
+                                <span className="truncate">{i18n.t('generated.routing_Index.payment')}{' '}{shortPaymentId(item.paymentId)}</span>
                             </Link>
                         )}
                         <p className="text-xs text-slate-400 mt-0.5">{fmtDate(item.time)}</p>
@@ -1314,10 +1310,10 @@ function shortPaymentId(id) {
 function humanizeAuditAction(action) {
     if (!action) return 'Unknown action';
     const map = {
-        'workflow.created':   'Created a new payment route',
-        'workflow.updated':   'Updated route configuration',
-        'workflow.published': 'Published route — now live',
-        'workflow.rollback':  'Rolled back to a previous version',
+        'workflow.created':   i18n.t('generated.common.workflowCreated'),
+        'workflow.updated':   i18n.t('generated.common.workflowUpdated'),
+        'workflow.published': i18n.t('generated.common.workflowPublished'),
+        'workflow.rollback':  i18n.t('generated.common.workflowRolledBack'),
     };
     return map[action] ?? action.replace(/[._]/g, ' ');
 }
@@ -1350,28 +1346,26 @@ export default function RoutingIndex({ summary, merchants, providers, workflows,
     const rulesByMerchant = useMemo(() => ({}), []);
 
     const sections = [
-        { key: 'routes',   label: 'Payment Routes' },
-        { key: 'health',   label: 'Processor Health', badge: Number(summary.unhealthyProviders) > 0 ? summary.unhealthyProviders : null },
-        { key: 'activity', label: 'Recent Activity' },
+        { key: 'routes',   label: i18n.t('generated.routing_Index.paymentRoutes') },
+        { key: 'health',   label: i18n.t('generated.routing_Index.processorHealth'), badge: Number(summary.unhealthyProviders) > 0 ? summary.unhealthyProviders : null },
+        { key: 'activity', label: i18n.t('generated.routing_Index.recentActivity') },
     ];
 
     return (
-        <AdminLayout title="Payment Routing">
-            <Head title="Payment Routing" />
+        <AdminLayout title={i18n.t('generated.routing_Index.paymentRouting')}>
+            <Head title={i18n.t('generated.routing_Index.paymentRouting')} />
 
             {/* Page title + create button */}
             <div className="mb-6 flex items-start justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-semibold text-slate-900">Payment Routing</h1>
-                    <p className="mt-0.5 text-sm text-slate-500">Control how customer payments are distributed across your payment processors.</p>
+                    <h1 className="text-xl font-semibold text-slate-900">{i18n.t('generated.routing_Index.paymentRouting')}</h1>
+                    <p className="mt-0.5 text-sm text-slate-500">{i18n.t('generated.routing_Index.controlHowCustomerPaymentsAreDistributedAcrossYour')}</p>
                 </div>
                 <button
                     onClick={() => setShowCreateWizard(true)}
                     className="shrink-0 flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors shadow-sm"
                 >
-                    <Plus size={16} strokeWidth={2.5} />
-                    New route
-                </button>
+                    <Plus size={16} strokeWidth={2.5} />{i18n.t('generated.routing_Index.newRoute')}</button>
             </div>
 
             {/* Status strip */}
@@ -1410,22 +1404,19 @@ export default function RoutingIndex({ summary, merchants, providers, workflows,
                                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-50 text-3xl">🛤</div>
                                 {(filters.search || filters.environment || filters.status || filters.merchant_id) ? (
                                     <>
-                                        <h3 className="text-base font-semibold text-slate-800">No routes match your filters</h3>
-                                        <p className="mt-1 text-sm text-slate-500">Try adjusting your search or clearing the filters.</p>
+                                        <h3 className="text-base font-semibold text-slate-800">{i18n.t('generated.routing_Index.noRoutesMatchYourFilters')}</h3>
+                                        <p className="mt-1 text-sm text-slate-500">{i18n.t('generated.routing_Index.tryAdjustingYourSearchOrClearingTheFilters')}</p>
                                         <button onClick={() => applyFilters({})} className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
-                                            <X size={13} strokeWidth={2} /> Clear filters
-                                        </button>
+                                            <X size={13} strokeWidth={2} />{i18n.t('generated.routing_Index.clearFilters')}</button>
                                     </>
                                 ) : (
                                     <>
-                                        <h3 className="text-base font-semibold text-slate-800">No payment routes yet</h3>
-                                        <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">Create your first payment route to start controlling how customer payments are distributed across Stripe, PayPal, and other processors.</p>
+                                        <h3 className="text-base font-semibold text-slate-800">{i18n.t('generated.routing_Index.noPaymentRoutesYet')}</h3>
+                                        <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">{i18n.t('generated.routing_Index.createYourFirstPaymentRouteToStartControlling')}</p>
                                         <button
                                             onClick={() => setShowCreateWizard(true)}
                                             className="mt-5 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
-                                        >
-                                            Create your first route
-                                        </button>
+                                        >{i18n.t('generated.routing_Index.createYourFirstRoute')}</button>
                                     </>
                                 )}
                             </div>
@@ -1449,8 +1440,8 @@ export default function RoutingIndex({ summary, merchants, providers, workflows,
             {activeSection === 'activity' && (
                 <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div className="border-b border-slate-100 px-6 py-4">
-                        <h2 className="text-sm font-semibold text-slate-900">Recent routing activity</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">A log of recent payment routing decisions and configuration changes.</p>
+                        <h2 className="text-sm font-semibold text-slate-900">{i18n.t('generated.routing_Index.recentRoutingActivity')}</h2>
+                        <p className="text-xs text-slate-500 mt-0.5">{i18n.t('generated.routing_Index.aLogOfRecentPaymentRoutingDecisionsAnd')}</p>
                     </div>
                     <div className="px-6 py-2">
                         <ActivityFeed attempts={attempts} audits={audits} />

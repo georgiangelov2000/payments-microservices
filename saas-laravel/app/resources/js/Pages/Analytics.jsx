@@ -13,6 +13,7 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import ProviderBrand, { getProviderMeta } from '@/Components/ProviderBrand';
 import { fmt, fmtCurrency, fmtMs } from '@/utils';
+import i18n from '@/i18n';
 import {
     TrendingUp, TrendingDown, Minus,
     CheckCircle2, XCircle, Zap, Clock,
@@ -229,7 +230,7 @@ function PaymentTrendChart({ data, currency, days, environment, trendStatus }) {
 
 function ProviderCard({ provider }) {
     const { t } = useTranslation();
-    const name = provider.provider ?? provider.provider_alias ?? 'Unknown';
+    const name = provider.provider ?? provider.provider_alias ?? i18n.t('generated.common.unknown');
     const providerMeta = getProviderMeta(name, name);
     const hasMixedCurrencies = Number(provider.currencies_count ?? 0) > 1;
     const currency = provider.currency || 'USD';
@@ -287,8 +288,8 @@ function ProviderCard({ provider }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ENV_TABS = [
-    { key: 'test', label: 'Test', Icon: FlaskConical, activeCls: 'border-indigo-500 bg-indigo-50 text-indigo-700', dotCls: 'bg-indigo-400' },
-    { key: 'live', label: 'Live', Icon: Globe,        activeCls: 'border-violet-500 bg-violet-50 text-violet-700', dotCls: 'bg-violet-400' },
+    { key: 'test', label: i18n.t('generated.common.test'), Icon: FlaskConical, activeCls: 'border-indigo-500 bg-indigo-50 text-indigo-700', dotCls: 'bg-indigo-400' },
+    { key: 'live', label: i18n.t('generated.common.live'), Icon: Globe,        activeCls: 'border-violet-500 bg-violet-50 text-violet-700', dotCls: 'bg-violet-400' },
 ]
 
 function EnvSelector({ current, days, trendStatus }) {
@@ -325,9 +326,9 @@ function EnvSelector({ current, days, trendStatus }) {
 
 function PeriodSelector({ current, env, trendStatus }) {
     const options = [
-        { label: '7d',  value: 7 },
-        { label: '30d', value: 30 },
-        { label: '90d', value: 90 },
+        { label: i18n.t('generated.analytics.text7d'),  value: 7 },
+        { label: i18n.t('generated.analytics.text30d'), value: 30 },
+        { label: i18n.t('generated.analytics.text90d'), value: 90 },
     ];
     return (
         <div className="inline-flex rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">

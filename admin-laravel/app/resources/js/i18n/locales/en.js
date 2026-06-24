@@ -1,4 +1,7 @@
+import generated from './generated/en';
+
 export default {
+    generated,
     common: {
         actions: {
             cancel: 'Cancel',

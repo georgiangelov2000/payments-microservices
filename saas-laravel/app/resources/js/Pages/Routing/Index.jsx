@@ -1,3 +1,5 @@
+
+import i18n from '@/i18n';
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Head, Link, router } from '@inertiajs/react'
 import {
@@ -55,24 +57,24 @@ function routingTypeBadge(nodes) {
         if (providers.length === 0) return null
         const hasWeights = providers.some(n => Number(n.data?.weight ?? n.weight ?? 0) > 0)
         return hasWeights
-            ? { label: 'Weighted split', cls: 'text-purple-700', Icon: Scale }
-            : { label: 'Priority fallback', cls: 'text-orange-600', Icon: RefreshCw }
+            ? { label: i18n.t('generated.routing_Index.weightedSplit'), cls: 'text-purple-700', Icon: Scale }
+            : { label: i18n.t('generated.routing_Index.priorityFallback'), cls: 'text-orange-600', Icon: RefreshCw }
     }
 
     const hasCondition = has('condition')
     const hasWeighted  = has('weighted')
     const hasFailover  = has('failover')
 
-    if (hasCondition && hasWeighted) return { label: 'Conditional + weighted', cls: 'text-amber-700', Icon: GitBranch }
-    if (hasCondition) return { label: 'Conditional routing', cls: 'text-amber-700', Icon: GitBranch }
-    if (hasWeighted)  return { label: 'Weighted split', cls: 'text-purple-700', Icon: Scale }
-    if (hasFailover)  return { label: 'Failover routing', cls: 'text-orange-600', Icon: RefreshCw }
+    if (hasCondition && hasWeighted) return { label: i18n.t('generated.routing_Index.conditionalWeighted'), cls: 'text-amber-700', Icon: GitBranch }
+    if (hasCondition) return { label: i18n.t('generated.routing_Index.conditionalRouting'), cls: 'text-amber-700', Icon: GitBranch }
+    if (hasWeighted)  return { label: i18n.t('generated.routing_Index.weightedSplit'), cls: 'text-purple-700', Icon: Scale }
+    if (hasFailover)  return { label: i18n.t('generated.routing_Index.failoverRouting'), cls: 'text-orange-600', Icon: RefreshCw }
 
     const providers = all.filter(n => n.type === 'provider')
     const hasWeightsInProviders = providers.some(n => Number(n.data?.weight ?? n.weight ?? 0) > 0)
     return hasWeightsInProviders
-        ? { label: 'Weighted split', cls: 'text-purple-700', Icon: Scale }
-        : { label: 'Priority fallback', cls: 'text-orange-600', Icon: RefreshCw }
+        ? { label: i18n.t('generated.routing_Index.weightedSplit'), cls: 'text-purple-700', Icon: Scale }
+        : { label: i18n.t('generated.routing_Index.priorityFallback'), cls: 'text-orange-600', Icon: RefreshCw }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,7 +87,7 @@ function buildFlowSummary(nodes) {
     const aliases = providers
         .sort((a, b) => (a.data?.priority ?? a.priority ?? 99) - (b.data?.priority ?? b.priority ?? 99))
         .map(n => capitalize(n.data?.provider_alias ?? n.provider_alias))
-    return `Visual workflow with processors: ${aliases.join(', ')}.`
+    return i18n.t('generated.common.visualWorkflowProcessors', { processors: aliases.join(', ') })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,7 +106,7 @@ function StartNode({ data }) {
                     <Play size={14} fill="currentColor" />
                 </span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">Entry Point</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">{i18n.t('generated.routing_Index.entryPoint')}</p>
                     <p className="text-sm font-bold leading-snug">{data.label || 'Payment Request'}</p>
                 </div>
             </div>
@@ -122,14 +124,14 @@ function ProviderNode({ data }) {
                 <div className="mb-2.5 flex items-center gap-2.5">
                     <ProviderIcon alias={data.provider_alias} label={data.label} size="md" className="ring-0" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Provider</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.provider')}</p>
                         <p className="text-sm font-bold leading-snug text-slate-800">{data.label || meta.label}</p>
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                     {data.enabled !== false
                         ? <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Active</span>
-                        : <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Disabled</span>}
+                        : <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">{i18n.t('generated.routing_Index.disabled')}</span>}
                     {Number(data.weight) > 0 && <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">{data.weight}%</span>}
                     {Number(data.priority) > 0 && <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">P{data.priority}</span>}
                 </div>
@@ -137,11 +139,11 @@ function ProviderNode({ data }) {
             <div className="flex border-t border-slate-100">
                 <div className="relative flex-1 py-1.5 text-center">
                     <Handle type="source" position={Position.Bottom} id="success" className="opacity-0" />
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">Success</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">{i18n.t('generated.routing_Index.success')}</span>
                 </div>
                 <div className="relative flex-1 border-l border-slate-100 py-1.5 text-center">
                     <Handle type="source" position={Position.Bottom} id="failure" className="opacity-0" />
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">Failure</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-red-500">{i18n.t('generated.routing_Index.failure')}</span>
                 </div>
             </div>
         </NodeShell>
@@ -157,7 +159,7 @@ function ConditionNode({ data }) {
                 <div className="mb-2 flex items-center gap-2">
                     <GitBranch size={18} className="shrink-0 text-amber-500" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Condition</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">{i18n.t('generated.routing_Index.condition')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'IF / ELSE'}</p>
                     </div>
                 </div>
@@ -168,8 +170,8 @@ function ConditionNode({ data }) {
                 ))}
             </div>
             <div className="flex border-t border-amber-200">
-                <div className="relative flex-1 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="yes" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">Yes</span></div>
-                <div className="relative flex-1 border-l border-amber-200 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="no" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-red-500">No</span></div>
+                <div className="relative flex-1 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="yes" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-emerald-600">{i18n.t('generated.routing_Index.yes')}</span></div>
+                <div className="relative flex-1 border-l border-amber-200 py-1.5 text-center"><Handle type="source" position={Position.Bottom} id="no" className="opacity-0" /><span className="text-[9px] font-bold uppercase tracking-wide text-red-500">{i18n.t('generated.routing_Index.no')}</span></div>
             </div>
         </NodeShell>
     )
@@ -184,7 +186,7 @@ function WeightedNode({ data }) {
                 <div className="mb-2.5 flex items-center gap-2">
                     <Scale size={16} className="shrink-0 text-purple-500" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-purple-600">Weighted Split</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-purple-600">{i18n.t('generated.routing_Index.weightedSplitdb5cb6')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'Traffic Split'}</p>
                     </div>
                 </div>
@@ -213,7 +215,7 @@ function FailoverNode({ data }) {
                 <div className="mb-2.5 flex items-center gap-2">
                     <Zap size={16} className="shrink-0 text-orange-500" />
                     <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">Failover Chain</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-orange-600">{i18n.t('generated.routing_Index.failoverChain')}</p>
                         <p className="text-sm font-bold text-slate-800">{data.label || 'Auto Failover'}</p>
                     </div>
                 </div>
@@ -241,8 +243,8 @@ function TerminalNode({ data, type }) {
                     {ok ? <CheckCircle2 size={18} /> : <XCircle size={18} />}
                 </span>
                 <div>
-                    <p className={`text-[10px] font-bold uppercase tracking-widest ${ok ? 'text-emerald-600' : 'text-red-600'}`}>Terminal</p>
-                    <p className="text-sm font-bold text-slate-800">{data.label || (ok ? 'Payment Success' : 'Payment Failed')}</p>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${ok ? 'text-emerald-600' : 'text-red-600'}`}>{i18n.t('generated.routing_Index.terminal')}</p>
+                    <p className="text-sm font-bold text-slate-800">{data.label || (ok ? i18n.t('generated.common.paymentSuccess') : i18n.t('generated.common.paymentFailed'))}</p>
                 </div>
             </div>
         </NodeShell>
@@ -264,13 +266,13 @@ const FLOW_NODE_TYPES = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const NODE_PALETTE = [
-    { type: 'start',     label: 'Start',     desc: 'Entry point',       cls: 'border-indigo-300 bg-indigo-50 text-indigo-700',  Icon: Play },
-    { type: 'provider',  label: 'Provider',  desc: 'Route to provider', cls: 'border-slate-300 bg-white text-slate-700',         Icon: null },
-    { type: 'condition', label: 'Condition', desc: 'IF / ELSE logic',   cls: 'border-amber-300 bg-amber-50 text-amber-700',      Icon: GitBranch },
-    { type: 'weighted',  label: 'Weighted',  desc: 'Traffic split',     cls: 'border-purple-300 bg-purple-50 text-purple-700',   Icon: Scale },
-    { type: 'failover',  label: 'Failover',  desc: 'Auto-failover',     cls: 'border-orange-300 bg-orange-50 text-orange-700',   Icon: Zap },
-    { type: 'success',   label: 'Success',   desc: 'Success terminal',  cls: 'border-emerald-300 bg-emerald-50 text-emerald-700', Icon: CheckCircle2 },
-    { type: 'failure',   label: 'Failure',   desc: 'Failure terminal',  cls: 'border-red-300 bg-red-50 text-red-700',            Icon: XCircle },
+    { type: 'start',     label: i18n.t('generated.routing_Index.start'),     desc: i18n.t('generated.routing_Index.entryPoint82805c'),       cls: 'border-indigo-300 bg-indigo-50 text-indigo-700',  Icon: Play },
+    { type: 'provider',  label: i18n.t('generated.routing_Index.provider'),  desc: i18n.t('generated.routing_Index.routeToProvider'), cls: 'border-slate-300 bg-white text-slate-700',         Icon: null },
+    { type: 'condition', label: i18n.t('generated.routing_Index.condition'), desc: i18n.t('generated.routing_Index.ifElseLogic'),   cls: 'border-amber-300 bg-amber-50 text-amber-700',      Icon: GitBranch },
+    { type: 'weighted',  label: i18n.t('generated.routing_Index.weighted'),  desc: i18n.t('generated.routing_Index.trafficSplit'),     cls: 'border-purple-300 bg-purple-50 text-purple-700',   Icon: Scale },
+    { type: 'failover',  label: i18n.t('generated.routing_Index.failover'),  desc: i18n.t('generated.routing_Index.autoFailover'),     cls: 'border-orange-300 bg-orange-50 text-orange-700',   Icon: Zap },
+    { type: 'success',   label: i18n.t('generated.routing_Index.success'),   desc: i18n.t('generated.routing_Index.successTerminal'),  cls: 'border-emerald-300 bg-emerald-50 text-emerald-700', Icon: CheckCircle2 },
+    { type: 'failure',   label: i18n.t('generated.routing_Index.failure'),   desc: i18n.t('generated.routing_Index.failureTerminal'),  cls: 'border-red-300 bg-red-50 text-red-700',            Icon: XCircle },
 ]
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -354,7 +356,7 @@ function NodeInspector({ node }) {
         return (
             <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
                 <LayoutGrid size={28} strokeWidth={1} className="text-slate-300" />
-                <p className="text-sm text-slate-400">Select a node to view its details</p>
+                <p className="text-sm text-slate-400">{i18n.t('generated.routing_Index.selectANodeToViewItsDetails')}</p>
             </div>
         )
     }
@@ -372,7 +374,7 @@ function NodeInspector({ node }) {
 
             {/* Label */}
             <div>
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Label</p>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.label')}</p>
                 <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{d.label || '—'}</p>
             </div>
 
@@ -381,7 +383,7 @@ function NodeInspector({ node }) {
                 <>
                     {d.provider_alias && (
                         <div>
-                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Provider</p>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.provider')}</p>
                             <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                                 <ProviderIcon alias={d.provider_alias} size="sm" className="ring-0 shadow-none" />
                                 <span className="text-sm text-slate-700">{capitalize(d.provider_alias)}</span>
@@ -390,20 +392,20 @@ function NodeInspector({ node }) {
                     )}
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Priority</p>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.priority')}</p>
                             <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{d.priority ?? '—'}</p>
                         </div>
                         <div>
-                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Weight</p>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.weight')}</p>
                             <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">{d.weight ? `${d.weight}%` : '—'}</p>
                         </div>
                     </div>
                     <div>
-                        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</p>
+                        <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.status')}</p>
                         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                             {d.enabled !== false
                                 ? <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Active</span>
-                                : <span className="text-sm text-slate-500">Disabled</span>
+                                : <span className="text-sm text-slate-500">{i18n.t('generated.routing_Index.disabled')}</span>
                             }
                         </div>
                     </div>
@@ -413,7 +415,7 @@ function NodeInspector({ node }) {
             {/* Condition-specific */}
             {node.type === 'condition' && d.conditions?.length > 0 && (
                 <div>
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Conditions</p>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.conditions')}</p>
                     <div className="space-y-1.5">
                         {d.conditions.map((c, i) => (
                             <div key={i} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-slate-600">
@@ -429,7 +431,7 @@ function NodeInspector({ node }) {
             {/* Weighted-specific */}
             {node.type === 'weighted' && d.distribution?.length > 0 && (
                 <div>
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Distribution</p>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.distribution')}</p>
                     <div className="space-y-2">
                         {d.distribution.map((item, i) => (
                             <div key={i} className="flex items-center gap-2">
@@ -448,7 +450,7 @@ function NodeInspector({ node }) {
             {/* Failover-specific */}
             {node.type === 'failover' && d.chain?.length > 0 && (
                 <div>
-                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">Failover chain</p>
+                    <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.failoverChain9802dd')}</p>
                     <div className="flex flex-wrap items-center gap-2">
                         {d.chain.map((alias, i) => (
                             <div key={i} className="flex items-center gap-1.5">
@@ -465,9 +467,7 @@ function NodeInspector({ node }) {
 
             {/* Read-only notice */}
             <div className="mt-auto rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 flex items-center gap-2 text-xs text-slate-400">
-                <Lock size={12} strokeWidth={2} />
-                This workflow is managed by your administrator. Node properties are read-only.
-            </div>
+                <Lock size={12} strokeWidth={2} />{i18n.t('generated.routing_Index.thisWorkflowIsManagedByYourAdministratorNode')}</div>
         </div>
     )
 }
@@ -509,9 +509,7 @@ function ReadOnlyCanvas({ workflow, onNodeSelect, onPositionsChange }) {
 
     if (!initialNodes.length) {
         return (
-            <div className="flex h-full items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">
-                No workflow canvas configured yet.
-            </div>
+            <div className="flex h-full items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400">{i18n.t('generated.routing_Index.noWorkflowCanvasConfiguredYet')}</div>
         )
     }
 
@@ -554,7 +552,7 @@ function VisualBuilderModal({ workflow, onClose }) {
     const nodeCount  = workflow.nodes?.length ?? 0
     const edgeCount  = workflow.edges?.length ?? 0
     const isPublished = workflow.status === 'published'
-    const envLabel   = workflow.environment === 'live' ? 'Live' : 'Test'
+    const envLabel   = workflow.environment === 'live' ? i18n.t('generated.common.live') : i18n.t('generated.common.test')
     const hasSaved   = Object.keys(workflow.canvas_layout ?? {}).length > 0
 
     useEffect(() => {
@@ -612,9 +610,7 @@ function VisualBuilderModal({ workflow, onClose }) {
                         onClick={onClose}
                         className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
                     >
-                        <ArrowLeft size={15} strokeWidth={2} />
-                        Routing
-                    </button>
+                        <ArrowLeft size={15} strokeWidth={2} />{i18n.t('common.nav.routing')}</button>
                     <span className="text-slate-300">|</span>
                     <span className="truncate text-sm font-semibold text-slate-800">{workflow.name}</span>
 
@@ -636,7 +632,7 @@ function VisualBuilderModal({ workflow, onClose }) {
                 {/* Right: stats + save button + close */}
                 <div className="flex shrink-0 items-center gap-2">
                     <span className="hidden text-xs text-slate-400 sm:block mr-1">
-                        {nodeCount} node{nodeCount !== 1 ? 's' : ''} · {edgeCount} edge{edgeCount !== 1 ? 's' : ''}
+                        {i18n.t('generated.common.nodesAndEdges', { nodes: nodeCount, edges: edgeCount })}
                     </span>
 
                     {/* Reset to auto-layout */}
@@ -644,11 +640,9 @@ function VisualBuilderModal({ workflow, onClose }) {
                         <button
                             onClick={handleResetLayout}
                             className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors"
-                            title="Reset to automatic layout"
+                            title={i18n.t('generated.routing_Index.resetToAutomaticLayout')}
                         >
-                            <RotateCcw size={12} strokeWidth={2} />
-                            Reset layout
-                        </button>
+                            <RotateCcw size={12} strokeWidth={2} />{i18n.t('generated.routing_Index.resetLayout')}</button>
                     )}
 
                     {/* Save Layout button */}
@@ -667,16 +661,14 @@ function VisualBuilderModal({ workflow, onClose }) {
                         ].join(' ')}
                     >
                         <Save size={12} strokeWidth={2} />
-                        {saveState === 'saving' ? 'Saving…'
-                            : saveState === 'saved' ? 'Layout saved'
-                            : saveState === 'error' ? 'Save failed'
-                            : 'Save layout'}
+                        {saveState === 'saving' ? i18n.t('generated.common.saving')
+                            : saveState === 'saved' ? i18n.t('generated.common.layoutSaved')
+                            : saveState === 'error' ? i18n.t('generated.common.saveFailed')
+                            : i18n.t('generated.common.saveLayout')}
                     </button>
 
                     <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
-                        <Lock size={12} strokeWidth={2} />
-                        Read-only
-                    </div>
+                        <Lock size={12} strokeWidth={2} />{i18n.t('generated.routing_Index.readOnly')}</div>
                     <button
                         onClick={onClose}
                         className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
@@ -693,7 +685,7 @@ function VisualBuilderModal({ workflow, onClose }) {
                 <aside className="hidden w-48 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
                     <div className="flex-1 overflow-y-auto p-3 space-y-5">
                         <div>
-                            <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Node Types</p>
+                            <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.nodeTypes')}</p>
                             <div className="space-y-1.5">
                                 {NODE_PALETTE.map(({ type, label, desc, cls, Icon }) => (
                                     <div key={type} className={`flex cursor-default items-center gap-2.5 rounded-lg border px-3 py-2.5 ${cls} opacity-75`}>
@@ -709,7 +701,7 @@ function VisualBuilderModal({ workflow, onClose }) {
 
                         {workflow.versions?.length > 0 && (
                             <div>
-                                <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">Versions</p>
+                                <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.versions')}</p>
                                 <div className="space-y-1.5">
                                     {workflow.versions.map(v => (
                                         <div key={v.id} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
@@ -733,7 +725,7 @@ function VisualBuilderModal({ workflow, onClose }) {
                         <p className="text-[10px] leading-relaxed text-slate-400">
                             {hasSaved
                                 ? '✓ Custom layout saved. Drag nodes to rearrange.'
-                                : 'Drag nodes to rearrange, then click Save layout.'}
+                                : i18n.t('generated.common.dragNodesSaveLayout')}
                         </p>
                     </div>
                 </aside>
@@ -753,7 +745,7 @@ function VisualBuilderModal({ workflow, onClose }) {
                 <aside className="hidden w-64 shrink-0 flex-col border-l border-slate-200 bg-white xl:flex">
                     <div className="border-b border-slate-100 px-4 py-3">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                            {selectedNode ? 'Node details' : 'Inspector'}
+                            {selectedNode ? i18n.t('generated.common.nodeDetails') : i18n.t('generated.common.inspector')}
                         </p>
                     </div>
                     <div className="flex-1 overflow-hidden">
@@ -783,8 +775,8 @@ function WorkflowCard({ workflow }) {
     const visibleVers = showAllVersions ? versions : versions.slice(0, 4)
     const isPublished = workflow.status === 'published'
     const envLabel    = workflow.environment === 'live'
-        ? <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700"><span className="h-1.5 w-1.5 rounded-full bg-violet-500" />Live payments</span>
-        : <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600"><span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />Test mode</span>
+        ? <span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-xs font-semibold text-violet-700"><span className="h-1.5 w-1.5 rounded-full bg-violet-500" />{i18n.t('generated.routing_Index.livePayments')}</span>
+        : <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-600"><span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />{i18n.t('generated.routing_Index.testMode')}</span>
     const hasNodes    = (workflow.nodes?.length ?? 0) > 0
 
     return (
@@ -811,14 +803,10 @@ function WorkflowCard({ workflow }) {
                             href={route('routing.workflows.builder', workflow.id)}
                             className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700"
                         >
-                            <LayoutGrid size={13} strokeWidth={2} />
-                            Visual Builder
-                        </Link>
+                            <LayoutGrid size={13} strokeWidth={2} />{i18n.t('generated.routing_Index.visualBuilder')}</Link>
                     ) : (
                         <span className="inline-flex shrink-0 cursor-not-allowed items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white opacity-40">
-                            <LayoutGrid size={13} strokeWidth={2} />
-                            Visual Builder
-                        </span>
+                            <LayoutGrid size={13} strokeWidth={2} />{i18n.t('generated.routing_Index.visualBuilder')}</span>
                     )}
                 </div>
 
@@ -826,11 +814,11 @@ function WorkflowCard({ workflow }) {
                 {providers.length > 0 && (
                     <div className="border-t border-slate-100 px-5 py-4 space-y-2">
                         <div className="flex items-center gap-2">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Payment Flow</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{i18n.t('generated.routing_Index.paymentFlow')}</p>
                         </div>
                         {typeBadge && (
                             <p className="text-xs text-slate-500">
-                                <span className="font-medium text-slate-400">Routing type:</span>{' '}
+                                <span className="font-medium text-slate-400">{i18n.t('generated.routing_Index.routingType')}</span>{' '}
                                 <span className={`inline-flex items-center gap-1 font-semibold ${typeBadge.cls}`}>
                                     <typeBadge.Icon size={11} strokeWidth={2.5} />
                                     {typeBadge.label}
@@ -845,7 +833,7 @@ function WorkflowCard({ workflow }) {
                                 </div>
                             ))}
                             <ArrowRight size={13} strokeWidth={2} className="text-slate-300" />
-                            <span className="text-xs italic text-slate-400">Visual workflow</span>
+                            <span className="text-xs italic text-slate-400">{i18n.t('generated.routing_Index.visualWorkflow')}</span>
                         </div>
                         {summary && <p className="text-sm text-slate-500">{summary}</p>}
                     </div>
@@ -854,7 +842,7 @@ function WorkflowCard({ workflow }) {
                 {/* Version history */}
                 {versions.length > 0 && (
                     <div className="border-t border-slate-100 px-5 py-3 flex flex-wrap items-center gap-2">
-                        <span className="text-xs text-slate-400">Version history:</span>
+                        <span className="text-xs text-slate-400">{i18n.t('generated.routing_Index.versionHistory')}</span>
                         {visibleVers.map(v => (
                             <span key={v.id} className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
                                 v.status === 'published'
@@ -868,8 +856,8 @@ function WorkflowCard({ workflow }) {
                                 className="inline-flex items-center gap-0.5 text-xs text-slate-400 hover:text-slate-600 transition-colors"
                             >
                                 {showAllVersions
-                                    ? <><ChevronUp size={11} strokeWidth={2} /> less</>
-                                    : <><ChevronDown size={11} strokeWidth={2} /> +{versions.length - 4} more</>
+                                    ? <><ChevronUp size={11} strokeWidth={2} />{' '}{i18n.t('generated.routing_Index.less')}</>
+                                    : <><ChevronDown size={11} strokeWidth={2} /> +{versions.length - 4}{' '}{i18n.t('generated.routing_Index.more')}</>
                                 }
                             </button>
                         )}
@@ -900,29 +888,29 @@ function SummaryStrip({ workflows, health, attempts, env }) {
                     {allHealthy ? <CheckCircle2 size={22} strokeWidth={1.75} /> : <AlertTriangle size={22} strokeWidth={1.75} />}
                 </span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">System Status</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{i18n.t('generated.routing_Index.systemStatus')}</p>
                     <p className={`mt-0.5 text-sm font-semibold ${allHealthy ? 'text-emerald-700' : 'text-red-700'}`}>
                         {allHealthy
-                            ? envHealth.length === 0 ? 'No activity recorded yet' : 'All processors running normally'
-                            : `${unhealthy} processor${unhealthy > 1 ? 's' : ''} unhealthy`}
+                            ? envHealth.length === 0 ? i18n.t('generated.common.noActivityRecordedYet') : i18n.t('generated.common.allProcessorsRunningNormally')
+                            : i18n.t('generated.common.processorsUnhealthy', { count: unhealthy })}
                     </p>
                 </div>
             </div>
             <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-2xl font-bold text-indigo-600">{liveRoutes}</span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Active Routes</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{i18n.t('generated.routing_Index.activeRoutes')}</p>
                     <p className="mt-0.5 text-sm font-semibold text-slate-700">
-                        {liveRoutes === 0 ? 'No routes published yet' : `${liveRoutes} route${liveRoutes > 1 ? 's' : ''} actively routing`}
+                        {liveRoutes === 0 ? i18n.t('generated.common.noRoutesPublishedYet') : i18n.t('generated.common.routesActivelyRouting', { count: liveRoutes })}
                     </p>
                 </div>
             </div>
             <div className={`flex items-center gap-4 rounded-xl border p-5 ${failedCount > 0 ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white shadow-sm'}`}>
                 <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-2xl font-bold ${failedCount > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{failedCount}</span>
                 <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Failed Attempts</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{i18n.t('generated.routing_Index.failedAttempts')}</p>
                     <p className={`mt-0.5 text-sm font-semibold ${failedCount > 0 ? 'text-amber-700' : 'text-slate-700'}`}>
-                        {failedCount > 0 ? `${failedCount} payment${failedCount > 1 ? 's' : ''} failed to route` : 'No failed attempts'}
+                        {failedCount > 0 ? i18n.t('generated.common.paymentsFailedToRoute', { count: failedCount }) : i18n.t('generated.common.noFailedAttempts')}
                     </p>
                 </div>
             </div>
@@ -934,20 +922,24 @@ function SummaryStrip({ workflows, health, attempts, env }) {
 // Main page
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SECTION_TABS = ['Payment Routes', 'Processor Health', 'Recent Activity']
+const SECTION_TABS = [
+    { key: 'Payment Routes', label: i18n.t('generated.routing_Index.paymentRoutes') },
+    { key: 'Processor Health', label: i18n.t('generated.routing_Index.processorHealth') },
+    { key: 'Recent Activity', label: i18n.t('generated.routing_Index.recentActivity') },
+]
 
 const ENV_TABS = [
-    { key: 'test', label: 'Test', Icon: FlaskConical, activeCls: 'border-indigo-500 bg-indigo-50 text-indigo-700', dotCls: 'bg-indigo-400' },
-    { key: 'live', label: 'Live', Icon: Globe,        activeCls: 'border-violet-500 bg-violet-50 text-violet-700', dotCls: 'bg-violet-400' },
+    { key: 'test', label: i18n.t('generated.common.test'), Icon: FlaskConical, activeCls: 'border-indigo-500 bg-indigo-50 text-indigo-700', dotCls: 'bg-indigo-400' },
+    { key: 'live', label: i18n.t('generated.common.live'), Icon: Globe,        activeCls: 'border-violet-500 bg-violet-50 text-violet-700', dotCls: 'bg-violet-400' },
 ]
 
 function humanizeAuditAction(action) {
-    if (!action) return 'Unknown action';
+    if (!action) return i18n.t('generated.common.unknownAction');
     const map = {
-        'workflow.created':   'Created a new payment route',
-        'workflow.updated':   'Updated route configuration',
-        'workflow.published': 'Published route — now live',
-        'workflow.rollback':  'Rolled back to a previous version',
+        'workflow.created':   i18n.t('generated.common.workflowCreated'),
+        'workflow.updated':   i18n.t('generated.common.workflowUpdated'),
+        'workflow.published': i18n.t('generated.common.workflowPublished'),
+        'workflow.rollback':  i18n.t('generated.common.workflowRolledBack'),
     };
     return map[action] ?? action.replace(/[._]/g, ' ');
 }
@@ -961,20 +953,20 @@ function ActivityFeed({ attempts, audits }) {
             ok: a.status === 'succeeded',
             paymentId: a.payment_id,
             text: a.status === 'succeeded'
-                ? `Payment routed to ${a.provider_alias} via ${a.strategy} strategy in ${a.latency_ms}ms`
-                : `Routing to ${a.provider_alias} failed (${a.error_code ?? a.status}) after ${a.latency_ms}ms`,
+                ? i18n.t('generated.common.paymentRouted', { provider: a.provider_alias, strategy: a.strategy, latency: a.latency_ms })
+                : i18n.t('generated.common.routingFailed', { provider: a.provider_alias, error: a.error_code ?? a.status, latency: a.latency_ms }),
         })),
         ...(audits ?? []).map((a) => ({
             id: `aud-${a.id}`,
             type: 'audit',
             time: a.created_at,
             ok: null,
-            text: `${humanizeAuditAction(a.action)} by ${a.actor_type}`,
+            text: i18n.t('generated.common.auditBy', { action: humanizeAuditAction(a.action), actor: a.actor_type }),
         })),
     ].sort((a, b) => (timestampMillis(b.time) ?? 0) - (timestampMillis(a.time) ?? 0)).slice(0, 10);
 
     if (!items.length) {
-        return <p className="text-sm text-slate-400 py-4 text-center">No recent activity.</p>;
+        return <p className="text-sm text-slate-400 py-4 text-center">{i18n.t('generated.routing_Index.noRecentActivity')}</p>;
     }
 
     return (
@@ -991,7 +983,7 @@ function ActivityFeed({ attempts, audits }) {
                                 className="mt-1 inline-flex max-w-full items-center gap-1 rounded-md bg-indigo-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-indigo-700 ring-1 ring-indigo-100 hover:bg-indigo-100 hover:text-indigo-900"
                             >
                                 <Activity size={11} strokeWidth={2} />
-                                <span className="truncate">Payment {shortPaymentId(item.paymentId)}</span>
+                                <span className="truncate">{i18n.t('generated.routing_Index.payment')}{' '}{shortPaymentId(item.paymentId)}</span>
                             </Link>
                         )}
                         <p className="text-xs text-slate-400 mt-0.5">{fmt(item.time)}</p>
@@ -1015,7 +1007,7 @@ function ProviderHealthPanel({ health }) {
         return (
             <div className="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 flex items-center gap-3">
                 <CheckCircle2 size={20} strokeWidth={2} className="shrink-0 text-green-500" />
-                <p className="text-sm font-medium text-green-700">All payment processors are running normally — no issues detected.</p>
+                <p className="text-sm font-medium text-green-700">{i18n.t('generated.routing_Index.allPaymentProcessorsAreRunningNormallyNoIssues')}</p>
             </div>
         );
     }
@@ -1036,18 +1028,17 @@ function ProviderHealthPanel({ health }) {
                             <div className="ml-auto">
                                 <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${isUnhealthy ? 'border-red-300 bg-red-100 text-red-700' : isDegraded ? 'border-amber-300 bg-amber-100 text-amber-700' : 'border-green-300 bg-green-100 text-green-700'}`}>
                                     <span className={`h-1.5 w-1.5 rounded-full ${isUnhealthy ? 'bg-red-500' : isDegraded ? 'bg-amber-500' : 'bg-green-500'}`} />
-                                    {isUnhealthy ? 'Down' : isDegraded ? 'Degraded' : 'Healthy'}
+                                    {isUnhealthy ? i18n.t('generated.common.down') : isDegraded ? i18n.t('generated.common.degraded') : i18n.t('generated.common.healthy')}
                                 </span>
                             </div>
                         </div>
 
                         {row.consecutive_failures > 0 && (
                             <p className="text-xs text-red-600 font-medium mb-1">
-                                {row.consecutive_failures} failed attempt{row.consecutive_failures > 1 ? 's' : ''} in a row
-                            </p>
+                                {i18n.t('generated.common.failedAttemptsInRow', { count: row.consecutive_failures })}</p>
                         )}
                         {row.disabled_until && (
-                            <p className="text-xs text-amber-700">Automatically paused until {row.disabled_until}</p>
+                            <p className="text-xs text-amber-700">{i18n.t('generated.routing_Index.automaticallyPausedUntil')}{' '}{row.disabled_until}</p>
                         )}
                         {row.last_error && (
                             <p className="mt-2 text-xs text-slate-500 bg-white/70 rounded-lg px-2 py-1.5 border border-white truncate" title={row.last_error}>
@@ -1072,12 +1063,12 @@ export default function RoutingIndex({ workflows, health, attempts, summary }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Routing" />
+            <Head title={i18n.t('common.nav.routing')} />
             <div className="p-6 max-w-7xl mx-auto space-y-6">
 
                 <div>
-                    <h1 className="text-2xl font-semibold text-slate-800">Payment Routing</h1>
-                    <p className="mt-1 text-sm text-slate-500">Control how customer payments are distributed across your payment processors.</p>
+                    <h1 className="text-2xl font-semibold text-slate-800">{i18n.t('generated.routing_Index.paymentRouting')}</h1>
+                    <p className="mt-1 text-sm text-slate-500">{i18n.t('generated.routing_Index.controlHowCustomerPaymentsAreDistributedAcrossYour')}</p>
                 </div>
 
                 {/* Environment switcher */}
@@ -1100,7 +1091,7 @@ export default function RoutingIndex({ workflows, health, attempts, summary }) {
                                 {label}
                                 {isActive && (
                                     <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${key === 'test' ? 'bg-indigo-100 text-indigo-600' : 'bg-violet-100 text-violet-600'}`}>
-                                        Active
+                                        {i18n.t('generated.common.active')}
                                     </span>
                                 )}
                             </button>
@@ -1113,19 +1104,19 @@ export default function RoutingIndex({ workflows, health, attempts, summary }) {
 
                 {/* Section tabs */}
                 <div className="flex gap-1 border-b border-slate-200">
-                    {SECTION_TABS.map(t => (
+                    {SECTION_TABS.map(({ key, label }) => (
                         <button
-                            key={t}
-                            onClick={() => setTab(t)}
+                            key={key}
+                            onClick={() => setTab(key)}
                             className={[
                                 'relative px-4 py-2.5 text-sm font-medium transition-colors',
-                                tab === t
+                                tab === key
                                     ? 'text-indigo-600 after:absolute after:bottom-0 after:inset-x-0 after:h-0.5 after:bg-indigo-600'
                                     : 'text-slate-500 hover:text-slate-700',
                             ].join(' ')}
                         >
-                            {t}
-                            {t === 'Processor Health' && unhealthyCount > 0 && (
+                            {label}
+                            {key === 'Processor Health' && unhealthyCount > 0 && (
                                 <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white leading-none">
                                     {unhealthyCount}
                                 </span>
@@ -1141,13 +1132,11 @@ export default function RoutingIndex({ workflows, health, attempts, summary }) {
                         ) : (
                             <div className="rounded-xl border-2 border-dashed border-slate-200 py-14 text-center">
                                 <GitBranch size={30} strokeWidth={1} className="mx-auto text-slate-300 mb-3" />
-                                <p className="text-sm font-medium text-slate-600">
-                                    No {env === 'live' ? 'live' : 'test'} routing workflows configured
-                                </p>
+                                <p className="text-sm font-medium text-slate-600">{i18n.t('generated.common.noRoutingWorkflowsConfigured', { environment: env === 'live' ? i18n.t('generated.common.live') : i18n.t('generated.common.test') })}</p>
                                 <p className="text-xs text-slate-400 mt-1">
                                     {env === 'live'
-                                        ? 'Your administrator will publish a live workflow once testing is complete.'
-                                        : 'Your administrator will set up routing workflows for your account.'}
+                                        ? i18n.t('generated.common.liveWorkflowPending')
+                                        : i18n.t('generated.common.routingSetupPending')}
                                 </p>
                             </div>
                         )}

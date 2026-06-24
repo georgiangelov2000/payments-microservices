@@ -4,6 +4,7 @@ import FormSection from '@/Components/FormSection';
 import Field from '@/Components/Field';
 import { CheckCircle2, XCircle, Clock, Circle, ChevronRight } from 'lucide-react';
 
+import i18n from '@/i18n';
 function TextInput({ error, ...props }) {
     return (
         <input
@@ -22,8 +23,8 @@ const STATUS_OPTIONS = [
         value:       'pending',
         Icon:        Clock,
         iconColor:   'text-amber-500',
-        label:       'Pending',
-        description: 'Account created, awaiting setup and provider assignment.',
+        label:       i18n.t('generated.common.pending'),
+        description: i18n.t('generated.merchants_Create.accountCreatedAwaitingSetupAndProviderAssignment'),
         ring:        'border-amber-400 bg-amber-50 ring-amber-300',
         idle:        'border-slate-200 hover:border-amber-300 hover:bg-amber-50/40',
     },
@@ -31,8 +32,8 @@ const STATUS_OPTIONS = [
         value:       'active',
         Icon:        CheckCircle2,
         iconColor:   'text-green-500',
-        label:       'Active',
-        description: 'Account is live and ready to accept real payments.',
+        label:       i18n.t('generated.common.active'),
+        description: i18n.t('generated.merchants_Create.accountIsLiveAndReadyToAcceptReal'),
         ring:        'border-green-400 bg-green-50 ring-green-300',
         idle:        'border-slate-200 hover:border-green-300 hover:bg-green-50/40',
     },
@@ -40,8 +41,8 @@ const STATUS_OPTIONS = [
         value:       'inactive',
         Icon:        Circle,
         iconColor:   'text-slate-400',
-        label:       'Inactive',
-        description: 'Account exists but cannot process any payments.',
+        label:       i18n.t('generated.common.inactive'),
+        description: i18n.t('generated.merchants_Create.accountExistsButCannotProcessAnyPayments'),
         ring:        'border-slate-400 bg-slate-100 ring-slate-300',
         idle:        'border-slate-200 hover:border-slate-300 hover:bg-slate-50',
     },
@@ -49,8 +50,8 @@ const STATUS_OPTIONS = [
         value:       'suspended',
         Icon:        XCircle,
         iconColor:   'text-red-500',
-        label:       'Suspended',
-        description: 'Account is suspended due to policy or compliance issues.',
+        label:       i18n.t('generated.common.suspended'),
+        description: i18n.t('generated.merchants_Create.accountIsSuspendedDueToPolicyOrCompliance'),
         ring:        'border-red-400 bg-red-50 ring-red-300',
         idle:        'border-slate-200 hover:border-red-300 hover:bg-red-50/40',
     },
@@ -106,14 +107,14 @@ export default function MerchantsCreate() {
     };
 
     return (
-        <AdminLayout title="Add Merchant">
-            <Head title="Add Merchant" />
+        <AdminLayout title={i18n.t('generated.merchants_Create.addMerchant')}>
+            <Head title={i18n.t('generated.merchants_Create.addMerchant')} />
 
             {/* Breadcrumb */}
             <nav className="mb-6 flex items-center gap-2 text-sm text-slate-500">
-                <Link href={route('admin.merchants.index')} className="hover:text-slate-700 transition-colors">Merchants</Link>
+                <Link href={route('admin.merchants.index')} className="hover:text-slate-700 transition-colors">{i18n.t('common.nav.merchants')}</Link>
                 <ChevronRight size={14} strokeWidth={2} className="text-slate-300" />
-                <span className="font-medium text-slate-900">New Merchant</span>
+                <span className="font-medium text-slate-900">{i18n.t('generated.merchants_Create.newMerchant')}</span>
             </nav>
 
             <form onSubmit={submit}>
@@ -124,18 +125,18 @@ export default function MerchantsCreate() {
 
                         {/* Account details */}
                         <FormSection
-                            title="Account Details"
-                            description="Basic information for the merchant account. A secure password will be auto-generated and can be reset by the merchant."
+                            title={i18n.t('generated.merchants_Create.accountDetails')}
+                            description={i18n.t('generated.merchants_Create.basicInformationForTheMerchantAccountASecure')}
                         >
                             <Field
-                                label="Full Name"
-                                hint="The merchant's business or contact name."
+                                label={i18n.t('generated.merchants_Create.fullName')}
+                                hint={i18n.t('generated.merchants_Create.theMerchantsBusinessOrContactName')}
                                 error={errors.name}
                                 required
                             >
                                 <TextInput
                                     type="text"
-                                    placeholder="e.g. Acme Corp"
+                                    placeholder={i18n.t('generated.merchants_Create.eGAcmeCorp')}
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
                                     autoFocus
@@ -144,14 +145,14 @@ export default function MerchantsCreate() {
                             </Field>
 
                             <Field
-                                label="Email Address"
-                                hint="Used for login and all platform notifications."
+                                label={i18n.t('generated.merchants_Create.emailAddress')}
+                                hint={i18n.t('generated.merchants_Create.usedForLoginAndAllPlatformNotifications')}
                                 error={errors.email}
                                 required
                             >
                                 <TextInput
                                     type="email"
-                                    placeholder="merchant@example.com"
+                                    placeholder={i18n.t('generated.merchants_Create.merchantExampleCom')}
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
                                     error={errors.email}
@@ -160,36 +161,36 @@ export default function MerchantsCreate() {
                         </FormSection>
 
                         <FormSection
-                            title="Company Profile"
-                            description="Brand, legal and contact details for this merchant company."
+                            title={i18n.t('generated.merchants_Create.companyProfile')}
+                            description={i18n.t('generated.merchants_Create.brandLegalAndContactDetailsForThisMerchant')}
                         >
                             <div className="grid gap-5 sm:grid-cols-2">
-                                <Field label="Trading Name" error={errors.company_name}>
-                                    <TextInput type="text" placeholder="Acme Payments" value={data.company_name}
+                                <Field label={i18n.t('generated.merchants_Create.tradingName')} error={errors.company_name}>
+                                    <TextInput type="text" placeholder={i18n.t('generated.merchants_Create.acmePayments')} value={data.company_name}
                                         onChange={(e) => setData('company_name', e.target.value)} error={errors.company_name} />
                                 </Field>
-                                <Field label="Legal Company Name" error={errors.legal_name}>
-                                    <TextInput type="text" placeholder="Acme Payments Ltd." value={data.legal_name}
+                                <Field label={i18n.t('generated.merchants_Create.legalCompanyName')} error={errors.legal_name}>
+                                    <TextInput type="text" placeholder={i18n.t('generated.merchants_Create.acmePaymentsLtd')} value={data.legal_name}
                                         onChange={(e) => setData('legal_name', e.target.value)} error={errors.legal_name} />
                                 </Field>
-                                <Field label="Website" error={errors.website}>
+                                <Field label={i18n.t('generated.merchants_Create.website')} error={errors.website}>
                                     <TextInput type="url" placeholder="https://example.com" value={data.website}
                                         onChange={(e) => setData('website', e.target.value)} error={errors.website} />
                                 </Field>
-                                <Field label="Phone" error={errors.phone}>
+                                <Field label={i18n.t('generated.merchants_Create.phone')} error={errors.phone}>
                                     <TextInput type="tel" placeholder="+359 2 123 4567" value={data.phone}
                                         onChange={(e) => setData('phone', e.target.value)} error={errors.phone} />
                                 </Field>
-                                <Field label="Tax / VAT ID" error={errors.tax_id}>
+                                <Field label={i18n.t('generated.merchants_Create.taxVatId')} error={errors.tax_id}>
                                     <TextInput type="text" value={data.tax_id}
                                         onChange={(e) => setData('tax_id', e.target.value)} error={errors.tax_id} />
                                 </Field>
-                                <Field label="Country Code" hint="Two-letter ISO code, for example BG or US." error={errors.country}>
+                                <Field label={i18n.t('generated.merchants_Create.countryCode')} hint={i18n.t('generated.merchants_Create.twoLetterIsoCodeForExampleBgOr')} error={errors.country}>
                                     <TextInput type="text" maxLength={2} placeholder="BG" value={data.country}
                                         onChange={(e) => setData('country', e.target.value.toUpperCase())} error={errors.country} />
                                 </Field>
                             </div>
-                            <Field label="Company Logo" hint="JPG, PNG or WebP, up to 2 MB." error={errors.logo}>
+                            <Field label={i18n.t('generated.merchants_Create.companyLogo')} hint={i18n.t('generated.merchants_Create.jpgPngOrWebpUpTo2Mb')} error={errors.logo}>
                                 <input type="file" accept="image/jpeg,image/png,image/webp"
                                     onChange={(e) => setData('logo', e.target.files?.[0] ?? null)}
                                     className="block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:font-medium file:text-indigo-700" />
@@ -197,23 +198,23 @@ export default function MerchantsCreate() {
                         </FormSection>
 
                         <FormSection
-                            title="Business Address"
-                            description="Optional registered or operating address."
+                            title={i18n.t('generated.merchants_Create.businessAddress')}
+                            description={i18n.t('generated.merchants_Create.optionalRegisteredOrOperatingAddress')}
                         >
                             <div className="grid gap-5 sm:grid-cols-2">
-                                <Field label="Address Line 1" error={errors.address_line1}>
+                                <Field label={i18n.t('generated.merchants_Create.addressLine1')} error={errors.address_line1}>
                                     <TextInput type="text" value={data.address_line1}
                                         onChange={(e) => setData('address_line1', e.target.value)} error={errors.address_line1} />
                                 </Field>
-                                <Field label="Address Line 2" error={errors.address_line2}>
+                                <Field label={i18n.t('generated.merchants_Create.addressLine2')} error={errors.address_line2}>
                                     <TextInput type="text" value={data.address_line2}
                                         onChange={(e) => setData('address_line2', e.target.value)} error={errors.address_line2} />
                                 </Field>
-                                <Field label="City" error={errors.city}>
+                                <Field label={i18n.t('generated.merchants_Create.city')} error={errors.city}>
                                     <TextInput type="text" value={data.city}
                                         onChange={(e) => setData('city', e.target.value)} error={errors.city} />
                                 </Field>
-                                <Field label="Postal Code" error={errors.postal_code}>
+                                <Field label={i18n.t('generated.merchants_Create.postalCode')} error={errors.postal_code}>
                                     <TextInput type="text" value={data.postal_code}
                                         onChange={(e) => setData('postal_code', e.target.value)} error={errors.postal_code} />
                                 </Field>
@@ -222,10 +223,10 @@ export default function MerchantsCreate() {
 
                         {/* Account status */}
                         <FormSection
-                            title="Account Status"
-                            description="Choose the initial status for this merchant. You can change it at any time from the merchant's profile."
+                            title={i18n.t('generated.merchants_Create.accountStatus')}
+                            description={i18n.t('generated.merchants_Create.chooseTheInitialStatusForThisMerchantYou')}
                         >
-                            <Field label="Initial Status" error={errors.status}>
+                            <Field label={i18n.t('generated.merchants_Create.initialStatus')} error={errors.status}>
                                 <StatusPicker value={data.status} onChange={(v) => setData('status', v)} />
                             </Field>
                         </FormSection>
@@ -237,7 +238,7 @@ export default function MerchantsCreate() {
 
                         {/* Action card */}
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <h3 className="text-sm font-semibold text-slate-900 mb-4">Create merchant</h3>
+                            <h3 className="text-sm font-semibold text-slate-900 mb-4">{i18n.t('generated.merchants_Create.createMerchant')}</h3>
                             <button
                                 type="submit"
                                 disabled={processing}
@@ -249,19 +250,17 @@ export default function MerchantsCreate() {
                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3-3-3h4z"/>
                                     </svg>
                                 )}
-                                {processing ? 'Creating…' : 'Create Merchant'}
+                                {processing ? i18n.t('generated.common.creating') : i18n.t('generated.common.createMerchant')}
                             </button>
                             <Link
                                 href={route('admin.merchants.index')}
                                 className="mt-3 block w-full rounded-xl border border-slate-200 px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                            >
-                                Cancel
-                            </Link>
+                            >{i18n.t('common.actions.cancel')}</Link>
                         </div>
 
                         {/* What happens next */}
                         <div className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
-                            <h4 className="text-sm font-semibold text-blue-900 mb-3">What happens next?</h4>
+                            <h4 className="text-sm font-semibold text-blue-900 mb-3">{i18n.t('generated.merchants_Create.whatHappensNext')}</h4>
                             <ol className="space-y-2.5">
                                 {[
                                     'Merchant account is created with a secure auto-generated password.',
@@ -278,7 +277,7 @@ export default function MerchantsCreate() {
 
                         {/* Status guide */}
                         <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                            <h4 className="text-sm font-semibold text-slate-700 mb-3">Status guide</h4>
+                            <h4 className="text-sm font-semibold text-slate-700 mb-3">{i18n.t('generated.merchants_Create.statusGuide')}</h4>
                             <div className="space-y-2">
                                 {STATUS_OPTIONS.map((opt) => (
                                     <div key={opt.value} className="flex items-start gap-2">

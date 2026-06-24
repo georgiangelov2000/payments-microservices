@@ -18,14 +18,14 @@ enum PaymentLogEventType: int
     public function label(): string
     {
         return match ($this) {
-            self::EVENT_PAYMENT_CREATED            => 'Payment created',
-            self::EVENT_PROVIDER_REQUEST_SENT      => 'Provider request sent',
-            self::EVENT_PROVIDER_PAYMENT_ACCEPTED  => 'Provider status update',
-            self::EVENT_MERCHANT_NOTIFICATION_SENT => 'Merchant notified',
-            self::EVENT_PAYMENT_CANCELLED          => 'Payment cancelled',
-            self::EVENT_PAYMENT_REFUNDED           => 'Payment refunded',
-            self::EVENT_PAYMENT_EXPIRED            => 'Payment expired',
-            self::EVENT_PAYMENT_DISPUTED           => 'Payment disputed',
+            self::EVENT_PAYMENT_CREATED            => __('messages.events.payment_created'),
+            self::EVENT_PROVIDER_REQUEST_SENT      => __('messages.events.provider_request_sent'),
+            self::EVENT_PROVIDER_PAYMENT_ACCEPTED  => __('messages.events.provider_status_update'),
+            self::EVENT_MERCHANT_NOTIFICATION_SENT => __('messages.events.merchant_notified'),
+            self::EVENT_PAYMENT_CANCELLED          => __('messages.events.payment_cancelled'),
+            self::EVENT_PAYMENT_REFUNDED           => __('messages.events.payment_refunded'),
+            self::EVENT_PAYMENT_EXPIRED            => __('messages.events.payment_expired'),
+            self::EVENT_PAYMENT_DISPUTED           => __('messages.events.payment_disputed'),
         };
     }
 }

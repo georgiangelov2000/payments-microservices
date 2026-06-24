@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import { fmt, fmtCurrency } from '@/utils';
+import i18n from '@/i18n';
 import {
     CreditCard, TrendingUp, CheckCircle2, Clock, XCircle,
     DollarSign, BarChart2, ArrowRight, TrendingDown,
@@ -40,8 +41,7 @@ function StatCard({ label, value, sub, Icon, iconBg, iconColor, accent, spark, d
                             {delta != null && Math.abs(delta) > 0 && (
                                 <span className={`flex items-center gap-0.5 font-medium ${deltaPos ? 'text-emerald-600' : 'text-red-500'}`}>
                                     <DeltaIcon size={11} strokeWidth={2} />
-                                    {Math.abs(delta)}pp vs prev 7d
-                                </span>
+                                    {Math.abs(delta)}{i18n.t('generated.dashboard.ppVsPrev7d')}</span>
                             )}
                         </p>
                     )}
@@ -81,17 +81,15 @@ export default function Dashboard({ summary }) {
         <AuthenticatedLayout
             header={
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">{i18n.t('common.nav.dashboard')}</h2>
                     <Link href={route('analytics')}
                         className="flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors">
-                        <BarChart2 size={14} strokeWidth={2} />
-                        Full analytics
-                        <ArrowRight size={12} strokeWidth={2} />
+                        <BarChart2 size={14} strokeWidth={2} />{i18n.t('generated.dashboard.fullAnalytics')}<ArrowRight size={12} strokeWidth={2} />
                     </Link>
                 </div>
             }
         >
-            <Head title="Dashboard" />
+            <Head title={i18n.t('common.nav.dashboard')} />
             <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-6 max-w-7xl mx-auto">
 
                 {/* Top row */}
@@ -99,38 +97,37 @@ export default function Dashboard({ summary }) {
                     <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div className="absolute left-0 top-0 h-full w-1 bg-indigo-500" />
                         <div className="pl-2">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Success Rate</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">Last 7 days</p>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{i18n.t('generated.dashboard.successRate')}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{i18n.t('generated.dashboard.last7Days')}</p>
                         </div>
                         <div className="mt-3 flex items-center gap-4 pl-2">
                             <SuccessRateRing rate={s.success_rate_7d} />
                             <div>
-                                <p className="text-sm font-medium text-slate-700">{fmt(s.succeeded_7d)} of {fmt(s.payments_7d)}</p>
-                                <p className="text-xs text-slate-400">payments succeeded</p>
+                                <p className="text-sm font-medium text-slate-700">{fmt(s.succeeded_7d)}{' '}{i18n.t('generated.dashboard.of')}{' '}{fmt(s.payments_7d)}</p>
+                                <p className="text-xs text-slate-400">{i18n.t('generated.dashboard.paymentsSucceeded')}</p>
                                 {s.delta_volume != null && Math.abs(s.delta_volume) > 0 && (
                                     <p className={`mt-1 flex items-center gap-0.5 text-xs font-medium ${s.delta_volume >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                                         {s.delta_volume >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                                        {Math.abs(s.delta_volume)}pp vs prev 7d
-                                    </p>
+                                        {Math.abs(s.delta_volume)}{i18n.t('generated.dashboard.ppVsPrev7d')}</p>
                                 )}
                             </div>
                         </div>
                     </div>
-                    <StatCard label="Volume This Month" value={fmtCurrency(s.volume_this_month, s.currency)}
+                    <StatCard label={i18n.t('generated.dashboard.volumeThisMonth')} value={fmtCurrency(s.volume_this_month, s.currency)}
                         sub="Successful payments only" Icon={DollarSign}
                         iconBg="bg-indigo-50" iconColor="text-indigo-600" accent="bg-indigo-500" />
-                    <StatCard label="Volume Last 7 Days" value={fmtCurrency(s.volume_7d, s.currency)}
+                    <StatCard label={i18n.t('generated.dashboard.volumeLast7Days')} value={fmtCurrency(s.volume_7d, s.currency)}
                         Icon={TrendingUp} iconBg="bg-blue-50" iconColor="text-blue-600" accent="bg-blue-500"
                         spark={s.sparkline} />
-                    <StatCard label="This Month" value={fmt(s.payments_this_month)} sub="Total payments"
+                    <StatCard label={i18n.t('generated.dashboard.thisMonth')} value={fmt(s.payments_this_month)} sub="Total payments"
                         Icon={CreditCard} iconBg="bg-slate-100" iconColor="text-slate-600" accent="bg-slate-400" />
                 </div>
 
                 {/* Status breakdown */}
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <StatCard label="All-time Payments" value={fmt(s.total_payments)}
+                    <StatCard label={i18n.t('generated.dashboard.allTimePayments')} value={fmt(s.total_payments)}
                         Icon={CreditCard} iconBg="bg-slate-100" iconColor="text-slate-500" accent="bg-slate-400" />
-                    <StatCard label="Successful" value={fmt(s.payments_finished)}
+                    <StatCard label={i18n.t('generated.dashboard.successful')} value={fmt(s.payments_finished)}
                         Icon={CheckCircle2} iconBg="bg-emerald-50" iconColor="text-emerald-600" accent="bg-emerald-500" />
                     <StatCard label="Pending" value={fmt(s.payments_pending)}
                         Icon={Clock} iconBg="bg-amber-50" iconColor="text-amber-600" accent="bg-amber-500" />
@@ -141,9 +138,9 @@ export default function Dashboard({ summary }) {
                 {/* Quick links */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
-                        { label: 'View all payments', href: route('payments.index'), icon: CreditCard },
-                        { label: 'Analytics & trends', href: route('analytics'), icon: BarChart2 },
-                        { label: 'Manage webhooks', href: route('webhooks.index'), icon: TrendingUp },
+                        { label: i18n.t('generated.dashboard.viewAllPayments'), href: route('payments.index'), icon: CreditCard },
+                        { label: i18n.t('generated.dashboard.analyticsTrends'), href: route('analytics'), icon: BarChart2 },
+                        { label: i18n.t('generated.dashboard.manageWebhooks'), href: route('webhooks.index'), icon: TrendingUp },
                     ].map(({ label, href, icon: Icon }) => (
                         <Link key={label} href={href}
                             className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-colors group">

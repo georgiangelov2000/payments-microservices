@@ -1,3 +1,5 @@
+
+import i18n from '@/i18n';
 import { useState } from 'react'
 import { Head, Link, useForm, router } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
@@ -20,10 +22,10 @@ const EVENT_COLORS = {
 }
 
 const STATUS_CONFIG = {
-    delivered: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle2, label: 'Delivered' },
-    failed:    { color: 'bg-red-50 text-red-600 border-red-200',             icon: XCircle,      label: 'Failed'     },
-    retrying:  { color: 'bg-amber-50 text-amber-700 border-amber-200',       icon: RefreshCw,    label: 'Retrying'   },
-    pending:   { color: 'bg-slate-100 text-slate-500 border-slate-200',      icon: Clock,        label: 'Pending'    },
+    delivered: { color: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: CheckCircle2, label: i18n.t('generated.common.delivered') },
+    failed:    { color: 'bg-red-50 text-red-600 border-red-200',             icon: XCircle,      label: i18n.t('generated.common.failed') },
+    retrying:  { color: 'bg-amber-50 text-amber-700 border-amber-200',       icon: RefreshCw,    label: i18n.t('generated.common.retrying') },
+    pending:   { color: 'bg-slate-100 text-slate-500 border-slate-200',      icon: Clock,        label: i18n.t('generated.common.pending') },
 }
 
 function EventBadge({ event }) {
@@ -103,7 +105,7 @@ function DeliveryRow({ delivery }) {
                 <td className="px-4 py-2 text-xs text-slate-500 whitespace-nowrap">
                     {delivery.status === 'delivered' ? fmt(delivery.delivered_at) : (
                         delivery.next_retry_at
-                            ? <span className="text-amber-600">Retry {fmt(delivery.next_retry_at)}</span>
+                            ? <span className="text-amber-600">{i18n.t('generated.webhooks_Logs.retry')}{' '}{fmt(delivery.next_retry_at)}</span>
                             : '—'
                     )}
                 </td>
@@ -131,8 +133,8 @@ function DeliveryRow({ delivery }) {
                             className="inline-flex items-center gap-0.5 text-xs text-slate-400 hover:text-slate-700 transition-colors"
                         >
                             {open
-                                ? <><ChevronUp size={13} strokeWidth={2} />Hide</>
-                                : <><ChevronDown size={13} strokeWidth={2} />Details</>}
+                                ? <><ChevronUp size={13} strokeWidth={2} />{i18n.t('generated.webhooks_Logs.hide')}</>
+                                : <><ChevronDown size={13} strokeWidth={2} />{i18n.t('generated.webhooks_Logs.details')}</>}
                         </button>
                     )}
                 </td>
@@ -143,19 +145,19 @@ function DeliveryRow({ delivery }) {
                     <td colSpan={9} className="px-6 py-4">
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                             {delivery.payload && (
-                                <Section title="Request payload" icon={Send}>
+                                <Section title={i18n.t('generated.webhooks_Logs.requestPayload')} icon={Send}>
                                     <JsonBlock value={delivery.payload} />
                                 </Section>
                             )}
                             {delivery.response_body && (
-                                <Section title="Response body" icon={CheckCircle2}>
+                                <Section title={i18n.t('generated.webhooks_Logs.responseBody')} icon={CheckCircle2}>
                                     <pre className="whitespace-pre-wrap break-words text-xs text-slate-700 leading-relaxed max-h-52 overflow-auto">
                                         {delivery.response_body}
                                     </pre>
                                 </Section>
                             )}
                             {delivery.last_error && (
-                                <Section title="Last error" icon={AlertTriangle} accent="red">
+                                <Section title={i18n.t('generated.webhooks_Logs.lastError')} icon={AlertTriangle} accent="red">
                                     <pre className="whitespace-pre-wrap break-words text-xs text-red-700 leading-relaxed max-h-52 overflow-auto">
                                         {delivery.last_error}
                                     </pre>
@@ -218,7 +220,7 @@ export default function WebhookLogs({ deliveries, endpoints, events, filters = {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Webhook Logs" />
+            <Head title={i18n.t('generated.webhooks_Logs.webhookLogs')} />
 
             <div className="p-6 max-w-7xl mx-auto space-y-5">
 
@@ -229,31 +231,24 @@ export default function WebhookLogs({ deliveries, endpoints, events, filters = {
                             href={route('webhooks.index')}
                             className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 transition-colors"
                         >
-                            <ArrowLeft size={13} strokeWidth={2} />
-                            Endpoints
-                        </Link>
+                            <ArrowLeft size={13} strokeWidth={2} />{i18n.t('generated.webhooks_Logs.endpoints')}</Link>
                         <span className="text-slate-300">/</span>
                         <h1 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
-                            <Webhook size={18} strokeWidth={1.75} className="text-indigo-600" />
-                            Delivery Logs
-                        </h1>
+                            <Webhook size={18} strokeWidth={1.75} className="text-indigo-600" />{i18n.t('generated.webhooks_Logs.deliveryLogs')}</h1>
                     </div>
 
                     {/* Page-level stats */}
                     <div className="flex items-center gap-4 text-xs text-slate-500">
                         <span className="flex items-center gap-1">
                             <CheckCircle2 size={12} className="text-emerald-500" />
-                            {deliveries.total} total
-                        </span>
+                            {deliveries.total}{i18n.t('generated.webhooks_Logs.total')}</span>
                         <span className="flex items-center gap-1">
                             <CheckCircle2 size={12} className="text-emerald-500" />
-                            {totalDelivered} delivered this page
-                        </span>
+                            {totalDelivered}{i18n.t('generated.webhooks_Logs.deliveredThisPage')}</span>
                         {totalFailed > 0 && (
                             <span className="flex items-center gap-1 text-red-500 font-medium">
                                 <XCircle size={12} />
-                                {totalFailed} failed this page
-                            </span>
+                                {totalFailed}{i18n.t('generated.webhooks_Logs.failedThisPage')}</span>
                         )}
                     </div>
                 </div>
@@ -264,13 +259,13 @@ export default function WebhookLogs({ deliveries, endpoints, events, filters = {
                     className="bg-white rounded-lg border p-4 grid gap-3 md:grid-cols-6 items-end"
                 >
                     <div className="md:col-span-2">
-                        <label className="block text-xs font-medium text-slate-500 mb-1">Endpoint</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{i18n.t('generated.webhooks_Logs.endpoint')}</label>
                         <select
                             value={data.webhook_id}
                             onChange={e => setData('webhook_id', e.target.value)}
                             className="w-full rounded border-gray-300 text-sm"
                         >
-                            <option value="">All endpoints</option>
+                            <option value="">{i18n.t('generated.webhooks_Logs.allEndpoints')}</option>
                             {endpoints.map(ep => (
                                 <option key={ep.id} value={ep.id}>
                                     {ep.desc ? `${ep.desc} — ` : ''}{ep.url}
@@ -280,34 +275,34 @@ export default function WebhookLogs({ deliveries, endpoints, events, filters = {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">Event</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{i18n.t('generated.webhooks_Logs.event')}</label>
                         <select
                             value={data.event}
                             onChange={e => setData('event', e.target.value)}
                             className="w-full rounded border-gray-300 text-sm"
                         >
-                            <option value="">All events</option>
+                            <option value="">{i18n.t('generated.webhooks_Logs.allEvents')}</option>
                             {events.map(ev => <option key={ev} value={ev}>{ev}</option>)}
                         </select>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">Status</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{i18n.t('generated.webhooks_Logs.status')}</label>
                         <select
                             value={data.status}
                             onChange={e => setData('status', e.target.value)}
                             className="w-full rounded border-gray-300 text-sm"
                         >
-                            <option value="">All statuses</option>
-                            <option value="delivered">Delivered</option>
+                            <option value="">{i18n.t('generated.webhooks_Logs.allStatuses')}</option>
+                            <option value="delivered">{i18n.t('generated.webhooks_Logs.delivered')}</option>
                             <option value="failed">Failed</option>
-                            <option value="retrying">Retrying</option>
+                            <option value="retrying">{i18n.t('generated.webhooks_Logs.retrying')}</option>
                             <option value="pending">Pending</option>
                         </select>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">From</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{i18n.t('generated.webhooks_Logs.from')}</label>
                         <input
                             type="date"
                             value={data.from}
@@ -317,7 +312,7 @@ export default function WebhookLogs({ deliveries, endpoints, events, filters = {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-slate-500 mb-1">To</label>
+                        <label className="block text-xs font-medium text-slate-500 mb-1">{i18n.t('generated.webhooks_Logs.to')}</label>
                         <input
                             type="date"
                             value={data.to}
@@ -332,17 +327,13 @@ export default function WebhookLogs({ deliveries, endpoints, events, filters = {
                             disabled={processing}
                             className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg bg-indigo-600 text-white py-2 text-sm font-medium hover:bg-indigo-700 transition-colors"
                         >
-                            <SlidersHorizontal size={13} strokeWidth={2} />
-                            Filter
-                        </button>
+                            <SlidersHorizontal size={13} strokeWidth={2} />{i18n.t('common.actions.filter')}</button>
                         <button
                             type="button"
                             onClick={reset}
                             className="inline-flex items-center justify-center gap-1 w-full rounded-lg border border-gray-300 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                         >
-                            <RotateCcw size={13} strokeWidth={2} />
-                            Reset
-                        </button>
+                            <RotateCcw size={13} strokeWidth={2} />{i18n.t('common.actions.reset')}</button>
                     </div>
                 </form>
 
@@ -351,15 +342,15 @@ export default function WebhookLogs({ deliveries, endpoints, events, filters = {
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50 border-b text-xs text-left text-gray-500 uppercase tracking-wide">
                             <tr>
-                                <th className="px-4 py-2 font-medium">Sent at</th>
-                                <th className="px-4 py-2 font-medium">Event</th>
-                                <th className="px-4 py-2 font-medium">Endpoint</th>
-                                <th className="px-4 py-2 font-medium">Status</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.webhooks_Logs.sentAt')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.webhooks_Logs.event')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.webhooks_Logs.endpoint')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.webhooks_Logs.status')}</th>
                                 <th className="px-4 py-2 font-medium text-center">HTTP</th>
-                                <th className="px-4 py-2 font-medium text-center">Attempts</th>
-                                <th className="px-4 py-2 font-medium">Resolved at</th>
-                                <th className="px-4 py-2 font-medium">Payment</th>
-                                <th className="px-4 py-2 font-medium text-center">Details</th>
+                                <th className="px-4 py-2 font-medium text-center">{i18n.t('generated.webhooks_Logs.attempts')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.webhooks_Logs.resolvedAt')}</th>
+                                <th className="px-4 py-2 font-medium">{i18n.t('generated.webhooks_Logs.payment')}</th>
+                                <th className="px-4 py-2 font-medium text-center">{i18n.t('generated.webhooks_Logs.details')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -368,8 +359,8 @@ export default function WebhookLogs({ deliveries, endpoints, events, filters = {
                                     <td colSpan={9} className="px-6 py-14 text-center">
                                         <div className="flex flex-col items-center gap-2 text-slate-400">
                                             <Webhook size={32} strokeWidth={1.25} />
-                                            <span className="text-sm font-medium">No deliveries found</span>
-                                            <span className="text-xs">Try adjusting the filters above</span>
+                                            <span className="text-sm font-medium">{i18n.t('generated.webhooks_Logs.noDeliveriesFound')}</span>
+                                            <span className="text-xs">{i18n.t('generated.webhooks_Logs.tryAdjustingTheFiltersAbove')}</span>
                                         </div>
                                     </td>
                                 </tr>

@@ -31,7 +31,7 @@ class StoreWorkflowRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'environment.in' => 'Environment must be either "test" or "live".',
+            'environment.in' => __('messages.routing.environment_invalid'),
         ];
     }
 }

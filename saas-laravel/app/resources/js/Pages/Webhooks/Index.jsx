@@ -10,6 +10,7 @@ import {
 import toast from 'react-hot-toast';
 import { fmtDate } from '@/utils';
 
+import i18n from '@/i18n';
 // ─────────────────────────────────────────────────────────────────────────────
 // Signing secret verification snippet
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,12 +57,10 @@ function AddWebhookForm({ availableEvents, onClose }) {
     return (
         <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-5">
             <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <Plus size={15} strokeWidth={2} className="text-indigo-600" />
-                Add Webhook Endpoint
-            </h3>
+                <Plus size={15} strokeWidth={2} className="text-indigo-600" />{i18n.t('generated.webhooks_Index.addWebhookEndpoint')}</h3>
             <form onSubmit={submit} className="space-y-4">
                 <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Endpoint URL *</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{i18n.t('generated.webhooks_Index.endpointUrl')}</label>
                     <input
                         type="url"
                         value={form.data.url}
@@ -74,18 +73,18 @@ function AddWebhookForm({ availableEvents, onClose }) {
                 </div>
 
                 <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Description (optional)</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">{i18n.t('generated.webhooks_Index.descriptionOptional')}</label>
                     <input
                         type="text"
                         value={form.data.description}
                         onChange={e => form.setData('description', e.target.value)}
-                        placeholder="e.g. Production order fulfillment"
+                        placeholder={i18n.t('generated.webhooks_Index.eGProductionOrderFulfillment')}
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-2">Subscribe to events *</label>
+                    <label className="block text-xs font-medium text-slate-600 mb-2">{i18n.t('generated.webhooks_Index.subscribeToEvents')}</label>
                     <div className="flex flex-wrap gap-2">
                         {availableEvents.map(ev => (
                             <button
@@ -112,15 +111,13 @@ function AddWebhookForm({ availableEvents, onClose }) {
                         disabled={form.processing || !form.data.url || !form.data.events.length}
                         className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                     >
-                        {form.processing ? 'Saving…' : 'Save endpoint'}
+                        {form.processing ? i18n.t('generated.common.saving') : i18n.t('generated.common.saveEndpoint')}
                     </button>
                     <button
                         type="button"
                         onClick={onClose}
                         className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                    >
-                        Cancel
-                    </button>
+                    >{i18n.t('common.actions.cancel')}</button>
                 </div>
             </form>
         </div>
@@ -170,7 +167,7 @@ function WebhookRow({ webhook }) {
                             <ExternalLink size={12} strokeWidth={1.75} className="shrink-0" />
                         </a>
                         <Badge variant={webhook.active ? 'success' : 'default'}>
-                            {webhook.active ? 'Active' : 'Inactive'}
+                            {webhook.active ? i18n.t('generated.common.active') : i18n.t('generated.common.inactive')}
                         </Badge>
                     </div>
                     {webhook.description && (
@@ -182,16 +179,16 @@ function WebhookRow({ webhook }) {
                     <button
                         onClick={test}
                         disabled={testing}
-                        title="Send test ping"
+                        title={i18n.t('generated.webhooks_Index.sendTestPing')}
                         className="flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
                     >
                         <Play size={12} strokeWidth={2} />
-                        {testing ? 'Sending…' : 'Test'}
+                        {testing ? i18n.t('generated.common.sending') : i18n.t('generated.common.test')}
                     </button>
                     <button
                         onClick={del}
                         disabled={deleting}
-                        title="Delete webhook"
+                        title={i18n.t('generated.webhooks_Index.deleteWebhook')}
                         className="flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
                     >
                         <Trash2 size={12} strokeWidth={2} />
@@ -212,21 +209,18 @@ function WebhookRow({ webhook }) {
             <div className="flex items-center gap-5 text-xs text-slate-500 border-t border-slate-100 pt-3">
                 <span className="flex items-center gap-1">
                     <CheckCircle2 size={12} className="text-emerald-500" />
-                    {webhook.delivered_count} delivered
-                </span>
+                    {webhook.delivered_count}{i18n.t('generated.webhooks_Index.delivered')}</span>
                 <span className="flex items-center gap-1">
                     <AlertTriangle size={12} className="text-amber-500" />
                     {webhook.deliveries_count - webhook.delivered_count} failed
                 </span>
                 {successRate !== null && (
                     <span className={successRate >= 90 ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
-                        {successRate}% success rate
-                    </span>
+                        {successRate}{i18n.t('generated.webhooks_Index.successRate')}</span>
                 )}
                 {webhook.last_used_at && (
                     <span className="flex items-center gap-1 ml-auto">
-                        <Clock size={12} />
-                        Last delivery {fmtDate(webhook.last_used_at)}
+                        <Clock size={12} />{i18n.t('generated.webhooks_Index.lastDelivery')}{fmtDate(webhook.last_used_at)}
                     </span>
                 )}
                 <span className="font-mono text-slate-400">{webhook.secret_hint}</span>
@@ -250,36 +244,28 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
             header={
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                        <Webhook size={20} strokeWidth={1.75} className="text-indigo-600" />
-                        Webhooks
-                    </h2>
+                        <Webhook size={20} strokeWidth={1.75} className="text-indigo-600" />{i18n.t('common.nav.webhooks')}</h2>
                     <div className="flex gap-2">
                         <Link
                             href={route('webhooks.logs')}
                             className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                         >
-                            <ScrollText size={13} strokeWidth={2} />
-                            Delivery logs
-                        </Link>
+                            <ScrollText size={13} strokeWidth={2} />{i18n.t('generated.webhooks_Index.deliveryLogs')}</Link>
                         <button
                             onClick={() => setShowSnippet(s => !s)}
                             className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                         >
-                            <Code2 size={13} strokeWidth={2} />
-                            Verify signature
-                        </button>
+                            <Code2 size={13} strokeWidth={2} />{i18n.t('generated.webhooks_Index.verifySignature')}</button>
                         <button
                             onClick={() => setShowForm(true)}
                             className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
                         >
-                            <Plus size={13} strokeWidth={2.5} />
-                            Add endpoint
-                        </button>
+                            <Plus size={13} strokeWidth={2.5} />{i18n.t('generated.webhooks_Index.addEndpoint')}</button>
                     </div>
                 </div>
             }
         >
-            <Head title="Webhooks" />
+            <Head title={i18n.t('common.nav.webhooks')} />
 
             <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-5 max-w-4xl mx-auto">
 
@@ -299,10 +285,8 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
 
                 {/* How it works banner */}
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-600">
-                    <p className="font-medium text-slate-700 mb-1">How webhooks work</p>
-                    <p>PayFlow sends a signed <code className="rounded bg-slate-200 px-1 text-xs">POST</code> request to your endpoint when a payment event occurs.
-                    Requests include a <code className="rounded bg-slate-200 px-1 text-xs">X-PayFlow-Signature</code> header with an HMAC-SHA256 signature you can verify using your endpoint secret.
-                    Failed deliveries are retried up to 5 times with exponential backoff (1m → 5m → 15m → 1h → 3h).</p>
+                    <p className="font-medium text-slate-700 mb-1">{i18n.t('generated.webhooks_Index.howWebhooksWork')}</p>
+                    <p>{i18n.t('generated.webhooks_Index.payflowSendsASigned')}{' '}<code className="rounded bg-slate-200 px-1 text-xs">POST</code>{i18n.t('generated.webhooks_Index.requestToYourEndpointWhenAPaymentEvent')}<code className="rounded bg-slate-200 px-1 text-xs">X-PayFlow-Signature</code>{i18n.t('generated.webhooks_Index.headerWithAnHmacSha256SignatureYouCan')}</p>
                 </div>
 
                 {/* Events reference */}
@@ -312,9 +296,9 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                         onClick={() => setShowEvents(v => !v)}
                         className="w-full px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between hover:bg-slate-100 transition-colors"
                     >
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Event reference</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.webhooks_Index.eventReference')}</p>
                         <div className="flex items-center gap-2 text-xs text-slate-400">
-                            <span>All events share the same payload shape</span>
+                            <span>{i18n.t('generated.webhooks_Index.allEventsShareTheSamePayloadShape')}</span>
                             {showEvents ? <ChevronUp size={13} strokeWidth={2} /> : <ChevronDown size={13} strokeWidth={2} />}
                         </div>
                     </button>
@@ -329,11 +313,8 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                                     </span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-700">Payment session opened</p>
-                                    <p className="mt-0.5 text-xs text-slate-500">
-                                        Fired as soon as a new payment is created and the customer is redirected to the provider checkout.
-                                        Use this to mark the order as <em>awaiting payment</em> in your system.
-                                    </p>
+                                    <p className="text-sm font-medium text-slate-700">{i18n.t('generated.webhooks_Index.paymentSessionOpened')}</p>
+                                    <p className="mt-0.5 text-xs text-slate-500">{i18n.t('generated.webhooks_Index.firedAsSoonAsANewPaymentIs')}<em>{i18n.t('generated.webhooks_Index.awaitingPayment')}</em>{i18n.t('generated.webhooks_Index.inYourSystem')}</p>
                                     <p className="mt-1 text-[11px] text-slate-400 font-mono">data.status = "created"</p>
                                 </div>
                             </div>
@@ -344,11 +325,8 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                                     </span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-700">Payment captured successfully</p>
-                                    <p className="mt-0.5 text-xs text-slate-500">
-                                        Fired when the provider confirms the charge was captured. This is the authoritative signal
-                                        to fulfil the order — do not fulfil on <code className="rounded bg-slate-100 px-1">payment.created</code> alone.
-                                    </p>
+                                    <p className="text-sm font-medium text-slate-700">{i18n.t('generated.webhooks_Index.paymentCapturedSuccessfully')}</p>
+                                    <p className="mt-0.5 text-xs text-slate-500">{i18n.t('generated.webhooks_Index.firedWhenTheProviderConfirmsTheChargeWas')}<code className="rounded bg-slate-100 px-1">payment.created</code>{i18n.t('generated.webhooks_Index.alone')}</p>
                                     <p className="mt-1 text-[11px] text-slate-400 font-mono">data.status = "succeeded"  ·  data.amount and data.currency are set</p>
                                 </div>
                             </div>
@@ -359,12 +337,8 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                                     </span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-700">Payment declined by provider</p>
-                                    <p className="mt-0.5 text-xs text-slate-500">
-                                        Fired when the provider declines the charge — insufficient funds, card blocked, fraud check, etc.
-                                        All retry attempts have already been exhausted before this event is sent.
-                                        Prompt the customer to use a different payment method.
-                                    </p>
+                                    <p className="text-sm font-medium text-slate-700">{i18n.t('generated.webhooks_Index.paymentDeclinedByProvider')}</p>
+                                    <p className="mt-0.5 text-xs text-slate-500">{i18n.t('generated.webhooks_Index.firedWhenTheProviderDeclinesTheChargeInsufficient')}</p>
                                     <p className="mt-1 text-[11px] text-slate-400 font-mono">data.status = "failed"</p>
                                 </div>
                             </div>
@@ -375,18 +349,15 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                                     </span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-slate-700">Customer abandoned checkout</p>
-                                    <p className="mt-0.5 text-xs text-slate-500">
-                                        Fired when the customer clicks "Cancel" or navigates away from the provider checkout page.
-                                        No charge was attempted. You can show a recovery prompt or restart the checkout flow.
-                                    </p>
+                                    <p className="text-sm font-medium text-slate-700">{i18n.t('generated.webhooks_Index.customerAbandonedCheckout')}</p>
+                                    <p className="mt-0.5 text-xs text-slate-500">{i18n.t('generated.webhooks_Index.firedWhenTheCustomerClicksCancelOrNavigates')}</p>
                                     <p className="mt-1 text-[11px] text-slate-400 font-mono">data.status = "cancelled"</p>
                                 </div>
                             </div>
                         </div>
                         <div className="border-t border-slate-100 bg-slate-900 overflow-hidden">
                             <div className="flex items-center justify-between px-5 py-2 border-b border-slate-700">
-                                <span className="text-xs font-medium text-slate-400">Example payload (all events)</span>
+                                <span className="text-xs font-medium text-slate-400">{i18n.t('generated.webhooks_Index.examplePayloadAllEvents')}</span>
                             </div>
                             <pre className="px-5 py-4 text-xs text-slate-300 overflow-x-auto leading-relaxed">{`{
   "id": "019eaccb-1234-...",
@@ -412,13 +383,11 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                 {showSnippet && (
                     <div className="rounded-xl border border-slate-200 bg-slate-900 overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700">
-                            <span className="text-xs font-medium text-slate-400">Signature verification (Node.js)</span>
+                            <span className="text-xs font-medium text-slate-400">{i18n.t('generated.webhooks_Index.signatureVerificationNodeJs')}</span>
                             <button
                                 onClick={() => { navigator.clipboard.writeText(VERIFY_SNIPPET); toast.success('Copied!'); }}
                                 className="text-xs text-slate-400 hover:text-white transition-colors"
-                            >
-                                Copy
-                            </button>
+                            >{i18n.t('common.actions.copy')}</button>
                         </div>
                         <pre className="px-4 py-4 text-xs text-slate-300 overflow-x-auto leading-relaxed">{VERIFY_SNIPPET}</pre>
                     </div>
@@ -433,14 +402,12 @@ export default function WebhooksIndex({ webhooks, availableEvents }) {
                 {webhooks.length === 0 && !showForm ? (
                     <div className="rounded-xl border-2 border-dashed border-slate-200 py-16 text-center">
                         <Webhook size={36} strokeWidth={1} className="mx-auto text-slate-300 mb-3" />
-                        <p className="text-sm font-medium text-slate-600">No webhook endpoints yet</p>
-                        <p className="text-xs text-slate-400 mt-1 mb-4">Add an endpoint to receive real-time payment events</p>
+                        <p className="text-sm font-medium text-slate-600">{i18n.t('generated.webhooks_Index.noWebhookEndpointsYet')}</p>
+                        <p className="text-xs text-slate-400 mt-1 mb-4">{i18n.t('generated.webhooks_Index.addAnEndpointToReceiveRealTimePayment')}</p>
                         <button
                             onClick={() => setShowForm(true)}
                             className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 transition-colors"
-                        >
-                            Add your first endpoint
-                        </button>
+                        >{i18n.t('generated.webhooks_Index.addYourFirstEndpoint')}</button>
                     </div>
                 ) : (
                     <div className="space-y-3">

@@ -21,17 +21,17 @@ use Illuminate\Support\Facades\DB;
 class EmailNotificationService
 {
     public const EVENTS = [
-        'payment.succeeded' => 'Payment succeeded',
-        'payment.failed' => 'Payment failed',
-        'payment.pending_too_long' => 'Payment pending too long',
-        'payment.refunded' => 'Payment refunded',
-        'payment.partially_refunded' => 'Payment partially refunded',
-        'payment.disputed' => 'Payment disputed',
-        'payment.cancelled' => 'Payment cancelled',
-        'payment.expired' => 'Payment expired',
-        'provider.timeout' => 'Provider timeout',
-        'routing.failed_over' => 'Routing failed over',
-        'routing.all_providers_failed' => 'All providers failed',
+        'payment.succeeded' => 'messages.events.payment_succeeded',
+        'payment.failed' => 'messages.events.payment_failed',
+        'payment.pending_too_long' => 'messages.events.payment_pending_too_long',
+        'payment.refunded' => 'messages.events.payment_refunded',
+        'payment.partially_refunded' => 'messages.events.payment_partially_refunded',
+        'payment.disputed' => 'messages.events.payment_disputed',
+        'payment.cancelled' => 'messages.events.payment_cancelled',
+        'payment.expired' => 'messages.events.payment_expired',
+        'provider.timeout' => 'messages.events.provider_timeout',
+        'routing.failed_over' => 'messages.events.routing_failed_over',
+        'routing.all_providers_failed' => 'messages.events.routing_all_providers_failed',
     ];
 
     public const SENDABLE_EVENTS = [
@@ -50,6 +50,11 @@ class EmailNotificationService
             'retry_attempts' => 3,
             'default_events' => array_fill_keys(self::SENDABLE_EVENTS, true),
         ];
+    }
+
+    public function events(): array
+    {
+        return array_map(static fn (string $key): string => __($key), self::EVENTS);
     }
 
     public function ensureMerchantDefaults(string $merchantId, ?string $email = null): void
@@ -96,7 +101,7 @@ class EmailNotificationService
                 ->where('merchant_id', $merchantId)
                 ->orderBy('event_type')
                 ->get(),
-            'events' => self::EVENTS,
+            'events' => $this->events(),
             'global' => $this->globalSettings(),
         ];
     }
@@ -274,12 +279,12 @@ class EmailNotificationService
 
     public function ensureTemplates(): void
     {
-        foreach (self::EVENTS as $event => $label) {
+        foreach ($this->events() as $event => $label) {
             EmailNotificationTemplate::firstOrCreate(
                 ['event_type' => $event],
                 [
-                    'subject' => "PayFlow: {$label}",
-                    'body' => "Event: {{event_label}}\nOrder: {{order_id}}\nPayment ID: {{payment_id}}\nAmount: {{amount}} {{currency}}\nEnvironment: {{environment}}\nStatus: {{status}}",
+                    'subject' => __('messages.notifications.template_subject', ['event' => $label]),
+                    'body' => __('messages.notifications.template_body'),
                     'enabled' => true,
                 ],
             );
@@ -297,7 +302,9 @@ class EmailNotificationService
         $payment = $delivery->payment;
         $values = [
             '{{event}}' => $delivery->event_type,
-            '{{event_label}}' => self::EVENTS[$delivery->event_type] ?? $delivery->event_type,
+            '{{event_label}}' => isset(self::EVENTS[$delivery->event_type])
+                ? __(self::EVENTS[$delivery->event_type])
+                : $delivery->event_type,
             '{{payment_id}}' => (string) ($payment?->id ?? $delivery->payment_id ?? ''),
             '{{order_id}}' => (string) ($payment?->order_id ?? $delivery->order_id ?? ''),
             '{{amount}}' => $payment ? number_format((float) $payment->price, 2) : '',
@@ -307,7 +314,7 @@ class EmailNotificationService
         ];
 
         return [
-            'subject' => strtr($template?->subject ?? 'PayFlow email notification', $values),
+            'subject' => strtr($template?->subject ?? __('messages.notifications.default_subject'), $values),
             'body' => strtr($template?->body ?? '', $values),
         ];
     }

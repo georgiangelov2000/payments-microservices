@@ -3,6 +3,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { fmtDate } from '@/utils';
 import { Mail, Save } from 'lucide-react';
 
+import i18n from '@/i18n';
 function StatusPill({ value }) {
     const styles = {
         sent: 'border-emerald-200 bg-emerald-50 text-emerald-700',
@@ -35,15 +36,12 @@ function TemplateForm({ template, label }) {
                     <p className="font-mono text-xs text-slate-400">{template.event_type}</p>
                 </div>
                 <label className="flex items-center gap-2 text-xs text-slate-600">
-                    <input type="checkbox" checked={data.enabled} onChange={(e) => setData('enabled', e.target.checked)} />
-                    Enabled
-                </label>
+                    <input type="checkbox" checked={data.enabled} onChange={(e) => setData('enabled', e.target.checked)} />{i18n.t('generated.notifications_Index.enabled')}</label>
             </div>
             <input value={data.subject} onChange={(e) => setData('subject', e.target.value)} className="mt-3 w-full rounded-lg border-slate-300 text-sm" />
             <textarea value={data.body} onChange={(e) => setData('body', e.target.value)} rows="5" className="mt-2 w-full rounded-lg border-slate-300 font-mono text-xs" />
             <button disabled={processing} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
-                <Save size={13} /> Save template
-            </button>
+                <Save size={13} />{i18n.t('generated.notifications_Index.saveTemplate')}</button>
         </form>
     );
 }
@@ -65,8 +63,8 @@ export default function AdminNotificationsIndex({ settings, events, templates, d
     );
 
     return (
-        <AdminLayout title="Email Notifications">
-            <Head title="Email Notifications" />
+        <AdminLayout title={i18n.t('generated.notifications_Index.emailNotifications')}>
+            <Head title={i18n.t('generated.notifications_Index.emailNotifications')} />
 
             <div className="space-y-6 p-6">
                 <form
@@ -78,29 +76,26 @@ export default function AdminNotificationsIndex({ settings, events, templates, d
                 >
                     <div className="flex items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-lg font-semibold text-slate-900">Email notification controls</h1>
-                            <p className="mt-1 text-sm text-slate-500">Global defaults apply to new merchant notification settings. The global enable switch overrides merchant settings.</p>
+                            <h1 className="text-lg font-semibold text-slate-900">{i18n.t('generated.notifications_Index.emailNotificationControls')}</h1>
+                            <p className="mt-1 text-sm text-slate-500">{i18n.t('generated.notifications_Index.globalDefaultsApplyToNewMerchantNotificationSettings')}</p>
                         </div>
                         <button disabled={processing} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
-                            <Save size={15} /> Save defaults
-                        </button>
+                            <Save size={15} />{i18n.t('generated.notifications_Index.saveDefaults')}</button>
                     </div>
                     <div className="mt-5 grid gap-4 md:grid-cols-3">
                         <label className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                            <input type="checkbox" checked={data.enabled} onChange={(e) => setData('enabled', e.target.checked)} />
-                            Email notifications enabled globally
-                        </label>
+                            <input type="checkbox" checked={data.enabled} onChange={(e) => setData('enabled', e.target.checked)} />{i18n.t('generated.notifications_Index.emailNotificationsEnabledGlobally')}</label>
                         <label className="text-sm">
-                            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Max recipients</span>
+                            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.notifications_Index.maxRecipients')}</span>
                             <input type="number" min="1" max="20" value={data.max_recipients} onChange={(e) => setData('max_recipients', e.target.value)} className="w-full rounded-lg border-slate-300 text-sm" />
                         </label>
                         <label className="text-sm">
-                            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Retry attempts</span>
+                            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.notifications_Index.retryAttempts')}</span>
                             <input type="number" min="1" max="10" value={data.retry_attempts} onChange={(e) => setData('retry_attempts', e.target.value)} className="w-full rounded-lg border-slate-300 text-sm" />
                         </label>
                     </div>
                     <div className="mt-5">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Default events for new merchants</p>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{i18n.t('generated.notifications_Index.defaultEventsForNewMerchants')}</p>
                         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
                             {Object.entries(events).map(([event, label]) => (
                                 <label key={event} className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 px-3 py-2 text-sm">
@@ -113,7 +108,7 @@ export default function AdminNotificationsIndex({ settings, events, templates, d
                 </form>
 
                 <section>
-                    <h2 className="mb-3 text-base font-semibold text-slate-900">Email templates</h2>
+                    <h2 className="mb-3 text-base font-semibold text-slate-900">{i18n.t('generated.notifications_Index.emailTemplates')}</h2>
                     <div className="grid gap-4 xl:grid-cols-2">
                         {templates.map((template) => (
                             <TemplateForm key={template.id} template={template} label={events[template.event_type] ?? template.event_type} />
@@ -123,19 +118,19 @@ export default function AdminNotificationsIndex({ settings, events, templates, d
 
                 <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div className="border-b border-slate-100 px-5 py-4">
-                        <h2 className="text-sm font-semibold text-slate-900">Delivery logs</h2>
+                        <h2 className="text-sm font-semibold text-slate-900">{i18n.t('generated.notifications_Index.deliveryLogs')}</h2>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                                 <tr>
-                                    <th className="px-4 py-3">Merchant</th>
-                                    <th className="px-4 py-3">Event</th>
-                                    <th className="px-4 py-3">Payment</th>
-                                    <th className="px-4 py-3">Recipient</th>
-                                    <th className="px-4 py-3">Status</th>
-                                    <th className="px-4 py-3">Sent</th>
-                                    <th className="px-4 py-3">Failure</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.merchant')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.event')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.payment')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.recipient')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.status')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.sent')}</th>
+                                    <th className="px-4 py-3">{i18n.t('generated.notifications_Index.failure')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -151,7 +146,7 @@ export default function AdminNotificationsIndex({ settings, events, templates, d
                                     </tr>
                                 ))}
                                 {(deliveries.data ?? []).length === 0 && (
-                                    <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-400"><Mail className="mx-auto mb-2" size={28} />No email deliveries yet.</td></tr>
+                                    <tr><td colSpan="7" className="px-4 py-10 text-center text-slate-400"><Mail className="mx-auto mb-2" size={28} />{i18n.t('generated.notifications_Index.noEmailDeliveriesYet')}</td></tr>
                                 )}
                             </tbody>
                         </table>

@@ -103,14 +103,14 @@ final class RoutingController extends Controller
     {
         $this->routingService->createWorkflow($request->validated());
 
-        return back()->with('success', 'Routing workflow created.');
+        return back()->with('success', __('messages.routing.created'));
     }
 
     public function updateWorkflow(UpdateWorkflowRequest $request, RoutingWorkflow $workflow): RedirectResponse
     {
         $this->routingService->updateWorkflow($workflow, $request->validated());
 
-        return back()->with('success', 'Routing workflow saved.');
+        return back()->with('success', __('messages.routing.saved'));
     }
 
     public function publishWorkflow(RoutingWorkflow $workflow): RedirectResponse
@@ -121,14 +121,14 @@ final class RoutingController extends Controller
             return back()->withErrors(['workflow' => $e->getMessage()]);
         }
 
-        return back()->with('success', 'Routing workflow published.');
+        return back()->with('success', __('messages.routing.published'));
     }
 
     public function rollbackWorkflow(RoutingWorkflow $workflow, RoutingWorkflowVersion $version): RedirectResponse
     {
         $this->routingService->rollbackWorkflow($workflow, $version);
 
-        return back()->with('success', 'Workflow rolled back as a new draft.');
+        return back()->with('success', __('messages.routing.rolled_back'));
     }
 
     public function updateWorkflowVersion(
@@ -142,7 +142,7 @@ final class RoutingController extends Controller
 
         $this->routingService->renameVersion($workflow, $version, $data['name'] ?? null);
 
-        return back()->with('success', 'Workflow version renamed.');
+        return back()->with('success', __('messages.routing.version_renamed'));
     }
 
     public function deleteWorkflowVersion(
@@ -155,7 +155,7 @@ final class RoutingController extends Controller
             return back()->withErrors(['version' => $e->getMessage()]);
         }
 
-        return back()->with('success', 'Workflow version deleted.');
+        return back()->with('success', __('messages.routing.version_deleted'));
     }
 
     public function saveCanvasLayout(Request $request, RoutingWorkflow $workflow): RedirectResponse
@@ -163,7 +163,7 @@ final class RoutingController extends Controller
         $data = $request->validate(['layout' => ['present', 'array']]);
         $this->routingService->saveCanvasLayout($workflow, $data['layout']);
 
-        return back()->with('success', 'Layout saved.');
+        return back()->with('success', __('messages.routing.layout_saved'));
     }
 
     public function simulateWorkflow(Request $request, RoutingWorkflow $workflow): JsonResponse

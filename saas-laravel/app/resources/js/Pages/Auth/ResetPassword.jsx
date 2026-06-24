@@ -5,6 +5,7 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
 
+import i18n from '@/i18n';
 export default function ResetPassword({ token, email }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         token: token,
@@ -23,7 +24,7 @@ export default function ResetPassword({ token, email }) {
 
     return (
         <GuestLayout>
-            <Head title="Reset Password" />
+            <Head title={i18n.t('generated.auth_ResetPassword.resetPassword')} />
 
             <form onSubmit={submit}>
                 <div>
@@ -84,9 +85,7 @@ export default function ResetPassword({ token, email }) {
                 </div>
 
                 <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Reset Password
-                    </PrimaryButton>
+                    <PrimaryButton className="ms-4" disabled={processing}>{i18n.t('generated.auth_ResetPassword.resetPassword')}</PrimaryButton>
                 </div>
             </form>
         </GuestLayout>

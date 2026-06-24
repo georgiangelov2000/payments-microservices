@@ -44,7 +44,7 @@ class MerchantPaymentsExportJob implements ShouldQueue
         $export = AdminExportFile::query()->with('admin')->findOrFail($this->exportId);
         $export->update([
             'status' => 'running',
-            'message' => 'Generating export file...',
+            'message' => __('messages.exports.processing'),
         ]);
 
         $format = strtolower($export->format);
@@ -69,7 +69,7 @@ class MerchantPaymentsExportJob implements ShouldQueue
             'path' => $path,
             'mime' => $this->mime($format),
             'size' => Storage::size($path),
-            'message' => 'Export completed successfully.',
+            'message' => __('messages.exports.completed'),
             'completed_at' => now(),
             'failed_at' => null,
         ]);

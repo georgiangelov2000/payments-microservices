@@ -1,3 +1,5 @@
+
+import i18n from '@/i18n';
 import { useForm, Head, Link, usePage } from '@inertiajs/react'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout'
 import { router } from '@inertiajs/react'
@@ -26,10 +28,10 @@ export default function Subscriptions({ filters = {} }) {
 
   return (
     <AuthenticatedLayout>
-      <Head title="Subscriptions" />
+      <Head title={i18n.t('common.nav.subscriptions')} />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold">Subscriptions</h1>
+        <h1 className="text-2xl font-semibold">{i18n.t('common.nav.subscriptions')}</h1>
 
         {/* FILTERS */}
         <form
@@ -38,7 +40,7 @@ export default function Subscriptions({ filters = {} }) {
         >
           <input
             type="text"
-            placeholder="Plan name"
+            placeholder={i18n.t('generated.subscriptions_Index.planName')}
             value={data.plan}
             onChange={(e) => setData('plan', e.target.value)}
             className="rounded border-gray-300 text-sm"
@@ -49,7 +51,7 @@ export default function Subscriptions({ filters = {} }) {
             onChange={(e) => setData('status', e.target.value)}
             className="rounded border-gray-300 text-sm"
           >
-            <option value="">All statuses</option>
+            <option value="">{i18n.t('generated.subscriptions_Index.allStatuses')}</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
@@ -59,30 +61,23 @@ export default function Subscriptions({ filters = {} }) {
               type="submit"
               disabled={processing}
               className="w-full rounded bg-indigo-600 text-white py-2 text-sm hover:bg-indigo-700"
-            >
-              Filter
-            </button>
+            >{i18n.t('common.actions.filter')}</button>
 
             <button
               type="button"
               onClick={resetFilters}
               className="w-full rounded border py-2 text-sm hover:bg-gray-100"
-            >
-              Reset
-            </button>
+            >{i18n.t('common.actions.reset')}</button>
           </div>
         </form>
 
         {/* SUMMARY */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600">
-          <div>
-            Showing <span className="font-medium">{subscriptions.from ?? 0}</span>–
-            <span className="font-medium">{subscriptions.to ?? 0}</span> of{' '}
-            <span className="font-medium">{subscriptions.total}</span> subscriptions
-          </div>
+          <div>{i18n.t('generated.subscriptions_Index.showing')}<span className="font-medium">{subscriptions.from ?? 0}</span>–
+            <span className="font-medium">{subscriptions.to ?? 0}</span>{' '}{i18n.t('generated.subscriptions_Index.of')}{' '}
+            <span className="font-medium">{subscriptions.total}</span>{i18n.t('generated.subscriptions_Index.subscriptions')}</div>
 
-          <div>
-            Page <span className="font-medium">{subscriptions.current_page}</span> of{' '}
+          <div>{i18n.t('generated.subscriptions_Index.page')}<span className="font-medium">{subscriptions.current_page}</span>{' '}{i18n.t('generated.subscriptions_Index.of')}{' '}
             <span className="font-medium">{subscriptions.last_page}</span>
           </div>
         </div>
@@ -92,19 +87,17 @@ export default function Subscriptions({ filters = {} }) {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="px-4 py-3 text-left">Plan</th>
-                <th className="px-4 py-3 text-left">Billing Period</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-left">Pricing</th>
+                <th className="px-4 py-3 text-left">{i18n.t('generated.subscriptions_Index.plan')}</th>
+                <th className="px-4 py-3 text-left">{i18n.t('generated.subscriptions_Index.billingPeriod')}</th>
+                <th className="px-4 py-3 text-left">{i18n.t('generated.subscriptions_Index.status')}</th>
+                <th className="px-4 py-3 text-left">{i18n.t('generated.subscriptions_Index.pricing')}</th>
               </tr>
             </thead>
 
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-4 py-6 text-center text-gray-500">
-                    No subscriptions found.
-                  </td>
+                  <td colSpan="4" className="px-4 py-6 text-center text-gray-500">{i18n.t('generated.subscriptions_Index.noSubscriptionsFound')}</td>
                 </tr>
               ) : (
                 rows.map((sub) => (
@@ -112,7 +105,7 @@ export default function Subscriptions({ filters = {} }) {
                     <td className="px-4 py-3 font-medium">{sub.name}</td>
 
                     <td className="px-4 py-3">
-                      {sub.current_period_transactions} tx / ${sub.current_period_volume}
+                      {sub.current_period_transactions}{' '}{i18n.t('generated.subscriptions_Index.tx')}{sub.current_period_volume}
                     </td>
 
                     <td className="px-4 py-3">
@@ -124,12 +117,12 @@ export default function Subscriptions({ filters = {} }) {
                               : 'bg-gray-100 text-gray-600'
                           }`}
                       >
-                        {sub.status === 'active' ? 'Active' : 'Inactive'}
+                        {sub.status === 'active' ? i18n.t('generated.common.active') : i18n.t('generated.common.inactive')}
                       </span>
                     </td>
 
                     <td className="px-4 py-3">
-                      ${sub.monthly_fee}/mo + {sub.transaction_fee_percent}% + ${sub.transaction_fee_fixed}
+                      ${sub.monthly_fee}{i18n.t('generated.subscriptions_Index.mo')}{' '}{sub.transaction_fee_percent}% + ${sub.transaction_fee_fixed}
                     </td>
                   </tr>
                 ))

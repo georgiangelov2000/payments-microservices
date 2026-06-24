@@ -5,6 +5,7 @@ import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
+import i18n from '@/i18n';
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
@@ -23,7 +24,7 @@ export default function Register() {
 
     return (
         <GuestLayout>
-            <Head title="Register" />
+            <Head title={i18n.t('generated.auth_Register.register')} />
 
             <form onSubmit={submit}>
                 <div>
@@ -106,13 +107,9 @@ export default function Register() {
                     <Link
                         href={route('login')}
                         className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Already registered?
-                    </Link>
+                    >{i18n.t('generated.auth_Register.alreadyRegistered')}</Link>
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Register
-                    </PrimaryButton>
+                    <PrimaryButton className="ms-4" disabled={processing}>{i18n.t('generated.auth_Register.register')}</PrimaryButton>
                 </div>
             </form>
         </GuestLayout>

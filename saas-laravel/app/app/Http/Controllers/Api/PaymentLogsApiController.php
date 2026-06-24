@@ -28,7 +28,7 @@ class PaymentLogsApiController extends Controller
         $result = $this->service->show($logId, (string) auth()->id());
 
         if (! $result) {
-            return response()->json(['message' => 'Not found.'], 404);
+            return response()->json(['message' => __('messages.common.not_found')], 404);
         }
 
         return response()->json($this->resolveResource($result, PaymentLogResource::class));
@@ -39,7 +39,7 @@ class PaymentLogsApiController extends Controller
         $result = $this->service->byPayment($paymentId, (string) auth()->id());
 
         if (! $result) {
-            return response()->json(['message' => 'Not found.'], 404);
+            return response()->json(['message' => __('messages.common.not_found')], 404);
         }
 
         return response()->json([
