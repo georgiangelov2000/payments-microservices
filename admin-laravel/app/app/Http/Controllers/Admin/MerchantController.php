@@ -14,16 +14,27 @@ use App\Http\Resources\Admin\MerchantResource;
 use App\Models\MerchantProviderCredential;
 use App\Models\Provider;
 use App\Models\User;
+use App\Services\MerchantOnboardingDocumentService;
 use App\Services\MerchantService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class MerchantController extends Controller
 {
+    private MerchantService $merchantService;
+
+    private MerchantOnboardingDocumentService $onboardingDocumentService;
+
     public function __construct(
-        private readonly MerchantService $merchantService,
-    ) {}
+        MerchantService $merchantService,
+        MerchantOnboardingDocumentService $onboardingDocumentService
+    ) {
+        $this->merchantService = $merchantService;
+        $this->onboardingDocumentService = $onboardingDocumentService;
+    }
 
     public function index(IndexMerchantsRequest $request): Response
     {
@@ -69,6 +80,22 @@ final class MerchantController extends Controller
         $this->merchantService->update($merchant, $request->validated());
 
         return back()->with('success', __('messages.merchants.updated'));
+    }
+
+    public function downloadOnboardingGuide(User $merchant): StreamedResponse
+    {
+        abort_unless($merchant->isMerchant(), 404);
+
+        $pdf = $this->onboardingDocumentService->generate($merchant);
+        $filename = Str::slug($merchant->company_name ?: $merchant->name) ?: 'merchant';
+
+        return response()->streamDownload(
+            static function () use ($pdf): void {
+                echo $pdf;
+            },
+            $filename.'-payflow-onboarding-guide.pdf',
+            ['Content-Type' => 'application/pdf']
+        );
     }
 
     public function storeProvider(StoreProviderCredentialRequest $request, User $merchant): RedirectResponse

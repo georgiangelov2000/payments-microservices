@@ -113,6 +113,11 @@ export default {
             webhooksManage: 'Configure webhooks',
         },
     },
+    merchants: {
+        onboarding: {
+            download: 'Download onboarding guide',
+        },
+    },
     routing: {
         versions: {
             history: 'Version history',

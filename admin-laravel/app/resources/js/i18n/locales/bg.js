@@ -113,6 +113,11 @@ export default {
             webhooksManage: 'Конфигуриране на webhooks',
         },
     },
+    merchants: {
+        onboarding: {
+            download: 'Изтегли ръководство за интеграция',
+        },
+    },
     routing: {
         versions: {
             history: 'История на версиите',

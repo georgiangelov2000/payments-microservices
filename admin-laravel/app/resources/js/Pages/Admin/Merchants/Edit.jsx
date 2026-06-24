@@ -9,7 +9,7 @@ import i18n from '@/i18n';
 import {
     CheckCircle2, XCircle, Clock, Circle, Plus,
     Copy, ChevronDown, ChevronRight, CreditCard, Key, GitBranch,
-    Store,
+    Store, FileDown,
 } from 'lucide-react';
 
 function TextInput({ error, className = '', ...props }) {
@@ -793,6 +793,13 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                         </div>
                     </div>
                 </div>
+                <a
+                    href={route('admin.merchants.onboarding-guide.download', merchant.id)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm transition-colors hover:bg-indigo-100"
+                >
+                    <FileDown size={16} strokeWidth={2} />
+                    {i18n.t('merchants.onboarding.download')}
+                </a>
             </div>
 
             <div className="mb-6 grid grid-cols-3 gap-3 sm:w-fit">
@@ -937,10 +944,18 @@ export default function MerchantsEdit({ merchant, availableProviders, generatedK
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-2">
                         <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">{i18n.t('generated.merchants_Edit.quickLinks')}</h3>
                         {[
+                            { label: i18n.t('merchants.onboarding.download'), href: route('admin.merchants.onboarding-guide.download', merchant.id), Icon: FileDown, external: true },
                             { label: i18n.t('generated.merchants_Edit.viewPayments'),   href: route('admin.payments.index'), Icon: CreditCard },
                             { label: i18n.t('generated.merchants_Edit.manageApiKeys'), href: route('admin.api-keys.index'), Icon: Key },
                             { label: i18n.t('generated.merchants_Edit.paymentRouting'), href: route('admin.routing.index'),  Icon: GitBranch },
-                        ].map(({ label, href, Icon }) => (
+                        ].map(({ label, href, Icon, external }) => external ? (
+                            <a key={href} href={href}
+                                className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:border-slate-200 transition-colors">
+                                <Icon size={15} strokeWidth={1.75} className="shrink-0 text-slate-400" />
+                                <span className="flex-1">{label}</span>
+                                <ChevronRight size={13} strokeWidth={2} className="text-slate-300" />
+                            </a>
+                        ) : (
                             <Link key={href} href={href}
                                 className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:border-slate-200 transition-colors">
                                 <Icon size={15} strokeWidth={1.75} className="shrink-0 text-slate-400" />

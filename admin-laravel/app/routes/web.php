@@ -29,6 +29,7 @@ Route::middleware(['auth:admin', 'admin'])->group(function () {
     Route::get('/merchants/create', [MerchantController::class, 'create'])->name('admin.merchants.create');
     Route::post('/merchants', [MerchantController::class, 'store'])->name('admin.merchants.store');
     Route::get('/merchants/{merchant}/edit', [MerchantController::class, 'edit'])->name('admin.merchants.edit');
+    Route::get('/merchants/{merchant}/onboarding-guide', [MerchantController::class, 'downloadOnboardingGuide'])->name('admin.merchants.onboarding-guide.download');
     Route::put('/merchants/{merchant}', [MerchantController::class, 'update'])->name('admin.merchants.update');
     Route::post('/merchants/{merchant}/providers', [MerchantController::class, 'storeProvider'])->name('admin.merchants.providers.store');
     Route::put('/merchant-provider-credentials/{credential}', [MerchantController::class, 'updateProvider'])->name('admin.merchant-provider-credentials.update');
