@@ -10,10 +10,21 @@ use Illuminate\Mail\Mailables\Envelope;
 
 class EmailNotificationMail extends Mailable
 {
+    public string $subjectLine;
+
+    public string $bodyText;
+
+    public array $notification;
+
     public function __construct(
-        public readonly string $subjectLine,
-        public readonly string $bodyText,
-    ) {}
+        string $subjectLine,
+        string $bodyText,
+        array $notification = []
+    ) {
+        $this->subjectLine = $subjectLine;
+        $this->bodyText = $bodyText;
+        $this->notification = $notification;
+    }
 
     public function envelope(): Envelope
     {
@@ -24,7 +35,11 @@ class EmailNotificationMail extends Mailable
     {
         return new Content(
             view: 'emails.email-notification',
-            with: ['bodyText' => $this->bodyText],
+            text: 'emails.email-notification-text',
+            with: [
+                'bodyText' => $this->bodyText,
+                'notification' => $this->notification,
+            ],
         );
     }
 }

@@ -167,6 +167,21 @@ services:
       redis:
         condition: service_healthy
 
+  saas-scheduler:
+    build: ./saas-laravel
+    container_name: saas-scheduler
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - ./saas-laravel/app:/var/www
+    restart: unless-stopped
+    depends_on:
+      payments-db:
+        condition: service_healthy
+      payments-logs-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   admin-gateway:
     image: nginx:alpine
     container_name: admin-gateway

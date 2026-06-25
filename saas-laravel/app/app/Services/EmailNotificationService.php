@@ -17,6 +17,7 @@ use App\Models\PaymentRoutingAttempt;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Lang;
 
 class EmailNotificationService
 {
@@ -300,11 +301,12 @@ class EmailNotificationService
             ->first();
 
         $payment = $delivery->payment;
+        $eventLabel = isset(self::EVENTS[$delivery->event_type])
+            ? __(self::EVENTS[$delivery->event_type])
+            : $delivery->event_type;
         $values = [
             '{{event}}' => $delivery->event_type,
-            '{{event_label}}' => isset(self::EVENTS[$delivery->event_type])
-                ? __(self::EVENTS[$delivery->event_type])
-                : $delivery->event_type,
+            '{{event_label}}' => $eventLabel,
             '{{payment_id}}' => (string) ($payment?->id ?? $delivery->payment_id ?? ''),
             '{{order_id}}' => (string) ($payment?->order_id ?? $delivery->order_id ?? ''),
             '{{amount}}' => $payment ? number_format((float) $payment->price, 2) : '',
@@ -313,9 +315,88 @@ class EmailNotificationService
             '{{status}}' => $payment?->status instanceof PaymentStatus ? $payment->status->label() : (string) ($payment?->status ?? ''),
         ];
 
+        $renderedBody = strtr($template?->body ?? '', $values);
+        $defaultBody = strtr(__('messages.notifications.template_body'), $values);
+        $defaultSubject = __('messages.notifications.template_subject', ['event' => $eventLabel]);
+        $subject = $template?->subject ?? __('messages.notifications.default_subject');
+
+        if (trim($subject) === trim($defaultSubject)) {
+            $subject = __('messages.notifications.email.events.'.
+                str_replace('.', '_', $delivery->event_type).'.subject', [
+                    'order' => $values['{{order_id}}'],
+                ]);
+        } else {
+            $subject = strtr($subject, $values);
+        }
+
         return [
-            'subject' => strtr($template?->subject ?? __('messages.notifications.default_subject'), $values),
-            'body' => strtr($template?->body ?? '', $values),
+            'subject' => $subject,
+            'body' => trim($renderedBody) === trim($defaultBody) ? '' : $renderedBody,
+            'notification' => $this->notificationPresentation($delivery, $eventLabel, $values),
+        ];
+    }
+
+    private function notificationPresentation(
+        EmailNotificationDelivery $delivery,
+        string $eventLabel,
+        array $values
+    ): array {
+        $payment = $delivery->payment;
+        $eventKey = str_replace('.', '_', $delivery->event_type);
+        $status = $values['{{status}}'] ?: 'pending';
+        $tone = $this->eventTone($delivery->event_type);
+        $statusKey = 'messages.notifications.email.statuses.'.$status;
+
+        return [
+            'event' => $delivery->event_type,
+            'event_label' => $eventLabel,
+            'headline' => __('messages.notifications.email.events.'.$eventKey.'.headline'),
+            'summary' => __('messages.notifications.email.events.'.$eventKey.'.summary'),
+            'eyebrow' => __('messages.notifications.email.eyebrow'),
+            'tone' => $tone,
+            'status' => $status,
+            'status_label' => Lang::has($statusKey) ? __($statusKey) : ucfirst(str_replace('_', ' ', $status)),
+            'merchant_name' => (string) ($payment?->merchant?->company_name ?: $payment?->merchant?->name ?: ''),
+            'payment_id' => $values['{{payment_id}}'],
+            'order_id' => $values['{{order_id}}'],
+            'amount' => trim($values['{{amount}}'].' '.$values['{{currency}}']),
+            'environment' => $values['{{environment}}'],
+            'provider' => (string) ($payment?->provider?->name ?? ''),
+            'routing_strategy' => (string) ($payment?->routing_strategy ?? ''),
+            'occurred_at' => $payment?->updated_at?->format('M j, Y · H:i T') ?? now()->format('M j, Y · H:i T'),
+            'payment_url' => $payment
+                ? route('payments.show', $payment->id)
+                : route('payments.index'),
+            'notifications_url' => route('notifications.index'),
+            'dashboard_url' => route('dashboard'),
+        ];
+    }
+
+    private function eventTone(string $eventType): array
+    {
+        if ($eventType === 'payment.succeeded') {
+            return [
+                'accent' => '#16a34a',
+                'soft' => '#f0fdf4',
+                'border' => '#bbf7d0',
+                'icon' => '✓',
+            ];
+        }
+
+        if (in_array($eventType, ['payment.failed', 'routing.all_providers_failed'], true)) {
+            return [
+                'accent' => '#dc2626',
+                'soft' => '#fef2f2',
+                'border' => '#fecaca',
+                'icon' => '!',
+            ];
+        }
+
+        return [
+            'accent' => '#d97706',
+            'soft' => '#fffbeb',
+            'border' => '#fde68a',
+            'icon' => '!',
         ];
     }
 

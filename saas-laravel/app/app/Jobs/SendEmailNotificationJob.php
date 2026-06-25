@@ -31,7 +31,9 @@ class SendEmailNotificationJob implements ShouldQueue
 
     public function handle(EmailNotificationService $service): void
     {
-        $delivery = EmailNotificationDelivery::query()->with('payment')->find($this->deliveryId);
+        $delivery = EmailNotificationDelivery::query()
+            ->with(['payment.merchant', 'payment.provider'])
+            ->find($this->deliveryId);
         if (! $delivery || $delivery->status === 'sent') {
             return;
         }
@@ -49,7 +51,11 @@ class SendEmailNotificationJob implements ShouldQueue
 
         try {
             $content = $service->renderTemplate($delivery);
-            Mail::to($delivery->recipient_email)->send(new EmailNotificationMail($content['subject'], $content['body']));
+            Mail::to($delivery->recipient_email)->send(new EmailNotificationMail(
+                $content['subject'],
+                $content['body'],
+                $content['notification']
+            ));
 
             $delivery->update([
                 'status' => 'sent',

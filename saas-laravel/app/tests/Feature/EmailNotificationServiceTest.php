@@ -148,6 +148,37 @@ final class EmailNotificationServiceTest extends TestCase
         Mail::assertSent(EmailNotificationMail::class);
     }
 
+    public function test_notification_email_uses_branded_layout_and_payment_actions(): void
+    {
+        $merchant = User::factory()->create();
+        $payment = $this->payment($merchant, PaymentStatus::FINISHED);
+        $delivery = EmailNotificationDelivery::create([
+            'merchant_id' => $merchant->id,
+            'payment_id' => $payment->id,
+            'order_id' => (string) $payment->order_id,
+            'event_type' => 'payment.succeeded',
+            'recipient_email' => 'ops@example.com',
+            'status' => 'pending',
+            'idempotency_key' => sha1('notification-design-test'),
+        ]);
+
+        $delivery->load(['payment.merchant', 'payment.provider']);
+        $content = app(EmailNotificationService::class)->renderTemplate($delivery);
+        $html = (new EmailNotificationMail(
+            $content['subject'],
+            $content['body'],
+            $content['notification'],
+        ))->render();
+
+        $this->assertSame('Payment completed — Order #'.$payment->order_id, $content['subject']);
+        $this->assertStringContainsString('Payment completed successfully', $html);
+        $this->assertStringContainsString('Payment details', $html);
+        $this->assertStringContainsString('View payment', $html);
+        $this->assertStringContainsString(route('payments.show', $payment->id), $html);
+        $this->assertStringContainsString(route('notifications.index'), $html);
+        $this->assertStringNotContainsString('<pre', $html);
+    }
+
     private function payment(User $merchant, PaymentStatus $status): Payment
     {
         return Payment::create([
