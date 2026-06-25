@@ -341,6 +341,45 @@ stateDiagram-v2
 
 ## 5. Routing Engine
 
+### Supported Routing Types
+
+PayFlow supports four routing patterns. A merchant has separate routing configuration for each environment (`test` and `live`).
+
+| Routing type | Behavior | Example |
+| --- | --- | --- |
+| **Priority routing** | Attempts providers in a configured order. The next provider is tried when an eligible soft failure or timeout occurs. | Stripe → PayPal |
+| **Weighted routing** | Distributes transactions according to percentage weights. Selection is deterministic for a transaction, using a hash of its event, order, and idempotency context. | Stripe 70%, PayPal 30% |
+| **Conditional routing** | Evaluates enabled rules by ascending priority; the first matching rule places its provider first. | EUR → Stripe, USD → PayPal |
+| **Failover routing** | Appends an ordered fallback chain and automatically continues to the next healthy provider after retryable provider failures. | Stripe primary, PayPal fallback |
+
+Conditional rules can inspect:
+
+- country and billing country;
+- currency;
+- minimum or maximum amount;
+- payment method and card type;
+- recurring-payment status;
+- environment and channel;
+- minimum or maximum risk score.
+
+The routing types can be combined. Common configurations include:
+
+- priority with failover;
+- weighted distribution with failover;
+- conditional rules with failover;
+- conditional rules followed by weighted or priority routing.
+
+Additional routing behavior:
+
+- **Provider override:** an API request may include a provider `alias`. The provider must be connected to the merchant in the requested environment.
+- **Health-aware selection:** unavailable or quarantined providers are removed before routing. Provider health is checked again immediately before each provider request.
+- **Tenant isolation:** only credentials and providers assigned to the current merchant are eligible.
+- **Environment isolation:** test credentials and routing never fall back to live configuration, or vice versa.
+- **Default behavior:** when no enabled configuration or conditional rule applies, providers use the default priority order `stripe → paypal`.
+- **Hard declines:** invalid amounts, unsupported currencies, and similar request errors stop failover because trying another provider would not correct the request.
+
+`unavailable` and `health_blocked` may appear in routing diagnostics, but they are failure outcomes rather than selectable routing strategies.
+
 ### Routing Decision Waterfall
 
 ```mermaid
